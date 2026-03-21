@@ -147,42 +147,32 @@ tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
 .user-row .ur-name{font-weight:700;font-size:var(--text-base)}
 .user-row .ur-role{font-size:var(--text-xs);padding:2px 10px;border-radius:99px;margin-left:var(--sp-2)}
 .role-admin{background:rgba(0,87,98,0.1);color:var(--teal-600);border:1px solid rgba(0,87,98,0.2)}
+.role-director{background:rgba(59,130,246,0.08);color:#1d4ed8;border:1px solid rgba(59,130,246,0.2)}
+.role-vendedor{background:rgba(34,197,94,0.08);color:#166534;border:1px solid rgba(34,197,94,0.2)}
 .role-dashboard{background:rgba(249,115,22,0.08);color:var(--warning);border:1px solid rgba(249,115,22,0.2)}
 </style>
 </head>
 <body>
 
 <!-- LOGIN OVERLAY -->
-<div id="login-overlay">
-  <div class="login-box">
-    <div class="login-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#E6FCFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </div>
-    <h2 id="login-title">Iniciar Sesion</h2>
-    <div class="sub" id="login-sub">PANEL DE ADMINISTRACION</div>
-    <div id="login-form">
-      <div class="field">
-        <label>Usuario</label>
-        <input class="inp" id="login-user" placeholder="admin" autocomplete="username">
-      </div>
-      <div class="field">
-        <label>Contrasena</label>
-        <input class="inp" id="login-pass" type="password" placeholder="••••••" autocomplete="current-password">
-      </div>
-      <button class="btn-p" style="width:100%;margin-top:var(--sp-1)" onclick="doLogin()">Entrar</button>
-      <div class="err-msg" id="login-err"></div>
-    </div>
-  </div>
-</div>
+<!-- AUTH GUARD -->
+<script>
+(function(){
+  function getSession(){try{return JSON.parse(localStorage.getItem('jdm_session')||'null');}catch{return null;}}
+  const s=getSession();
+  if(!s||s.role!=='admin'){localStorage.removeItem('jdm_session');location.href='index.html';}
+  else window._session=s;
+})();
+function logout(){localStorage.removeItem('jdm_session');location.href='index.html';}
+</script>
 
 <!-- MAIN CONTENT -->
-<div class="wrap" id="main-wrap">
+<div class="wrap" id="main-wrap" style="display:block">
   <div class="header">
     <h1>ADMIN — JASON DE MEXICO</h1>
     <sub>GESTION DE INVENTARIO · PRECIOS · COTIZADORES</sub>
-    <div class="session-info">Sesion: <span id="session-user"></span> · <a href="#" onclick="doLogout()">Cerrar sesion</a></div>
+    <div id="app-nav-admin" style="margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap"></div>
+    <div class="session-info" style="margin-top:8px">Sesion: <span id="session-user"></span> · <a href="#" onclick="logout()">Cerrar sesion</a></div>
   </div>
 
   <div class="tabs">
@@ -281,10 +271,31 @@ tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
         <div><label class="sec">Usuario</label><input class="inp" id="new-user" placeholder="nombre"></div>
         <div><label class="sec">Contrasena</label><input class="inp" id="new-pass" type="password" placeholder="••••••"></div>
       </div>
-      <div style="display:flex;gap:var(--sp-3);align-items:center;margin-bottom:var(--sp-3)">
-        <label class="sec" style="margin:0">Rol:</label>
-        <label style="font-size:var(--text-sm);cursor:pointer;color:var(--text-secondary)"><input type="radio" name="new-role" value="dashboard" checked> Dashboard</label>
-        <label style="font-size:var(--text-sm);cursor:pointer;color:var(--text-secondary)"><input type="radio" name="new-role" value="admin"> Admin</label>
+      <div style="margin-bottom:var(--sp-3)">
+        <label class="sec" style="margin-bottom:6px;display:block">Rol y permisos:</label>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='#22c55e'">
+            <input type="radio" name="new-role" value="vendedor" checked style="margin-top:2px">
+            <div>
+              <div style="font-weight:700;font-size:var(--text-sm);color:#166534">🟢 Vendedor</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Solo cotizadores (Mangueras y Bandas)</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='#3b82f6'">
+            <input type="radio" name="new-role" value="director" style="margin-top:2px">
+            <div>
+              <div style="font-weight:700;font-size:var(--text-sm);color:#1e40af">🔵 Director</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Cotizadores + Dashboard y estadisticas</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='var(--teal-600)'">
+            <input type="radio" name="new-role" value="admin" style="margin-top:2px">
+            <div>
+              <div style="font-weight:700;font-size:var(--text-sm);color:var(--teal-600)">⚙️ Admin</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Acceso completo: cotizadores + dashboard + administracion</div>
+            </div>
+          </label>
+        </div>
       </div>
       <button class="btn-p" onclick="addUser()">+ Agregar Usuario</button>
       <div id="add-user-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
@@ -313,8 +324,6 @@ function revealChildren(container){
 }
 
 /* AUTH SYSTEM */
-let _currentUser = null;
-
 async function hashPass(str){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -323,60 +332,26 @@ async function hashPass(str){
 function getUsers(){ return JSON.parse(localStorage.getItem('jdm_users')||'[]'); }
 function saveUsers(users){ localStorage.setItem('jdm_users', JSON.stringify(users)); }
 
-async function doLogin(){
-  const user = document.getElementById('login-user').value.trim().toLowerCase();
-  const pass = document.getElementById('login-pass').value;
-  const errEl = document.getElementById('login-err');
-
-  if(!user||!pass){errEl.textContent='Ingresa usuario y contraseña';return;}
-
-  const users = getUsers();
-
-  // First-time setup: no users exist yet
-  if(users.length===0){
-    const h = await hashPass(pass);
-    saveUsers([{user, passHash:h, role:'admin'}]);
-    _currentUser = {user, role:'admin'};
-    unlockUI();
-    return;
-  }
-
-  const h = await hashPass(pass);
-  const found = users.find(u=>u.user===user && u.passHash===h);
-  if(!found){errEl.textContent='Usuario o contraseña incorrectos';return;}
-  if(found.role!=='admin'){errEl.textContent='Acceso denegado. Solo administradores.';return;}
-
-  _currentUser = found;
-  unlockUI();
-}
-
-function unlockUI(){
-  document.getElementById('login-overlay').style.display='none';
-  document.getElementById('main-wrap').style.display='block';
-  document.getElementById('session-user').textContent=_currentUser.user;
+/* SESSION-BASED INIT */
+let _currentUser=window._session||null;
+(function(){
+  const s=window._session;
+  if(!s)return;
+  const ROLE_LABEL={vendedor:'Vendedor',director:'Director',admin:'Admin'};
+  document.getElementById('session-user').textContent=`${s.user} (${ROLE_LABEL[s.role]||s.role})`;
+  // Nav bar
+  const links=[
+    {href:'cotizador_mangueras.html',label:'🔴 Mangueras',roles:['vendedor','director','admin']},
+    {href:'cotizador_bandas.html',label:'💛 Bandas',roles:['vendedor','director','admin']},
+    {href:'dashboard.html',label:'📊 Dashboard',roles:['director','admin']},
+    {href:'admin.html',label:'⚙️ Admin',roles:['admin']},
+  ];
+  document.getElementById('app-nav-admin').innerHTML=links
+    .filter(l=>l.roles.includes(s.role))
+    .map(l=>`<a href="${l.href}" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;${l.href==='admin.html'?'background:var(--teal-600);color:#E6FCFF':'background:#EAECEE;color:var(--text-muted)'}">${l.label}</a>`)
+    .join('');
   renderUserList();
   revealChildren(document.getElementById('tab-inv'));
-}
-
-function doLogout(){
-  _currentUser=null;
-  document.getElementById('login-overlay').style.display='flex';
-  document.getElementById('main-wrap').style.display='none';
-  document.getElementById('login-pass').value='';
-  document.getElementById('login-err').textContent='';
-}
-
-// Enter key on login
-document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
-
-// Check if first-time setup
-(function(){
-  const users=getUsers();
-  if(users.length===0){
-    document.getElementById('login-title').textContent='Crear Cuenta Admin';
-    document.getElementById('login-sub').textContent='PRIMERA VEZ — CONFIGURA TU ACCESO';
-  }
 })();
 
 /* User management */
@@ -384,13 +359,15 @@ function renderUserList(){
   const users=getUsers();
   const el=document.getElementById('user-list');
   if(!users.length){el.innerHTML='<p style="color:var(--text-muted);font-size:var(--text-sm)">No hay usuarios registrados.</p>';return;}
+  const ROLE_CSS={vendedor:'role-vendedor',director:'role-director',admin:'role-admin'};
+  const ROLE_LABEL={vendedor:'🟢 Vendedor',director:'🔵 Director',admin:'⚙️ Admin'};
   el.innerHTML=users.map((u,i)=>`
     <div class="user-row">
       <div>
         <span class="ur-name">${u.user}</span>
-        <span class="ur-role ${u.role==='admin'?'role-admin':'role-dashboard'}">${u.role}</span>
+        <span class="ur-role ${ROLE_CSS[u.role]||'role-dashboard'}">${ROLE_LABEL[u.role]||u.role}</span>
       </div>
-      ${u.user!==_currentUser.user?`<button class="btn-danger" onclick="removeUser(${i})">Eliminar</button>`:'<span style="font-size:var(--text-xs);color:var(--text-muted)">(tu)</span>'}
+      ${u.user!==(_currentUser&&_currentUser.user)?`<button class="btn-danger" onclick="removeUser(${i})">Eliminar</button>`:'<span style="font-size:var(--text-xs);color:var(--text-muted)">(tu)</span>'}
     </div>
   `).join('');
 }
