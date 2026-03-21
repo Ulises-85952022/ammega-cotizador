@@ -49,8 +49,10 @@ td{padding:7px 6px;vertical-align:top}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media print{
   .noPrint{display:none!important}
-  body{background:#fff!important;color:#000!important}
-  @page{margin:1cm;size:Letter}
+  body{background:#fff!important;color:#000!important;padding:0!important;margin:0!important}
+  @page{margin:0.8cm;size:Letter}
+  #print-sheet{max-width:none!important;width:100%!important;box-shadow:none!important;padding:0!important;margin:0!important}
+  #sc-preview{padding:0!important;margin:0!important}
 }
 </style>
 </head>

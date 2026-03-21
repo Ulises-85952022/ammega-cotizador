@@ -173,6 +173,12 @@ tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
 .gauge-fill{height:100%;border-radius:99px;transition:width 1s var(--ease-out)}
 .gauge-fill-teal{background:linear-gradient(90deg,var(--lime-200),var(--teal-600))}
 .gauge-label{font-size:var(--text-xs);color:var(--text-muted);font-weight:600;min-width:40px;text-align:right}
+
+/* ─── Responsive grids ─── */
+@media(max-width:640px){
+  #tab-resumen .card:has(#weekday-chart),#tab-resumen .card:has(#tipo-breakdown){grid-column:1/-1}
+  #tab-stats>div[style*="grid"]{grid-template-columns:1fr!important}
+}
 </style>
 </head>
 <body>
@@ -253,9 +259,14 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
 
   <!-- ESTADISTICAS -->
   <div id="tab-stats" class="panel">
-    <div class="card"><h3>Productos CON Stock Mas Cotizados</h3><table id="stock-top"></table></div>
+    <div class="stat-grid" id="stats-kpis"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-4)">
+      <div class="card"><h3>Cotizaciones por Mes</h3><div class="bar-wrap" id="monthly-chart"></div></div>
+      <div class="card"><h3>Valor Cotizado por Tipo</h3><div id="tipo-valor-breakdown"></div></div>
+    </div>
+    <div class="card"><h3>Productos Mas Cotizados</h3><table id="stock-top"></table></div>
     <div class="card"><h3>Clientes que Mas Cotizan</h3><table id="client-top"></table></div>
-    <div class="card"><h3>Dias Mas Activos (Calendario)</h3><table id="date-top"></table></div>
+    <div class="card"><h3>Dias Mas Activos</h3><table id="date-top"></table></div>
   </div>
 </div>
 
@@ -538,33 +549,96 @@ function exportBO(){
 
 /* ESTADISTICAS */
 function renderStats(){
-  const stockProds={};
-  _quotes.forEach(q=>(q.items||[]).forEach(it=>{
-    if(it.stockOk===true){
-      if(!stockProds[it.c])stockProds[it.c]={c:it.c,d:it.d,count:0,qty:0};
-      stockProds[it.c].count++;stockProds[it.c].qty+=it.totalQty||0;
+  // KPIs
+  const totalVal=_quotes.reduce((s,q)=>s+(q.total||0),0);
+  const totalItems=_quotes.reduce((s,q)=>s+(q.items||[]).length,0);
+  const clientes=new Set(_quotes.map(q=>q.cliente).filter(Boolean));
+  const bandas=_quotes.filter(q=>q.tipo==='bandas');
+  const mangueras=_quotes.filter(q=>q.tipo==='mangueras');
+  const valBandas=bandas.reduce((s,q)=>s+(q.total||0),0);
+  const valMangueras=mangueras.reduce((s,q)=>s+(q.total||0),0);
+  document.getElementById('stats-kpis').innerHTML=`
+    <div class="stat stat-lime"><div class="lbl">Total Cotizaciones</div><div class="val">${_quotes.length}</div><div class="change">${totalItems} productos cotizados</div></div>
+    <div class="stat stat-teal"><div class="lbl">Valor Total</div><div class="val">${fmtShort(totalVal)}</div><div class="change">${fmtMXN(totalVal)}</div></div>
+    <div class="stat stat-white"><div class="lbl">Clientes Activos</div><div class="val">${clientes.size}</div></div>
+    <div class="stat stat-dark"><div class="lbl">Bandas / Mangueras</div><div class="val">${bandas.length}/${mangueras.length}</div><div class="change">${fmtShort(valBandas)} / ${fmtShort(valMangueras)}</div></div>
+  `;
+
+  // Monthly chart (last 6 months)
+  const monthlyCounts={};
+  const monthlyVals={};
+  _quotes.forEach(q=>{
+    if(q.fecha){
+      const m=q.fecha.slice(0,7);
+      monthlyCounts[m]=(monthlyCounts[m]||0)+1;
+      monthlyVals[m]=(monthlyVals[m]||0)+(q.total||0);
     }
+  });
+  const months=Object.keys(monthlyCounts).sort().slice(-6);
+  const maxM=Math.max(...months.map(m=>monthlyCounts[m]),1);
+  const MONTH_NAMES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  document.getElementById('monthly-chart').innerHTML=months.length
+    ? months.map(m=>{
+        const h=Math.max(6,Math.round(monthlyCounts[m]/maxM*110));
+        const label=MONTH_NAMES[parseInt(m.slice(5,7))-1]+' '+m.slice(2,4);
+        return`<div class="bar bar-teal" style="height:${h}px"><div class="bv">${monthlyCounts[m]}</div><div class="bl">${label}</div></div>`;
+      }).join('')
+    : '<div style="color:var(--text-muted);font-size:var(--text-sm);padding:20px">Sin datos</div>';
+
+  // Valor por tipo breakdown
+  const totalV=Math.max(valBandas+valMangueras,1);
+  const pctB=Math.round(valBandas/totalV*100);
+  const pctM=Math.round(valMangueras/totalV*100);
+  document.getElementById('tipo-valor-breakdown').innerHTML=`
+    <div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-4)">
+      <div style="flex:1;text-align:center;padding:var(--sp-3);background:var(--bg-card-lime);border-radius:var(--radius-md)">
+        <div style="font-size:var(--text-xl);font-weight:900">${fmtShort(valBandas)}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted);font-weight:600">Bandas (${bandas.length} cot.)</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:var(--sp-3);background:var(--bg-card-teal);color:var(--text-on-teal);border-radius:var(--radius-md)">
+        <div style="font-size:var(--text-xl);font-weight:900">${fmtShort(valMangueras)}</div>
+        <div style="font-size:var(--text-xs);opacity:.7;font-weight:600">Mangueras (${mangueras.length} cot.)</div>
+      </div>
+    </div>
+    <div class="gauge-wrap"><span style="font-size:var(--text-xs);color:var(--text-muted);min-width:70px">Bandas</span><div class="gauge-bar"><div class="gauge-fill gauge-fill-teal" style="width:${pctB}%"></div></div><span class="gauge-label">${pctB}%</span></div>
+    <div class="gauge-wrap" style="margin-top:6px"><span style="font-size:var(--text-xs);color:var(--text-muted);min-width:70px">Mangueras</span><div class="gauge-bar"><div class="gauge-fill" style="width:${pctM}%;background:var(--teal-600)"></div></div><span class="gauge-label">${pctM}%</span></div>
+  `;
+
+  // Top productos (todos, sin filtro de stock)
+  const allProds={};
+  _quotes.forEach(q=>(q.items||[]).forEach(it=>{
+    const k=it.c;
+    if(!k)return;
+    if(!allProds[k])allProds[k]={c:it.c,d:it.d,t:it.t,count:0,qty:0,valor:0};
+    allProds[k].count++;
+    allProds[k].qty+=it.totalQty||0;
+    allProds[k].valor+=it.total||0;
   }));
-  const topStock=Object.values(stockProds).sort((a,b)=>b.count-a.count).slice(0,15);
-  let html='<thead><tr><th>#</th><th>Codigo</th><th>Descripcion</th><th style="text-align:right">Veces</th><th style="text-align:right">Qty Total</th></tr></thead><tbody>';
-  topStock.forEach((p,i)=>{html+=`<tr><td style="color:var(--text-muted)">${i+1}</td><td style="color:var(--success);font-family:var(--font-mono);font-weight:700">${p.c}</td><td style="color:var(--text-secondary);font-size:var(--text-xs)">${(p.d||'').substring(0,40)}</td><td style="text-align:right;font-weight:700">${p.count}</td><td style="text-align:right">${p.qty}</td></tr>`;});
-  if(!topStock.length)html+='<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Sin datos</td></tr>';
+  const topStock=Object.values(allProds).sort((a,b)=>b.count-a.count).slice(0,15);
+  let html='<thead><tr><th>#</th><th>Codigo</th><th>Descripcion</th><th>Tipo</th><th style="text-align:right">Veces</th><th style="text-align:right">Qty Total</th><th style="text-align:right">Valor Total</th></tr></thead><tbody>';
+  topStock.forEach((p,i)=>{html+=`<tr><td style="color:var(--text-muted)">${i+1}</td><td style="color:var(--teal-600);font-family:var(--font-mono);font-weight:700;font-size:var(--text-xs)">${p.c}</td><td style="color:var(--text-secondary);font-size:var(--text-xs)">${(p.d||'').substring(0,38)}</td><td style="font-size:var(--text-xs)">${p.t||'-'}</td><td style="text-align:right;font-weight:700">${p.count}</td><td style="text-align:right">${p.qty}</td><td style="text-align:right;color:var(--success);font-weight:700">${fmtMXN(p.valor)}</td></tr>`;});
+  if(!topStock.length)html+='<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Sin datos — guarda cotizaciones para ver estadisticas</td></tr>';
   html+='</tbody>';
   document.getElementById('stock-top').innerHTML=html;
 
+  // Top clientes
   const clientStats={};
   _quotes.forEach(q=>{
-    const c=q.cliente||'Otro';
-    if(!clientStats[c])clientStats[c]={name:c,count:0,total:0};
-    clientStats[c].count++;clientStats[c].total+=q.total||0;
+    const c=q.cliente||'Sin cliente';
+    if(!clientStats[c])clientStats[c]={name:c,count:0,total:0,bandas:0,mangueras:0};
+    clientStats[c].count++;
+    clientStats[c].total+=q.total||0;
+    if(q.tipo==='bandas')clientStats[c].bandas++;
+    else if(q.tipo==='mangueras')clientStats[c].mangueras++;
   });
   const topClients=Object.values(clientStats).sort((a,b)=>b.count-a.count);
-  let cHtml='<thead><tr><th>#</th><th>Cliente</th><th style="text-align:right">Cotizaciones</th><th style="text-align:right">Valor Total</th></tr></thead><tbody>';
-  topClients.forEach((c,i)=>{cHtml+=`<tr><td style="color:var(--text-muted)">${i+1}</td><td style="font-weight:700">${c.name}</td><td style="text-align:right;font-weight:700;color:var(--teal-600)">${c.count}</td><td style="text-align:right;color:var(--success)">${fmtMXN(c.total)}</td></tr>`;});
-  if(!topClients.length)cHtml+='<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">Sin datos</td></tr>';
+  let cHtml='<thead><tr><th>#</th><th>Cliente</th><th style="text-align:right">Cotizaciones</th><th style="text-align:center">Bandas</th><th style="text-align:center">Mangueras</th><th style="text-align:right">Valor Total</th></tr></thead><tbody>';
+  topClients.forEach((c,i)=>{cHtml+=`<tr><td style="color:var(--text-muted)">${i+1}</td><td style="font-weight:700">${c.name}</td><td style="text-align:right;font-weight:700;color:var(--teal-600)">${c.count}</td><td style="text-align:center;font-size:var(--text-xs)">${c.bandas||0}</td><td style="text-align:center;font-size:var(--text-xs)">${c.mangueras||0}</td><td style="text-align:right;color:var(--success);font-weight:700">${fmtMXN(c.total)}</td></tr>`;});
+  if(!topClients.length)cHtml+='<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Sin datos</td></tr>';
   cHtml+='</tbody>';
   document.getElementById('client-top').innerHTML=cHtml;
 
+  // Dias mas activos
   const dateCounts={};
   _quotes.forEach(q=>{if(q.fecha){const d=q.fecha.slice(0,10);dateCounts[d]=(dateCounts[d]||0)+1;}});
   const topDates=Object.entries(dateCounts).sort((a,b)=>b[1]-a[1]).slice(0,15);
