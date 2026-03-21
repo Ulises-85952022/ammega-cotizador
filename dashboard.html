@@ -178,30 +178,25 @@ tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
 <body>
 
 <!-- LOGIN -->
-<div id="login-overlay">
-  <div class="login-box">
-    <div class="login-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#E6FCFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-      </svg>
-    </div>
-    <h2>Dashboard</h2>
-    <div class="sub">ESTADISTICAS Y REPORTES</div>
-    <div id="login-form">
-      <div class="field"><label>Usuario</label><input class="inp" id="login-user" placeholder="usuario" autocomplete="username"></div>
-      <div class="field"><label>Contrasena</label><input class="inp" id="login-pass" type="password" placeholder="••••••" autocomplete="current-password"></div>
-      <button class="btn-p" style="width:100%;margin-top:var(--sp-1)" onclick="doLogin()">Entrar</button>
-      <div class="err-msg" id="login-err"></div>
-    </div>
-  </div>
-</div>
+<!-- AUTH GUARD -->
+<script>
+(function(){
+  function getSession(){try{return JSON.parse(localStorage.getItem('jdm_session')||'null');}catch{return null;}}
+  const s=getSession();
+  const allowed=['director','admin'];
+  if(!s||!allowed.includes(s.role)){localStorage.removeItem('jdm_session');location.href='index.html';}
+  else window._session=s;
+})();
+function logout(){localStorage.removeItem('jdm_session');location.href='index.html';}
+</script>
 
 <!-- MAIN -->
-<div class="wrap" id="main-wrap">
+<div class="wrap" id="main-wrap" style="display:block">
   <div class="header">
     <h1>DASHBOARD — JASON DE MEXICO</h1>
     <sub>ESTADISTICAS · COTIZACIONES · BACK ORDERS · REPORTES</sub>
-    <div class="session-info">Sesion: <span id="session-user"></span> · <a href="#" onclick="doLogout()">Cerrar sesion</a></div>
+    <div id="app-nav-dash" style="margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap"></div>
+    <div class="session-info" style="margin-top:8px">Sesion: <span id="session-user"></span> · <a href="#" onclick="logout()">Cerrar sesion</a></div>
   </div>
 
   <div class="tabs">
@@ -276,29 +271,25 @@ function revealChildren(container){
 }
 
 /* AUTH */
-async function hashPass(str){
-  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-async function doLogin(){
-  const user=document.getElementById('login-user').value.trim().toLowerCase();
-  const pass=document.getElementById('login-pass').value;
-  const err=document.getElementById('login-err');
-  if(!user||!pass){err.textContent='Ingresa usuario y contrasena';return;}
-  const users=JSON.parse(localStorage.getItem('jdm_users')||'[]');
-  if(!users.length){err.textContent='No hay usuarios configurados. Primero configura desde Admin.';return;}
-  const h=await hashPass(pass);
-  const found=users.find(u=>u.user===user&&u.passHash===h);
-  if(!found){err.textContent='Usuario o contrasena incorrectos';return;}
-  document.getElementById('login-overlay').style.display='none';
-  document.getElementById('main-wrap').style.display='block';
-  document.getElementById('session-user').textContent=found.user;
+/* SESSION-BASED INIT */
+(function(){
+  const s=window._session;
+  if(!s)return;
+  const ROLE_LABEL={vendedor:'Vendedor',director:'Director',admin:'Admin'};
+  document.getElementById('session-user').textContent=`${s.user} (${ROLE_LABEL[s.role]||s.role})`;
+  // Nav bar links based on role
+  const links=[
+    {href:'cotizador_mangueras.html',label:'🔴 Mangueras',roles:['vendedor','director','admin']},
+    {href:'cotizador_bandas.html',label:'💛 Bandas',roles:['vendedor','director','admin']},
+    {href:'dashboard.html',label:'📊 Dashboard',roles:['director','admin']},
+    {href:'admin.html',label:'⚙️ Admin',roles:['admin']},
+  ];
+  document.getElementById('app-nav-dash').innerHTML=links
+    .filter(l=>l.roles.includes(s.role))
+    .map(l=>`<a href="${l.href}" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;${l.href==='dashboard.html'?'background:var(--teal-600);color:#E6FCFF':'background:#EAECEE;color:var(--text-muted)'}">${l.label}</a>`)
+    .join('');
   initDashboard();
-}
-function doLogout(){location.reload();}
-document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
+})();
 
 /* DATA */
 let _quotes=[],_bos=[];

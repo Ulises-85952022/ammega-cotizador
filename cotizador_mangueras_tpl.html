@@ -57,6 +57,53 @@ td{padding:7px 6px;vertical-align:top}
 </head>
 <body>
 
+<!-- ═══ AUTH GUARD ═══ -->
+<script>
+(function(){
+  if(localStorage.getItem('jdm_reseller_user')){window._isReseller=true;return;}
+  function getSession(){try{return JSON.parse(localStorage.getItem('jdm_session')||'null');}catch{return null;}}
+  const s=getSession();
+  const allowed=['vendedor','director','admin'];
+  if(!s||!allowed.includes(s.role)){localStorage.removeItem('jdm_session');location.href='index.html';}
+  else window._session=s;
+})();
+function logout(){localStorage.removeItem('jdm_session');location.href='index.html';}
+function logoutReseller(){['jdm_reseller_user','jdm_reseller_nombre','jdm_reseller_discount','jdm_reseller_logo'].forEach(k=>localStorage.removeItem(k));location.href='index.html';}
+function renderNav(){
+  if(window._isReseller){
+    const nav=document.getElementById('app-nav');
+    nav.querySelector('#nav-links').innerHTML=`<span style="font-size:12px;font-weight:700;color:#38bdf8">${_RS_NOMBRE||_RS_USER}</span>`;
+    nav.querySelector('#nav-user').textContent=`Descuento: ${_RS_DISCOUNT}%`;
+    return;
+  }
+  const s=window._session;if(!s)return;
+  const role=s.role;
+  const ROLE_LABEL={vendedor:'Vendedor',director:'Director',admin:'Admin'};
+  const links=[
+    {href:'cotizador_tpl.html',label:'← Inicio',roles:['vendedor','director','admin']},
+    {href:'cotizador_mangueras_tpl.html',label:'💧 Mangueras',roles:['vendedor','director','admin']},
+    {href:'cotizador_bandas.html',label:'⚡ Bandas',roles:['vendedor','director','admin']},
+    {href:'dashboard.html',label:'📊 Dashboard',roles:['director','admin']},
+    {href:'admin.html',label:'⚙️ Admin',roles:['admin']},
+  ];
+  const nav=document.getElementById('app-nav');
+  nav.querySelector('#nav-links').innerHTML=links
+    .filter(l=>l.roles.includes(role))
+    .map(l=>`<a href="${l.href}" style="padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;${l.href==='cotizador_mangueras_tpl.html'?'background:#001a26;color:#38bdf8;border:1px solid #1e3a5f':l.href==='cotizador_tpl.html'?'color:#94a3b8':'color:#64748b'}">${l.label}</a>`)
+    .join('');
+  nav.querySelector('#nav-user').textContent=`${s.user} · ${ROLE_LABEL[role]||role}`;
+}
+</script>
+
+<!-- ═══ NAV BAR ═══ -->
+<div id="app-nav" style="background:#0d0d1a;border-bottom:1px solid #1e1e38;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:500;flex-wrap:wrap;gap:8px">
+  <div id="nav-links" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="nav-user" style="font-size:11px;color:#475569"></span>
+    <button onclick="window._isReseller?logoutReseller():logout()" style="padding:4px 10px;background:transparent;border:1px solid #334155;border-radius:5px;color:#64748b;font-size:11px;cursor:pointer;font-family:inherit">Salir</button>
+  </div>
+</div>
+
 <!-- ═══ SCREEN 1: CONFIG ═══ -->
 <div id="sc-config" class="screen active">
   <div style="max-width:480px;margin:36px auto 0" class="card">
@@ -71,7 +118,7 @@ td{padding:7px 6px;vertical-align:top}
     </div>
     <div style="margin-bottom:12px">
       <p class="sec">Vendedor</p>
-      <input class="inp" id="vendedor-inp" value="ISMAEL ULISES HERNANDEZ FRAYLE">
+      <input class="inp" id="vendedor-inp" value="" placeholder="Nombre del vendedor">
     </div>
     <button class="btn-p" id="btn-next" disabled onclick="goToCategoria()">Cotizar →</button>
   </div>
@@ -221,9 +268,10 @@ const BRAND_XREF=/*BRAND_XREF_PLACEHOLDER*/[];
 <script>
 /* ── Constants ── */
 const COTIZADOR_TIPO='mangueras';
-const CLIENTES=["Brr","Applied","Motion","Binasa"];
-const CLI_KEY={Brr:"b",Applied:"a",Motion:"m",Binasa:"n"};
-const CLI_DESC={Brr:"Brr",Applied:"Applied Ind.",Motion:"Motion Industries",Binasa:"BINASA"};
+const _jdmClientes=(function(){try{const c=JSON.parse(localStorage.getItem('jdm_clientes')||'null');if(c&&c.length)return c;}catch{}return[{name:'Brr',key:'b',desc:'Brr',discount:30},{name:'Applied',key:'a',desc:'Applied Ind.',discount:40},{name:'Motion',key:'m',desc:'Motion Industries',discount:40},{name:'Binasa',key:'n',desc:'BINASA',discount:45}];})();
+const CLIENTES=_jdmClientes.map(c=>c.name);
+const CLI_KEY=Object.fromEntries(_jdmClientes.map(c=>[c.name,c.key]));
+const CLI_DESC=Object.fromEntries(_jdmClientes.map(c=>[c.name,c.desc]));
 
 const CAT_META={
   "MANGUERA HIDRAULICA":  {icon:"🔴",color:"#ef4444"},
@@ -235,9 +283,22 @@ const CAT_META={
   "ADAPTADORES":          {icon:"🔧",color:"#10b981"},
 };
 
+/* ── Reseller ── */
+const _RS_USER=localStorage.getItem('jdm_reseller_user')||'';
+const _RS_NOMBRE=localStorage.getItem('jdm_reseller_nombre')||'';
+const _RS_DISCOUNT=parseFloat(localStorage.getItem('jdm_reseller_discount')||'0');
+const _RS_LOGO=localStorage.getItem('jdm_reseller_logo')||'';
+const _IS_RESELLER=!!_RS_USER;
+
 /* ── State ── */
+const _sessionVendedor=(function(){
+  if(_IS_RESELLER)return _RS_NOMBRE||_RS_USER;
+  try{const s=JSON.parse(localStorage.getItem('jdm_session')||'null');
+  const u=JSON.parse(localStorage.getItem('jdm_users')||'[]').find(x=>x.user===s?.user);
+  return u?.nombre||s?.user||'ISMAEL ULISES HERNANDEZ FRAYLE';}catch{return 'ISMAEL ULISES HERNANDEZ FRAYLE';}
+})();
 let state={
-  cliente:"",vendedor:"ISMAEL ULISES HERNANDEZ FRAYLE",
+  cliente:"",vendedor:_sessionVendedor,
   items:[],entrega:null,sel:null,pz:"1",ex:"",
   currentCat:null,
   folio:genFolio()
@@ -255,7 +316,10 @@ const CATS=Object.keys(CAT_INDEX).sort((a,b)=>CAT_INDEX[b].length-CAT_INDEX[a].l
 function genFolio(){const d=new Date();return`COT-MG-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*900+100)}`;}
 function hoy(){return new Date().toLocaleDateString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric"});}
 function vigencia(){const d=new Date();d.setDate(d.getDate()+5);return d.toLocaleDateString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric"});}
-function precioCliente(p,cli){const k=CLI_KEY[cli];return(k&&p[k]!=null)?p[k]:p.l;}
+function precioCliente(p,cli){
+  if(_IS_RESELLER)return Math.round(p.l*(1-_RS_DISCOUNT/100)*100)/100;
+  const k=CLI_KEY[cli];return(k&&p[k]!=null)?p[k]:p.l;
+}
 function fmt(n){return n.toFixed(2);}
 function fmtMXN(n){return`$${fmt(n)}`;}
 function calcQty(u,pz,ex){
@@ -387,7 +451,7 @@ function goToPreview(){
   show('sc-preview');
 }
 function nuevaCot(){
-  state.items=[];state.entrega=null;state.sel=null;state.cliente="";state.pz="1";state.ex="";
+  state.items=[];state.entrega=null;state.sel=null;state.cliente="";state.pz="1";state.ex="";state.folio=genFolio();
   document.querySelectorAll('.cli-btn').forEach(b=>b.classList.remove('on'));
   document.getElementById('btn-next').disabled=true;
   show('sc-config');
@@ -415,7 +479,10 @@ function initConfig(){
     document.querySelectorAll('.cli-btn').forEach(b=>b.classList.remove('on'));
     document.getElementById('btn-next').disabled=!this.value;
   };
-  document.getElementById('vendedor-inp').oninput=function(){state.vendedor=this.value;};
+  // Vendedor: pre-llenar desde sesión y permitir editar
+  const vInp=document.getElementById('vendedor-inp');
+  vInp.value=state.vendedor;
+  vInp.oninput=function(){state.vendedor=this.value;};
 }
 function selectCli(c){
   state.cliente=c;
@@ -554,7 +621,7 @@ function renderQtyInputs(p,pr){
     </div>`;
   }else if(u==='pl'){
     html=`<div><p class="sec">Metros</p>
-      <input class="inp" id="qty-ex" type="number" min="0.1" step="0.1" oninput="onQtyChange()"></div>`;
+      <input class="inp" id="qty-ex" type="number" min="0.1" step="0.1" value="1" oninput="onQtyChange()"></div>`;
   }
   document.getElementById('qty-inputs').innerHTML=html;
   onQtyChange();
@@ -745,14 +812,14 @@ function renderPreview(){
     <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
       <tr>
         <td style="width:22%;vertical-align:top;padding-right:8px">
-          ${LOGO_B64?`<img src="data:image/png;base64,${LOGO_B64}" style="width:100%;max-width:130px" alt="Logo">`:`<div style="font-weight:900;font-size:14px;color:#0369a1">JASON DE MEXICO</div>`}
+          ${(_IS_RESELLER&&_RS_LOGO)?`<img src="data:image/png;base64,${_RS_LOGO}" style="width:100%;max-width:130px" alt="Logo">`:(LOGO_B64?`<img src="data:image/png;base64,${LOGO_B64}" style="width:100%;max-width:130px" alt="Logo">`:`<div style="font-weight:900;font-size:14px;color:#0369a1">${_IS_RESELLER?_RS_NOMBRE:'JASON DE MEXICO'}</div>`)}
           <div style="font-size:9px;color:#555;margin-top:2px">Fluid Power · Mangueras · Conexiones</div>
         </td>
         <td style="text-align:center;vertical-align:middle">
-          <div style="font-weight:bold;font-size:12px">JASON DE MEXICO</div>
-          <div>JESUS REYES HEROLES, Nº 6 - MODULO 4</div>
+          <div style="font-weight:bold;font-size:12px">${_IS_RESELLER?_RS_NOMBRE:'JASON DE MEXICO'}</div>
+          ${_IS_RESELLER?'':`<div>JESUS REYES HEROLES, Nº 6 - MODULO 4</div>
           <div>SAN PABLO XALPA (PUEBLO), TLALNEPANTLA</div>
-          <div>MEXICO, CP: 54090 · Tel: 55 8950 6254</div>
+          <div>MEXICO, CP: 54090 · Tel: 55 8950 6254</div>`}
         </td>
         <td style="width:28%;vertical-align:top">
           <table style="width:100%;border-collapse:collapse;border:1px solid #555">
@@ -846,6 +913,14 @@ function renderPreview(){
 /* ── INIT ── */
 initConfig();
 initCategories();
+renderNav();
+
+// Reseller: saltar pantalla de cliente, ir directo a categorías
+if(_IS_RESELLER){
+  state.cliente=_RS_NOMBRE||_RS_USER;
+  state.vendedor=_RS_NOMBRE||_RS_USER;
+  goToCategoria();
+}
 
 // If app starts with sel already set (from category pick)
 if(state.sel){showSel(state.sel);}

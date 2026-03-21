@@ -147,48 +147,39 @@ tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
 .user-row .ur-name{font-weight:700;font-size:var(--text-base)}
 .user-row .ur-role{font-size:var(--text-xs);padding:2px 10px;border-radius:99px;margin-left:var(--sp-2)}
 .role-admin{background:rgba(0,87,98,0.1);color:var(--teal-600);border:1px solid rgba(0,87,98,0.2)}
+.role-director{background:rgba(59,130,246,0.08);color:#1d4ed8;border:1px solid rgba(59,130,246,0.2)}
+.role-vendedor{background:rgba(34,197,94,0.08);color:#166534;border:1px solid rgba(34,197,94,0.2)}
 .role-dashboard{background:rgba(249,115,22,0.08);color:var(--warning);border:1px solid rgba(249,115,22,0.2)}
 </style>
 </head>
 <body>
 
 <!-- LOGIN OVERLAY -->
-<div id="login-overlay">
-  <div class="login-box">
-    <div class="login-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#E6FCFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </div>
-    <h2 id="login-title">Iniciar Sesion</h2>
-    <div class="sub" id="login-sub">PANEL DE ADMINISTRACION</div>
-    <div id="login-form">
-      <div class="field">
-        <label>Usuario</label>
-        <input class="inp" id="login-user" placeholder="admin" autocomplete="username">
-      </div>
-      <div class="field">
-        <label>Contrasena</label>
-        <input class="inp" id="login-pass" type="password" placeholder="••••••" autocomplete="current-password">
-      </div>
-      <button class="btn-p" style="width:100%;margin-top:var(--sp-1)" onclick="doLogin()">Entrar</button>
-      <div class="err-msg" id="login-err"></div>
-    </div>
-  </div>
-</div>
+<!-- AUTH GUARD -->
+<script>
+(function(){
+  function getSession(){try{return JSON.parse(localStorage.getItem('jdm_session')||'null');}catch{return null;}}
+  const s=getSession();
+  if(!s||s.role!=='admin'){localStorage.removeItem('jdm_session');location.href='index.html';}
+  else window._session=s;
+})();
+function logout(){localStorage.removeItem('jdm_session');location.href='index.html';}
+</script>
 
 <!-- MAIN CONTENT -->
-<div class="wrap" id="main-wrap">
+<div class="wrap" id="main-wrap" style="display:block">
   <div class="header">
     <h1>ADMIN — JASON DE MEXICO</h1>
     <sub>GESTION DE INVENTARIO · PRECIOS · COTIZADORES</sub>
-    <div class="session-info">Sesion: <span id="session-user"></span> · <a href="#" onclick="doLogout()">Cerrar sesion</a></div>
+    <div id="app-nav-admin" style="margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap"></div>
+    <div class="session-info" style="margin-top:8px">Sesion: <span id="session-user"></span> · <a href="#" onclick="logout()">Cerrar sesion</a></div>
   </div>
 
   <div class="tabs">
     <button class="tab on" onclick="showTab('inv')">Inventario</button>
     <button class="tab" onclick="showTab('precios')">Precios</button>
     <button class="tab" onclick="showTab('generar')">Generar</button>
+    <button class="tab" onclick="showTab('resellers')">Resellers</button>
     <button class="tab" onclick="showTab('acceso')">Acceso</button>
   </div>
 
@@ -229,17 +220,20 @@ tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
       </div>
     </div>
     <div class="card">
-      <h3>Descuentos por Cliente</h3>
-      <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--sp-4)">Porcentaje de descuento sobre el precio de lista para cada cliente.</p>
-      <table>
-        <thead><tr><th>Cliente</th><th>Clave</th><th style="text-align:right">Descuento %</th><th style="text-align:right">Factor</th></tr></thead>
-        <tbody>
-          <tr><td><b>Brr</b></td><td style="color:var(--text-muted)">b</td><td style="text-align:right"><input type="number" class="inp inp-sm disc-inp" data-cli="b" value="30" min="0" max="90" step="0.5"></td><td style="text-align:right;font-weight:700;color:var(--teal-600)" id="f-b">0.70</td></tr>
-          <tr><td><b>Applied Ind.</b></td><td style="color:var(--text-muted)">a</td><td style="text-align:right"><input type="number" class="inp inp-sm disc-inp" data-cli="a" value="40" min="0" max="90" step="0.5"></td><td style="text-align:right;font-weight:700;color:var(--teal-600)" id="f-a">0.60</td></tr>
-          <tr><td><b>Motion Industries</b></td><td style="color:var(--text-muted)">m</td><td style="text-align:right"><input type="number" class="inp inp-sm disc-inp" data-cli="m" value="40" min="0" max="90" step="0.5"></td><td style="text-align:right;font-weight:700;color:var(--teal-600)" id="f-m">0.60</td></tr>
-          <tr><td><b>BINASA</b></td><td style="color:var(--text-muted)">n</td><td style="text-align:right"><input type="number" class="inp inp-sm disc-inp" data-cli="n" value="45" min="0" max="90" step="0.5"></td><td style="text-align:right;font-weight:700;color:var(--teal-600)" id="f-n">0.55</td></tr>
-        </tbody>
-      </table>
+      <h3>Clientes y Descuentos</h3>
+      <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--sp-4)">Gestiona los clientes y su porcentaje de descuento sobre el precio de lista.</p>
+      <div id="cli-discount-table"></div>
+      <div style="margin-top:var(--sp-4);padding-top:var(--sp-4);border-top:1.5px solid #DDDEDF">
+        <h3 style="margin-bottom:var(--sp-3)">+ Agregar Cliente</h3>
+        <div style="display:grid;grid-template-columns:1fr 80px 1fr 80px;gap:var(--sp-2);margin-bottom:var(--sp-3);align-items:end">
+          <div><label class="sec">Nombre</label><input class="inp" id="add-cli-name" placeholder="Ej: Brr"></div>
+          <div><label class="sec">Clave</label><input class="inp" id="add-cli-key" placeholder="b" maxlength="3" style="text-align:center;text-transform:lowercase"></div>
+          <div><label class="sec">Descripcion (cotizacion)</label><input class="inp" id="add-cli-desc" placeholder="Ej: Applied Ind."></div>
+          <div><label class="sec">Dcto %</label><input class="inp" id="add-cli-disc" type="number" value="30" min="0" max="90" step="0.5" style="text-align:center"></div>
+        </div>
+        <button class="btn-p" style="width:auto;padding:8px 20px" onclick="addCliente()">+ Agregar</button>
+        <span id="add-cli-msg" style="font-size:var(--text-sm);margin-left:var(--sp-2)"></span>
+      </div>
     </div>
     <div class="card" id="price-preview-card" style="display:none">
       <h3>Vista Previa de Precios — Primeros 10 productos</h3>
@@ -269,6 +263,57 @@ tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
     </div>
   </div>
 
+  <!-- TAB: RESELLERS -->
+  <div id="tab-resellers" class="panel">
+    <div class="card">
+      <h3>Resellers Registrados</h3>
+      <div style="overflow-x:auto">
+        <table><thead><tr>
+          <th>Logo</th><th>Nombre</th><th>Usuario</th><th>Descuento %</th><th>Factor</th><th>Acciones</th>
+        </tr></thead><tbody id="resellers-list"></tbody></table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Crear Nuevo Reseller</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div><label class="sec">Nombre Reseller</label><input class="inp" id="new-rs-nombre" placeholder="Ej: Binasa · Brr · Applied"></div>
+        <div><label class="sec">Usuario (login)</label><input class="inp" id="new-rs-user" placeholder="ej: felipe"></div>
+        <div><label class="sec">Contraseña</label><input class="inp" id="new-rs-pass" type="password" placeholder="ej: binasa1"></div>
+        <div><label class="sec">Descuento % (0-90)</label><input class="inp" id="new-rs-desc" type="number" min="0" max="90" step="0.5" value="45"></div>
+      </div>
+      <div class="card" style="background:#F7F9FC;border:1px dashed #DDDEDF;padding:var(--sp-4);margin-bottom:var(--sp-3)">
+        <p class="sec">Logo Reseller (PNG/JPG recomendado 100x100px)</p>
+        <div class="dropzone" id="logo-dropzone" style="padding:var(--sp-6) var(--sp-4)"
+             onclick="document.getElementById('file-rs-logo').click()"
+             ondragover="event.preventDefault();this.classList.add('over')"
+             ondragleave="this.classList.remove('over')"
+             ondrop="event.preventDefault();this.classList.remove('over');handleRSLogoFile(event.dataTransfer.files[0])">
+          <div class="icon">🖼️</div>
+          <p>Arrastra logo (PNG/JPG) o haz clic<br><span style="font-size:var(--text-xs);color:#757575">Tamaño recomendado: 100x100px · Máx 500KB</span></p>
+          <div class="fname" id="logo-fname"></div>
+        </div>
+        <input type="file" id="file-rs-logo" accept="image/*" style="display:none" onchange="handleRSLogoFile(this.files[0])">
+        <div id="logo-preview" style="display:none;margin-top:var(--sp-3);text-align:center">
+          <img id="logo-preview-img" style="max-width:100px;max-height:100px;border-radius:8px;border:1px solid #DDDEDF" alt="Logo preview">
+          <div style="font-size:var(--text-xs);color:#757575;margin-top:4px" id="logo-size"></div>
+        </div>
+      </div>
+      <button class="btn-p" onclick="createNewReseller()" style="width:100%">+ Crear Reseller</button>
+      <div id="new-rs-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
+    </div>
+    <div class="card" id="edit-rs-card" style="display:none">
+      <h3>Editar Reseller</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div><label class="sec">Nombre</label><input class="inp" id="edit-rs-nombre" disabled></div>
+        <div><label class="sec">Descuento % actual</label><input class="inp" id="edit-rs-desc" type="number" min="0" max="90" step="0.5"></div>
+      </div>
+      <div style="display:flex;gap:var(--sp-3)">
+        <button class="btn-p" onclick="saveEditReseller()" style="flex:1">Guardar cambios</button>
+        <button class="btn-s" onclick="closeEditReseller()" style="flex:1">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TAB: ACCESO -->
   <div id="tab-acceso" class="panel">
     <div class="card">
@@ -278,13 +323,38 @@ tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
     <div class="card">
       <h3>Agregar Usuario</h3>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-        <div><label class="sec">Usuario</label><input class="inp" id="new-user" placeholder="nombre"></div>
-        <div><label class="sec">Contrasena</label><input class="inp" id="new-pass" type="password" placeholder="••••••"></div>
+        <div><label class="sec">Usuario (login)</label><input class="inp" id="new-user" placeholder="usuario123"></div>
+        <div><label class="sec">Contrasena</label><input class="inp" id="new-pass" type="password" placeholder="......"></div>
       </div>
-      <div style="display:flex;gap:var(--sp-3);align-items:center;margin-bottom:var(--sp-3)">
-        <label class="sec" style="margin:0">Rol:</label>
-        <label style="font-size:var(--text-sm);cursor:pointer;color:var(--text-secondary)"><input type="radio" name="new-role" value="dashboard" checked> Dashboard</label>
-        <label style="font-size:var(--text-sm);cursor:pointer;color:var(--text-secondary)"><input type="radio" name="new-role" value="admin"> Admin</label>
+      <div style="margin-bottom:var(--sp-3)">
+        <label class="sec">Nombre completo (aparece en cotizaciones)</label>
+        <input class="inp" id="new-nombre" placeholder="Ej: ISMAEL ULISES HERNANDEZ FRAYLE">
+      </div>
+      <div style="margin-bottom:var(--sp-3)">
+        <label class="sec" style="margin-bottom:6px;display:block">Rol y permisos:</label>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='#22c55e'">
+            <input type="radio" name="new-role" value="vendedor" checked style="margin-top:2px">
+            <div>
+              <div style="font-weight:700;font-size:var(--text-sm);color:#166534">🟢 Vendedor</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Solo cotizadores (Mangueras y Bandas)</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='#3b82f6'">
+            <input type="radio" name="new-role" value="director" style="margin-top:2px">
+            <div>
+              <div style="font-weight:700;font-size:var(--text-sm);color:#1e40af">🔵 Director</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Cotizadores + Dashboard y estadisticas</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='var(--teal-600)'">
+            <input type="radio" name="new-role" value="admin" style="margin-top:2px">
+            <div>
+              <div style="font-weight:700;font-size:var(--text-sm);color:var(--teal-600)">⚙️ Admin</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Acceso completo: cotizadores + dashboard + administracion</div>
+            </div>
+          </label>
+        </div>
       </div>
       <button class="btn-p" onclick="addUser()">+ Agregar Usuario</button>
       <div id="add-user-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
@@ -313,8 +383,6 @@ function revealChildren(container){
 }
 
 /* AUTH SYSTEM */
-let _currentUser = null;
-
 async function hashPass(str){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -323,60 +391,26 @@ async function hashPass(str){
 function getUsers(){ return JSON.parse(localStorage.getItem('jdm_users')||'[]'); }
 function saveUsers(users){ localStorage.setItem('jdm_users', JSON.stringify(users)); }
 
-async function doLogin(){
-  const user = document.getElementById('login-user').value.trim().toLowerCase();
-  const pass = document.getElementById('login-pass').value;
-  const errEl = document.getElementById('login-err');
-
-  if(!user||!pass){errEl.textContent='Ingresa usuario y contraseña';return;}
-
-  const users = getUsers();
-
-  // First-time setup: no users exist yet
-  if(users.length===0){
-    const h = await hashPass(pass);
-    saveUsers([{user, passHash:h, role:'admin'}]);
-    _currentUser = {user, role:'admin'};
-    unlockUI();
-    return;
-  }
-
-  const h = await hashPass(pass);
-  const found = users.find(u=>u.user===user && u.passHash===h);
-  if(!found){errEl.textContent='Usuario o contraseña incorrectos';return;}
-  if(found.role!=='admin'){errEl.textContent='Acceso denegado. Solo administradores.';return;}
-
-  _currentUser = found;
-  unlockUI();
-}
-
-function unlockUI(){
-  document.getElementById('login-overlay').style.display='none';
-  document.getElementById('main-wrap').style.display='block';
-  document.getElementById('session-user').textContent=_currentUser.user;
+/* SESSION-BASED INIT */
+let _currentUser=window._session||null;
+(function(){
+  const s=window._session;
+  if(!s)return;
+  const ROLE_LABEL={vendedor:'Vendedor',director:'Director',admin:'Admin'};
+  document.getElementById('session-user').textContent=`${s.user} (${ROLE_LABEL[s.role]||s.role})`;
+  // Nav bar
+  const links=[
+    {href:'cotizador_mangueras.html',label:'🔴 Mangueras',roles:['vendedor','director','admin']},
+    {href:'cotizador_bandas.html',label:'💛 Bandas',roles:['vendedor','director','admin']},
+    {href:'dashboard.html',label:'📊 Dashboard',roles:['director','admin']},
+    {href:'admin.html',label:'⚙️ Admin',roles:['admin']},
+  ];
+  document.getElementById('app-nav-admin').innerHTML=links
+    .filter(l=>l.roles.includes(s.role))
+    .map(l=>`<a href="${l.href}" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;${l.href==='admin.html'?'background:var(--teal-600);color:#E6FCFF':'background:#EAECEE;color:var(--text-muted)'}">${l.label}</a>`)
+    .join('');
   renderUserList();
   revealChildren(document.getElementById('tab-inv'));
-}
-
-function doLogout(){
-  _currentUser=null;
-  document.getElementById('login-overlay').style.display='flex';
-  document.getElementById('main-wrap').style.display='none';
-  document.getElementById('login-pass').value='';
-  document.getElementById('login-err').textContent='';
-}
-
-// Enter key on login
-document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
-
-// Check if first-time setup
-(function(){
-  const users=getUsers();
-  if(users.length===0){
-    document.getElementById('login-title').textContent='Crear Cuenta Admin';
-    document.getElementById('login-sub').textContent='PRIMERA VEZ — CONFIGURA TU ACCESO';
-  }
 })();
 
 /* User management */
@@ -384,13 +418,16 @@ function renderUserList(){
   const users=getUsers();
   const el=document.getElementById('user-list');
   if(!users.length){el.innerHTML='<p style="color:var(--text-muted);font-size:var(--text-sm)">No hay usuarios registrados.</p>';return;}
+  const ROLE_CSS={vendedor:'role-vendedor',director:'role-director',admin:'role-admin',reseller:'role-dashboard'};
+  const ROLE_LABEL={vendedor:'🟢 Vendedor',director:'🔵 Director',admin:'⚙️ Admin',reseller:'🏪 Reseller'};
   el.innerHTML=users.map((u,i)=>`
     <div class="user-row">
       <div>
         <span class="ur-name">${u.user}</span>
-        <span class="ur-role ${u.role==='admin'?'role-admin':'role-dashboard'}">${u.role}</span>
+        ${u.nombre&&u.nombre!==u.user.toUpperCase()?`<span style="font-size:var(--text-xs);color:var(--text-muted);margin-left:6px">${u.nombre}</span>`:''}
+        <span class="ur-role ${ROLE_CSS[u.role]||'role-dashboard'}">${ROLE_LABEL[u.role]||u.role}</span>
       </div>
-      ${u.user!==_currentUser.user?`<button class="btn-danger" onclick="removeUser(${i})">Eliminar</button>`:'<span style="font-size:var(--text-xs);color:var(--text-muted)">(tu)</span>'}
+      ${u.user!==(_currentUser&&_currentUser.user)?`<button class="btn-danger" onclick="removeUser(${i})">Eliminar</button>`:'<span style="font-size:var(--text-xs);color:var(--text-muted)">(tu)</span>'}
     </div>
   `).join('');
 }
@@ -398,6 +435,7 @@ function renderUserList(){
 async function addUser(){
   const user=document.getElementById('new-user').value.trim().toLowerCase();
   const pass=document.getElementById('new-pass').value;
+  const nombre=document.getElementById('new-nombre').value.trim().toUpperCase();
   const role=document.querySelector('input[name="new-role"]:checked').value;
   const msg=document.getElementById('add-user-msg');
 
@@ -408,10 +446,11 @@ async function addUser(){
   if(users.find(u=>u.user===user)){msg.innerHTML='<span style="color:var(--danger)">El usuario ya existe</span>';return;}
 
   const h=await hashPass(pass);
-  users.push({user, passHash:h, role});
+  users.push({user, passHash:h, role, nombre:nombre||user.toUpperCase()});
   saveUsers(users);
   document.getElementById('new-user').value='';
   document.getElementById('new-pass').value='';
+  document.getElementById('new-nombre').value='';
   msg.innerHTML=`<span style="color:var(--success)">Usuario "${user}" (${role}) creado</span>`;
   renderUserList();
 }
@@ -452,6 +491,7 @@ function showTab(id){
   if(id==='precios')updatePricePreview();
   if(id==='generar')updateGenState();
   if(id==='acceso')renderUserList();
+  if(id==='resellers')renderResellersTable();
   revealChildren(document.getElementById('tab-'+id));
 }
 
@@ -513,38 +553,114 @@ function renderInvStats(){
   document.getElementById('inv-preview').innerHTML=html;
 }
 
-/* PRECIOS */
+/* PRECIOS & CLIENTES */
+const DEFAULT_CLIENTES=[
+  {name:'Brr',key:'b',desc:'Brr',discount:30},
+  {name:'Applied',key:'a',desc:'Applied Ind.',discount:40},
+  {name:'Motion',key:'m',desc:'Motion Industries',discount:40},
+  {name:'Binasa',key:'n',desc:'BINASA',discount:45}
+];
+function getClientes(){try{const c=JSON.parse(localStorage.getItem('jdm_clientes'));return c&&c.length?c:DEFAULT_CLIENTES;}catch{return DEFAULT_CLIENTES;}}
+function saveClientes(c){localStorage.setItem('jdm_clientes',JSON.stringify(c));}
 function getInc(){return parseFloat(document.getElementById('inp-inc').value)||0;}
-function getDiscounts(){const d={};document.querySelectorAll('.disc-inp').forEach(inp=>{d[inp.dataset.cli]=parseFloat(inp.value)||0;});return d;}
+function getDiscounts(){const d={};getClientes().forEach(c=>d[c.key]=c.discount);return d;}
 
-function updateFactors(){
-  const disc=getDiscounts();
-  for(const[k,v]of Object.entries(disc)){const el=document.getElementById('f-'+k);if(el)el.textContent=(1-v/100).toFixed(4);}
+function renderClientTable(){
+  const clientes=getClientes();
+  const el=document.getElementById('cli-discount-table');
+  let html=`<table><thead><tr><th>Cliente</th><th>Clave</th><th style="text-align:right">Descuento %</th><th style="text-align:right">Factor</th><th></th></tr></thead><tbody>`;
+  clientes.forEach((c,i)=>{
+    const factor=(1-c.discount/100).toFixed(4);
+    html+=`<tr>
+      <td><b>${c.desc||c.name}</b></td>
+      <td style="color:var(--text-muted);font-family:var(--font-mono)">${c.key}</td>
+      <td style="text-align:right"><input type="number" class="inp inp-sm" value="${c.discount}" min="0" max="90" step="0.5" onchange="updateCliDiscount(${i},this.value)"></td>
+      <td style="text-align:right;font-weight:700;color:var(--teal-600)">${factor}</td>
+      <td style="text-align:right"><button class="btn-danger" style="font-size:10px;padding:2px 8px" onclick="removeCliente(${i})">✕</button></td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+function updateCliDiscount(idx,val){
+  const c=getClientes();
+  c[idx].discount=parseFloat(val)||0;
+  saveClientes(c);
+  renderClientTable();
+  updateIncPreview();
+  updatePricePreview();
+  updateGenState();
+}
+
+function addCliente(){
+  const name=document.getElementById('add-cli-name').value.trim();
+  const key=document.getElementById('add-cli-key').value.trim().toLowerCase();
+  const desc=document.getElementById('add-cli-desc').value.trim()||name;
+  const discount=parseFloat(document.getElementById('add-cli-disc').value)||0;
+  const msg=document.getElementById('add-cli-msg');
+  if(!name||!key){msg.innerHTML='<span style="color:var(--danger)">Nombre y clave son obligatorios</span>';return;}
+  if(key.length>3){msg.innerHTML='<span style="color:var(--danger)">La clave debe tener maximo 3 caracteres</span>';return;}
+  const clientes=getClientes();
+  if(clientes.find(c=>c.key===key)){msg.innerHTML='<span style="color:var(--danger)">Ya existe un cliente con clave "'+key+'"</span>';return;}
+  clientes.push({name,key,desc,discount});
+  saveClientes(clientes);
+  document.getElementById('add-cli-name').value='';
+  document.getElementById('add-cli-key').value='';
+  document.getElementById('add-cli-desc').value='';
+  document.getElementById('add-cli-disc').value='30';
+  msg.innerHTML='<span style="color:var(--success)">Cliente "'+name+'" agregado</span>';
+  renderClientTable();
+  updatePricePreview();
+  updateGenState();
+}
+
+function removeCliente(idx){
+  const c=getClientes();
+  if(c.length<=1){alert('Debe haber al menos un cliente');return;}
+  if(!confirm('Eliminar cliente "'+c[idx].name+'"?'))return;
+  c.splice(idx,1);
+  saveClientes(c);
+  renderClientTable();
+  updatePricePreview();
+  updateGenState();
+}
+
+function updateIncPreview(){
   const inc=getInc();const prev=document.getElementById('inc-preview');
   prev.textContent=inc!==0?`Ej: $100 → $${(100*(1+inc/100)).toFixed(2)}`:'Sin cambio';
 }
 
 function updatePricePreview(){
-  updateFactors();
+  updateIncPreview();
   let catB=_origCatB,catM=_origCatM;
   if(!catB||!catB.length){try{catB=JSON.parse(localStorage.getItem('jdm_cat_bandas')||'[]');}catch(e){catB=[];}}
   if(!catM||!catM.length){try{catM=JSON.parse(localStorage.getItem('jdm_cat_mangueras')||'[]');}catch(e){catM=[];}}
   const combined=[...(catB||[]),...(catM||[])];
   if(!combined.length){document.getElementById('price-preview-card').style.display='none';return;}
   document.getElementById('price-preview-card').style.display='block';
-  const inc=getInc()/100,disc=getDiscounts(),sample=combined.slice(0,10);
-  let html=`<thead><tr><th>Codigo</th><th style="text-align:right">Lista Orig</th><th style="text-align:right">Lista Nuevo</th><th style="text-align:right">Brr</th><th style="text-align:right">Applied</th><th style="text-align:right">Motion</th><th style="text-align:right">Binasa</th></tr></thead><tbody>`;
+  const inc=getInc()/100,clientes=getClientes(),sample=combined.slice(0,10);
+  let html=`<thead><tr><th>Codigo</th><th style="text-align:right">Lista Orig</th><th style="text-align:right">Lista Nuevo</th>`;
+  clientes.forEach(c=>html+=`<th style="text-align:right">${c.name}</th>`);
+  html+=`</tr></thead><tbody>`;
   sample.forEach(p=>{
-    const nl=p.l*(1+inc),nb=nl*(1-disc.b/100),na=nl*(1-disc.a/100),nm=nl*(1-disc.m/100),nn=nl*(1-disc.n/100);
-    html+=`<tr><td style="font-weight:700;font-size:var(--text-xs)">${p.c}</td><td style="text-align:right;color:var(--text-muted)">$${p.l.toFixed(2)}</td><td style="text-align:right;color:${inc!==0?'var(--teal-600)':'var(--text-dark)'};font-weight:700">$${nl.toFixed(2)}</td><td style="text-align:right">$${nb.toFixed(2)}</td><td style="text-align:right">$${na.toFixed(2)}</td><td style="text-align:right">$${nm.toFixed(2)}</td><td style="text-align:right">$${nn.toFixed(2)}</td></tr>`;
+    const nl=p.l*(1+inc);
+    html+=`<tr><td style="font-weight:700;font-size:var(--text-xs)">${p.c}</td>`;
+    html+=`<td style="text-align:right;color:var(--text-muted)">$${p.l.toFixed(2)}</td>`;
+    html+=`<td style="text-align:right;color:${inc!==0?'var(--teal-600)':'var(--text-dark)'};font-weight:700">$${nl.toFixed(2)}</td>`;
+    clientes.forEach(c=>{
+      const cp=nl*(1-c.discount/100);
+      html+=`<td style="text-align:right">$${cp.toFixed(2)}</td>`;
+    });
+    html+=`</tr>`;
   });
   html+='</tbody>';
   document.getElementById('price-preview').innerHTML=html;
 }
 
-document.getElementById('inp-inc').addEventListener('input',()=>{updateFactors();updatePricePreview();updateGenState();});
-document.querySelectorAll('.disc-inp').forEach(inp=>inp.addEventListener('input',()=>{updateFactors();updatePricePreview();updateGenState();}));
-updateFactors();updateGenState();updatePricePreview();
+document.getElementById('inp-inc').addEventListener('input',()=>{updateIncPreview();updatePricePreview();updateGenState();});
+renderClientTable();
+updateIncPreview();updateGenState();updatePricePreview();
 
 /* GENERAR */
 function handleHtmlFile(file){
@@ -591,7 +707,8 @@ function updateGenState(){
   html+=`<div style="margin-bottom:var(--sp-2)">Catalogo Mangueras: ${catMCount>0?`<span class="badge badge-ok">${catMCount} productos (desde archivo)</span>`:(lsMCount>0?`<span class="badge badge-info">${lsMCount} productos en localStorage</span>`:'<span class="badge badge-warn">Sin datos</span>')}</div>`;
   const inc=getInc(),disc=getDiscounts();
   html+=`<div style="margin-bottom:var(--sp-2)">Incremento: <span class="badge badge-info">${inc>0?'+':''}${inc}%</span></div>`;
-  html+=`<div>Descuentos: Brr ${disc.b}% · Applied ${disc.a}% · Motion ${disc.m}% · Binasa ${disc.n}%</div></div>`;
+  const cliSummary=getClientes().map(c=>`${c.name} ${c.discount}%`).join(' · ');
+  html+=`<div>Descuentos: ${cliSummary}</div></div>`;
   document.getElementById('gen-summary-content').innerHTML=html;
 }
 
@@ -602,8 +719,9 @@ function generarHTML(){
   let changes=0;
 
   const inc=getInc()/100,disc=getDiscounts();
+  const clientes=getClientes();
   function applyPrices(cat){
-    return cat.map(p=>{const nl=Math.round(p.l*(1+inc)*100)/100;return{...p,l:nl,b:Math.round(nl*(1-disc.b/100)*100)/100,a:Math.round(nl*(1-disc.a/100)*100)/100,m:Math.round(nl*(1-disc.m/100)*100)/100,n:Math.round(nl*(1-disc.n/100)*100)/100};});
+    return cat.map(p=>{const nl=Math.round(p.l*(1+inc)*100)/100;const np={...p,l:nl};clientes.forEach(c=>{np[c.key]=Math.round(nl*(1-c.discount/100)*100)/100;});return np;});
   }
 
   // ── Catalogo Bandas ──
@@ -647,13 +765,125 @@ function generarHTML(){
   }else{log('Inventario: sin cambios (no se cargo archivo)');}
 
   if(inc!==0)log(`Incremento lista: ${inc>0?'+':''}${(inc*100).toFixed(1)}%`,'ok');
-  log(`Descuentos: Brr ${disc.b}% | Applied ${disc.a}% | Motion ${disc.m}% | Binasa ${disc.n}%`);
+  log(`Descuentos: ${clientes.map(c=>`${c.name} ${c.discount}%`).join(' | ')}`);
 
   if(changes>0){
     log(`\n═══ LISTO — ${changes} seccion(es) actualizada(s) ═══`,'ok');
     log('El cotizador (cotizador_tpl.html) ya refleja los cambios.','ok');
     log('Abre o recarga cotizador_tpl.html para verificar.','ok');
   }else{log('\nNo se realizaron cambios. Carga inventario y/o catalogo.','err');}
+}
+
+/* ══════════════════════════════════
+   RESELLERS
+   ══════════════════════════════════ */
+let _rsLogoB64='';
+
+function getResellers(){try{return JSON.parse(localStorage.getItem('jdm_resellers')||'[]');}catch{return[];}}
+function saveResellers(r){localStorage.setItem('jdm_resellers',JSON.stringify(r));}
+
+function handleRSLogoFile(file){
+  if(!file)return;
+  if(!file.type.startsWith('image/')){alert('Solo se permiten imágenes');return;}
+  if(file.size>500000){alert('Logo muy grande (máx 500KB)');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    _rsLogoB64=e.target.result.split(',')[1];
+    document.getElementById('logo-fname').textContent='✅ '+file.name;
+    const prev=document.getElementById('logo-preview');
+    document.getElementById('logo-preview-img').src='data:image/png;base64,'+_rsLogoB64;
+    prev.style.display='block';
+    document.getElementById('logo-size').textContent='Tamaño: '+(file.size/1024).toFixed(1)+' KB';
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderResellersTable(){
+  const list=getResellers();
+  const el=document.getElementById('resellers-list');
+  if(!list.length){
+    el.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:var(--sp-4)">No hay resellers registrados</td></tr>';
+    return;
+  }
+  el.innerHTML=list.map((r,i)=>{
+    const logo=r.logo?`<img src="data:image/png;base64,${r.logo}" style="width:46px;height:46px;border-radius:6px;border:1px solid #DDDEDF;object-fit:contain">`:'<div style="width:46px;height:46px;background:#F7F9FC;border:1px solid #DDDEDF;border-radius:6px"></div>';
+    return `<tr>
+      <td style="text-align:center">${logo}</td>
+      <td style="font-weight:700">${r.nombre}</td>
+      <td style="color:var(--text-muted);font-family:monospace;font-size:var(--text-xs)">${r.user}</td>
+      <td style="text-align:center;font-weight:700">${r.descuento}%</td>
+      <td style="text-align:center;color:var(--teal-600);font-weight:700">${(1-r.descuento/100).toFixed(4)}</td>
+      <td style="text-align:center">
+        <button class="btn-s" onclick="openEditReseller(${i})" style="margin-right:var(--sp-2);font-size:var(--text-xs);padding:4px 10px">✏️ Editar</button>
+        <button class="btn-danger" onclick="removeReseller(${i})">Eliminar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function createNewReseller(){
+  const nombre=document.getElementById('new-rs-nombre').value.trim();
+  const user=document.getElementById('new-rs-user').value.trim().toLowerCase();
+  const pass=document.getElementById('new-rs-pass').value;
+  const desc=parseFloat(document.getElementById('new-rs-desc').value)||0;
+  const msg=document.getElementById('new-rs-msg');
+  if(!nombre){msg.innerHTML='<span style="color:var(--danger)">Ingresa nombre del reseller</span>';return;}
+  if(!user){msg.innerHTML='<span style="color:var(--danger)">Ingresa usuario (login)</span>';return;}
+  if(!pass){msg.innerHTML='<span style="color:var(--danger)">Ingresa contraseña</span>';return;}
+  if(!_rsLogoB64){msg.innerHTML='<span style="color:var(--danger)">Carga un logo</span>';return;}
+  if(desc<0||desc>90){msg.innerHTML='<span style="color:var(--danger)">Descuento debe ser 0-90%</span>';return;}
+  const users=getUsers();
+  if(users.find(u=>u.user===user)){msg.innerHTML='<span style="color:var(--danger)">El usuario ya existe</span>';return;}
+  hashPass(pass).then(h=>{
+    users.push({user,passHash:h,role:'reseller',nombre:nombre.toUpperCase()});
+    saveUsers(users);
+    const resellers=getResellers();
+    resellers.push({nombre,user,descuento:desc,logo:_rsLogoB64,fechaCreacion:new Date().toISOString()});
+    saveResellers(resellers);
+    document.getElementById('new-rs-nombre').value='';
+    document.getElementById('new-rs-user').value='';
+    document.getElementById('new-rs-pass').value='';
+    document.getElementById('new-rs-desc').value='45';
+    document.getElementById('logo-fname').textContent='';
+    document.getElementById('logo-preview').style.display='none';
+    _rsLogoB64='';
+    msg.innerHTML=`<span style="color:var(--success)">✓ Reseller "${nombre}" creado</span>`;
+    renderResellersTable();
+    renderUserList();
+  });
+}
+
+function openEditReseller(idx){
+  const r=getResellers()[idx];
+  document.getElementById('edit-rs-nombre').value=r.nombre;
+  document.getElementById('edit-rs-desc').value=r.descuento;
+  document.getElementById('edit-rs-card').dataset.idx=idx;
+  document.getElementById('edit-rs-card').style.display='block';
+  document.getElementById('edit-rs-card').scrollIntoView({behavior:'smooth'});
+}
+function closeEditReseller(){document.getElementById('edit-rs-card').style.display='none';}
+function saveEditReseller(){
+  const idx=parseInt(document.getElementById('edit-rs-card').dataset.idx);
+  const desc=parseFloat(document.getElementById('edit-rs-desc').value)||0;
+  if(desc<0||desc>90){alert('Descuento debe ser 0-90%');return;}
+  const resellers=getResellers();
+  resellers[idx].descuento=desc;
+  saveResellers(resellers);
+  closeEditReseller();
+  renderResellersTable();
+}
+function removeReseller(idx){
+  if(!confirm('¿Eliminar reseller?'))return;
+  const resellers=getResellers();
+  const user=resellers[idx].user;
+  resellers.splice(idx,1);
+  saveResellers(resellers);
+  const users=getUsers();
+  const ui=users.findIndex(u=>u.user===user);
+  if(ui>=0)users.splice(ui,1);
+  saveUsers(users);
+  renderResellersTable();
+  renderUserList();
 }
 </script>
 </body>

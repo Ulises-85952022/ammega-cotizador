@@ -56,6 +56,45 @@ td{padding:7px 6px;vertical-align:top}
 </head>
 <body>
 
+<!-- ═══ AUTH GUARD ═══ -->
+<script>
+(function(){
+  function getSession(){try{return JSON.parse(localStorage.getItem('jdm_session')||'null');}catch{return null;}}
+  const s=getSession();
+  const allowed=['vendedor','director','admin'];
+  if(!s||!allowed.includes(s.role)){localStorage.removeItem('jdm_session');location.href='index.html';}
+  else window._session=s;
+})();
+function logout(){localStorage.removeItem('jdm_session');location.href='index.html';}
+function renderNav(){
+  const s=window._session;if(!s)return;
+  const role=s.role;
+  const ROLE_LABEL={vendedor:'Vendedor',director:'Director',admin:'Admin'};
+  const links=[
+    {href:'cotizador_tpl.html',label:'← Inicio',roles:['vendedor','director','admin']},
+    {href:'cotizador_mangueras.html',label:'💧 Mangueras',roles:['vendedor','director','admin']},
+    {href:'cotizador_bandas.html',label:'⚡ Bandas',roles:['vendedor','director','admin']},
+    {href:'dashboard.html',label:'📊 Dashboard',roles:['director','admin']},
+    {href:'admin.html',label:'⚙️ Admin',roles:['admin']},
+  ];
+  const nav=document.getElementById('app-nav');
+  nav.querySelector('#nav-links').innerHTML=links
+    .filter(l=>l.roles.includes(role))
+    .map(l=>`<a href="${l.href}" style="padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;${l.href==='cotizador_mangueras.html'?'background:#001a26;color:#38bdf8;border:1px solid #1e3a5f':l.href==='cotizador_tpl.html'?'color:#94a3b8':'color:#64748b'}">${l.label}</a>`)
+    .join('');
+  nav.querySelector('#nav-user').textContent=`${s.user} · ${ROLE_LABEL[role]||role}`;
+}
+</script>
+
+<!-- ═══ NAV BAR ═══ -->
+<div id="app-nav" style="background:#0d0d1a;border-bottom:1px solid #1e1e38;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:500;flex-wrap:wrap;gap:8px">
+  <div id="nav-links" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="nav-user" style="font-size:11px;color:#475569"></span>
+    <button onclick="logout()" style="padding:4px 10px;background:transparent;border:1px solid #334155;border-radius:5px;color:#64748b;font-size:11px;cursor:pointer;font-family:inherit">Salir</button>
+  </div>
+</div>
+
 <!-- ═══ SCREEN 1: CONFIG ═══ -->
 <div id="sc-config" class="screen active">
   <div style="max-width:480px;margin:36px auto 0" class="card">
@@ -184,6 +223,7 @@ td{padding:7px 6px;vertical-align:top}
 <div id="sc-preview" class="screen">
   <div class="noPrint" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
     <button onclick="window.print()" style="padding:10px 16px;background:#38bdf8;color:#0a0a15;border:none;border-radius:7px;font-weight:800;cursor:pointer">🖨 PDF / Imprimir</button>
+    <button onclick="saveQuoteToStorage();this.textContent='✓ Guardada';this.style.background='#4ade80';this.style.color='#0a0a15';setTimeout(()=>{this.textContent='💾 Guardar';this.style.background='#22c55e';this.style.color='#fff'},2000)" style="padding:10px 16px;background:#22c55e;color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer">💾 Guardar</button>
     <button onclick="goToCotizar()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">← Editar</button>
     <button onclick="nuevaCot()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">+ Nueva</button>
   </div>
@@ -202,9 +242,11 @@ const BRAND_XREF=[{"j": "JCHP2TR-04", "cat": "CONEXION", "j2": "0053-JCHP2TR-04"
 <!-- ═══ APP ═══ -->
 <script>
 /* ── Constants ── */
-const CLIENTES=["Brr","Applied","Motion","Binasa"];
-const CLI_KEY={Brr:"b",Applied:"a",Motion:"m",Binasa:"n"};
-const CLI_DESC={Brr:"Brr",Applied:"Applied Ind.",Motion:"Motion Industries",Binasa:"BINASA"};
+const COTIZADOR_TIPO='mangueras';
+const _jdmClientes=(function(){try{const c=JSON.parse(localStorage.getItem('jdm_clientes')||'null');if(c&&c.length)return c;}catch{}return[{name:'Brr',key:'b',desc:'Brr',discount:30},{name:'Applied',key:'a',desc:'Applied Ind.',discount:40},{name:'Motion',key:'m',desc:'Motion Industries',discount:40},{name:'Binasa',key:'n',desc:'BINASA',discount:45}];})();
+const CLIENTES=_jdmClientes.map(c=>c.name);
+const CLI_KEY=Object.fromEntries(_jdmClientes.map(c=>[c.name,c.key]));
+const CLI_DESC=Object.fromEntries(_jdmClientes.map(c=>[c.name,c.desc]));
 
 const CAT_META={
   "MANGUERA HIDRAULICA":  {icon:"🔴",color:"#ef4444"},
@@ -360,9 +402,9 @@ function goToCotizar(){
   document.getElementById('search-inp').value='';
   closeDrop();
 }
-function goToPreview(){renderPreview();show('sc-preview');}
+function goToPreview(){renderPreview();saveQuoteToStorage();show('sc-preview');}
 function nuevaCot(){
-  state.items=[];state.entrega=null;state.sel=null;state.cliente="";state.pz="1";state.ex="";
+  state.items=[];state.entrega=null;state.sel=null;state.cliente="";state.pz="1";state.ex="";state.folio=genFolio();
   document.querySelectorAll('.cli-btn').forEach(b=>b.classList.remove('on'));
   document.getElementById('btn-next').disabled=true;
   show('sc-config');
@@ -529,7 +571,7 @@ function renderQtyInputs(p,pr){
     </div>`;
   }else if(u==='pl'){
     html=`<div><p class="sec">Metros</p>
-      <input class="inp" id="qty-ex" type="number" min="0.1" step="0.1" oninput="onQtyChange()"></div>`;
+      <input class="inp" id="qty-ex" type="number" min="0.1" step="0.1" value="1" oninput="onQtyChange()"></div>`;
   }
   document.getElementById('qty-inputs').innerHTML=html;
   onQtyChange();
@@ -818,9 +860,30 @@ function renderPreview(){
     </div>`;
 }
 
+/* ── localStorage: Guardar cotización ── */
+function saveQuoteToStorage(){
+  try{
+    const quotes=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
+    const sub=state.items.reduce((s,i)=>s+i.total,0);
+    const rec={
+      id:state.folio,tipo:COTIZADOR_TIPO,
+      cliente:state.cliente,clienteKey:CLI_KEY[state.cliente]||null,
+      vendedor:state.vendedor,fecha:new Date().toISOString(),
+      entrega:state.entrega,
+      items:state.items.map(it=>({c:it.c,d:it.d,t:it.t,u:it.u,totalQty:it.totalQty,precio:it.precio,total:it.total,stockOk:it.stockOk})),
+      subtotal:sub,iva:sub*0.16,total:sub*1.16
+    };
+    const idx=quotes.findIndex(q=>q.id===state.folio);
+    if(idx>=0)quotes[idx]=rec;else quotes.push(rec);
+    if(quotes.length>500)quotes.splice(0,quotes.length-500);
+    localStorage.setItem('jdm_quotes',JSON.stringify(quotes));
+  }catch(e){console.warn('saveQuote error',e);}
+}
+
 /* ── INIT ── */
 initConfig();
 initCategories();
+renderNav();
 
 // If app starts with sel already set (from category pick)
 if(state.sel){showSel(state.sel);}
