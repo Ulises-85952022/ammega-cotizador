@@ -26,10 +26,7 @@ body{background:#0a0a14;font-family:'Inter',system-ui,sans-serif;color:#ddd;min-
 .btn-login{width:100%;padding:13px;background:#38bdf8;color:#0a0a15;border:none;border-radius:8px;font-weight:800;font-size:15px;cursor:pointer;margin-top:4px;font-family:inherit;transition:background .15s}
 .btn-login:hover{background:#7dd3fc}
 .err-msg{color:#f87171;font-size:13px;margin-top:10px;min-height:18px;text-align:center}
-.setup-note{background:#1a1200;border:1px solid #92400e;border-radius:8px;padding:12px 14px;font-size:12px;color:#fbbf24;line-height:1.6;margin-bottom:16px}
-.setup-note strong{display:block;margin-bottom:4px;font-size:10px;letter-spacing:1px;text-transform:uppercase}
-.btn-create{width:100%;padding:12px;background:#f0b429;color:#0a0a15;border:none;border-radius:8px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;transition:background .15s}
-.btn-create:hover{background:#fbbf24}
+.contact-note{margin-top:18px;font-size:11px;color:#334155;text-align:center;letter-spacing:.3px}
 </style>
 </head>
 <body>
@@ -39,45 +36,18 @@ body{background:#0a0a14;font-family:'Inter',system-ui,sans-serif;color:#ddd;min-
     <div class="brand-sub">Sistema de Cotizaciones</div>
   </div>
   <div class="card">
-
-    <!-- Login normal -->
-    <div id="login-form">
-      <div class="card-title">Iniciar Sesion</div>
-      <div class="field">
-        <label>Usuario</label>
-        <input class="inp" id="login-user" type="text" placeholder="usuario" autocomplete="username">
-      </div>
-      <div class="field">
-        <label>Contrasena</label>
-        <input class="inp" id="login-pass" type="password" placeholder="......" autocomplete="current-password">
-      </div>
-      <button class="btn-login" onclick="doLogin()">Entrar</button>
-      <div class="err-msg" id="login-err"></div>
+    <div class="card-title">Iniciar Sesion</div>
+    <div class="field">
+      <label>Usuario</label>
+      <input class="inp" id="login-user" type="text" placeholder="usuario" autocomplete="username">
     </div>
-
-    <!-- Primera vez: no hay usuarios -->
-    <div id="setup-form" style="display:none">
-      <div class="card-title">Configuracion Inicial</div>
-      <div class="setup-note">
-        <strong>Primera vez</strong>
-        No hay usuarios registrados. Crea el primer administrador para comenzar.
-      </div>
-      <div class="field">
-        <label>Nombre de usuario</label>
-        <input class="inp" id="setup-user" type="text" placeholder="admin">
-      </div>
-      <div class="field">
-        <label>Contrasena</label>
-        <input class="inp" id="setup-pass" type="password" placeholder="minimo 4 caracteres">
-      </div>
-      <div class="field">
-        <label>Confirmar contrasena</label>
-        <input class="inp" id="setup-pass2" type="password" placeholder="......">
-      </div>
-      <button class="btn-create" onclick="doSetup()">Crear Administrador</button>
-      <div class="err-msg" id="setup-err"></div>
+    <div class="field">
+      <label>Contrasena</label>
+      <input class="inp" id="login-pass" type="password" placeholder="......" autocomplete="current-password">
     </div>
-
+    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <div class="err-msg" id="login-err"></div>
+    <div class="contact-note">Contacta al administrador para obtener acceso</div>
   </div>
 </div>
 
@@ -123,33 +93,14 @@ async function doLogin(){
   redirectByRole(found.role);
 }
 
-async function doSetup(){
-  const user=document.getElementById('setup-user').value.trim().toLowerCase();
-  const pass=document.getElementById('setup-pass').value;
-  const pass2=document.getElementById('setup-pass2').value;
-  const err=document.getElementById('setup-err');
-  err.textContent='';
-  if(!user||!pass){err.textContent='Completa todos los campos';return;}
-  if(pass.length<4){err.textContent='Minimo 4 caracteres';return;}
-  if(pass!==pass2){err.textContent='Las contrasenas no coinciden';return;}
-  const h=await hashPass(pass);
-  saveUsers([{user,passHash:h,role:'admin'}]);
-  setSession(user,'admin');
-  location.href='admin.html';
-}
-
 // Al cargar: si ya hay sesion valida, redirigir
 (function(){
   try{
     const s=JSON.parse(localStorage.getItem('jdm_session')||'null');
     if(s&&s.user&&s.role&&getUsers().find(u=>u.user===s.user)){
-      redirectByRole(s.role);return;
+      redirectByRole(s.role);
     }
   }catch{}
-  if(!getUsers().length){
-    document.getElementById('login-form').style.display='none';
-    document.getElementById('setup-form').style.display='block';
-  }
 })();
 
 document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
