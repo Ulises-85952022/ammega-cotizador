@@ -107,6 +107,9 @@ body{
 <!-- AUTH GUARD -->
 <script>
 (function(){
+  // Permitir reseller (no tiene jdm_session, usa jdm_reseller_user)
+  const resellerUser=localStorage.getItem('jdm_reseller_user');
+  if(resellerUser){window._isReseller=true;return;}
   function getSession(){try{return JSON.parse(localStorage.getItem('jdm_session')||'null');}catch{return null;}}
   const s=getSession();
   const allowed=['vendedor','director','admin'];
@@ -114,9 +117,25 @@ body{
   else window._session=s;
 })();
 function logout(){localStorage.removeItem('jdm_session');location.href='index.html';}
+function logoutReseller(){
+  ['jdm_reseller_user','jdm_reseller_nombre','jdm_reseller_discount','jdm_reseller_logo'].forEach(k=>localStorage.removeItem(k));
+  location.href='index.html';
+}
 </script>
 
 <div class="wrap" id="main-wrap">
+
+  <!-- Encabezado reseller logueado -->
+  <div id="reseller-header" style="display:none;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:14px;border:1.5px solid #10b981;padding:14px 16px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <img id="reseller-logo-header" style="width:52px;height:52px;border-radius:8px;border:1px solid #10b981;background:#fff;object-fit:contain" alt="Logo">
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:800;color:#059669" id="reseller-name-header"></div>
+        <div style="font-size:11px;color:#065f46;margin-top:2px">Descuento: <strong id="reseller-disc-header"></strong></div>
+      </div>
+      <button onclick="logoutReseller()" style="padding:6px 12px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Cerrar sesión</button>
+    </div>
+  </div>
 
   <!-- Logo Card -->
   <div class="logo-card">
@@ -151,6 +170,29 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
 
 <script>
 (function(){
+  // Caso reseller
+  if(window._isReseller){
+    const nombre=localStorage.getItem('jdm_reseller_nombre')||'';
+    const desc=localStorage.getItem('jdm_reseller_discount')||'0';
+    const logo=localStorage.getItem('jdm_reseller_logo')||'';
+    // Mostrar header reseller
+    document.getElementById('reseller-header').style.display='block';
+    document.getElementById('reseller-name-header').textContent=nombre;
+    document.getElementById('reseller-disc-header').textContent=desc+'%';
+    if(logo) document.getElementById('reseller-logo-header').src='data:image/png;base64,'+logo;
+    // Logo card: mostrar logo del reseller
+    const logoArea=document.getElementById('logo-area');
+    if(logo){
+      logoArea.innerHTML=`<img class="logo-img" src="data:image/png;base64,${logo}" alt="Logo">`;
+    } else {
+      logoArea.innerHTML=`<div class="logo-text-main">${nombre}<span style="font-size:13px;font-weight:600;letter-spacing:4px;opacity:.7;display:block">RESELLER</span></div>`;
+    }
+    // Nav: solo salir (sin links de admin)
+    document.getElementById('nav-user-info').innerHTML=
+      `<span style="color:#005762;font-weight:700">${nombre}</span>`;
+    return;
+  }
+
   const s=window._session;
   if(!s)return;
 

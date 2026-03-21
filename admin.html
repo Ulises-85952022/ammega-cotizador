@@ -179,6 +179,7 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
     <button class="tab on" onclick="showTab('inv')">Inventario</button>
     <button class="tab" onclick="showTab('precios')">Precios</button>
     <button class="tab" onclick="showTab('generar')">Generar</button>
+    <button class="tab" onclick="showTab('resellers')">Resellers</button>
     <button class="tab" onclick="showTab('acceso')">Acceso</button>
   </div>
 
@@ -259,6 +260,57 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
       <button class="btn-p" id="btn-gen" style="width:100%;font-size:var(--text-lg);padding:var(--sp-4)" onclick="generarHTML()">Actualizar Cotizador</button>
       <p style="font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--sp-2);text-align:center">Los datos se guardan en localStorage. El cotizador (cotizador_tpl.html) los lee automaticamente.</p>
       <div class="log" id="gen-log" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- TAB: RESELLERS -->
+  <div id="tab-resellers" class="panel">
+    <div class="card">
+      <h3>Resellers Registrados</h3>
+      <div style="overflow-x:auto">
+        <table><thead><tr>
+          <th>Logo</th><th>Nombre</th><th>Usuario</th><th>Descuento %</th><th>Factor</th><th>Acciones</th>
+        </tr></thead><tbody id="resellers-list"></tbody></table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Crear Nuevo Reseller</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div><label class="sec">Nombre Reseller</label><input class="inp" id="new-rs-nombre" placeholder="Ej: Binasa · Brr · Applied"></div>
+        <div><label class="sec">Usuario (login)</label><input class="inp" id="new-rs-user" placeholder="ej: felipe"></div>
+        <div><label class="sec">Contraseña</label><input class="inp" id="new-rs-pass" type="password" placeholder="ej: binasa1"></div>
+        <div><label class="sec">Descuento % (0-90)</label><input class="inp" id="new-rs-desc" type="number" min="0" max="90" step="0.5" value="45"></div>
+      </div>
+      <div class="card" style="background:#F7F9FC;border:1px dashed #DDDEDF;padding:var(--sp-4);margin-bottom:var(--sp-3)">
+        <p class="sec">Logo Reseller (PNG/JPG recomendado 100x100px)</p>
+        <div class="dropzone" id="logo-dropzone" style="padding:var(--sp-6) var(--sp-4)"
+             onclick="document.getElementById('file-rs-logo').click()"
+             ondragover="event.preventDefault();this.classList.add('over')"
+             ondragleave="this.classList.remove('over')"
+             ondrop="event.preventDefault();this.classList.remove('over');handleRSLogoFile(event.dataTransfer.files[0])">
+          <div class="icon">🖼️</div>
+          <p>Arrastra logo (PNG/JPG) o haz clic<br><span style="font-size:var(--text-xs);color:#757575">Tamaño recomendado: 100x100px · Máx 500KB</span></p>
+          <div class="fname" id="logo-fname"></div>
+        </div>
+        <input type="file" id="file-rs-logo" accept="image/*" style="display:none" onchange="handleRSLogoFile(this.files[0])">
+        <div id="logo-preview" style="display:none;margin-top:var(--sp-3);text-align:center">
+          <img id="logo-preview-img" style="max-width:100px;max-height:100px;border-radius:8px;border:1px solid #DDDEDF" alt="Logo preview">
+          <div style="font-size:var(--text-xs);color:#757575;margin-top:4px" id="logo-size"></div>
+        </div>
+      </div>
+      <button class="btn-p" onclick="createNewReseller()" style="width:100%">+ Crear Reseller</button>
+      <div id="new-rs-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
+    </div>
+    <div class="card" id="edit-rs-card" style="display:none">
+      <h3>Editar Reseller</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div><label class="sec">Nombre</label><input class="inp" id="edit-rs-nombre" disabled></div>
+        <div><label class="sec">Descuento % actual</label><input class="inp" id="edit-rs-desc" type="number" min="0" max="90" step="0.5"></div>
+      </div>
+      <div style="display:flex;gap:var(--sp-3)">
+        <button class="btn-p" onclick="saveEditReseller()" style="flex:1">Guardar cambios</button>
+        <button class="btn-s" onclick="closeEditReseller()" style="flex:1">Cancelar</button>
+      </div>
     </div>
   </div>
 
@@ -366,8 +418,8 @@ function renderUserList(){
   const users=getUsers();
   const el=document.getElementById('user-list');
   if(!users.length){el.innerHTML='<p style="color:var(--text-muted);font-size:var(--text-sm)">No hay usuarios registrados.</p>';return;}
-  const ROLE_CSS={vendedor:'role-vendedor',director:'role-director',admin:'role-admin'};
-  const ROLE_LABEL={vendedor:'🟢 Vendedor',director:'🔵 Director',admin:'⚙️ Admin'};
+  const ROLE_CSS={vendedor:'role-vendedor',director:'role-director',admin:'role-admin',reseller:'role-dashboard'};
+  const ROLE_LABEL={vendedor:'🟢 Vendedor',director:'🔵 Director',admin:'⚙️ Admin',reseller:'🏪 Reseller'};
   el.innerHTML=users.map((u,i)=>`
     <div class="user-row">
       <div>
@@ -439,6 +491,7 @@ function showTab(id){
   if(id==='precios')updatePricePreview();
   if(id==='generar')updateGenState();
   if(id==='acceso')renderUserList();
+  if(id==='resellers')renderResellersTable();
   revealChildren(document.getElementById('tab-'+id));
 }
 
@@ -719,6 +772,118 @@ function generarHTML(){
     log('El cotizador (cotizador_tpl.html) ya refleja los cambios.','ok');
     log('Abre o recarga cotizador_tpl.html para verificar.','ok');
   }else{log('\nNo se realizaron cambios. Carga inventario y/o catalogo.','err');}
+}
+
+/* ══════════════════════════════════
+   RESELLERS
+   ══════════════════════════════════ */
+let _rsLogoB64='';
+
+function getResellers(){try{return JSON.parse(localStorage.getItem('jdm_resellers')||'[]');}catch{return[];}}
+function saveResellers(r){localStorage.setItem('jdm_resellers',JSON.stringify(r));}
+
+function handleRSLogoFile(file){
+  if(!file)return;
+  if(!file.type.startsWith('image/')){alert('Solo se permiten imágenes');return;}
+  if(file.size>500000){alert('Logo muy grande (máx 500KB)');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    _rsLogoB64=e.target.result.split(',')[1];
+    document.getElementById('logo-fname').textContent='✅ '+file.name;
+    const prev=document.getElementById('logo-preview');
+    document.getElementById('logo-preview-img').src='data:image/png;base64,'+_rsLogoB64;
+    prev.style.display='block';
+    document.getElementById('logo-size').textContent='Tamaño: '+(file.size/1024).toFixed(1)+' KB';
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderResellersTable(){
+  const list=getResellers();
+  const el=document.getElementById('resellers-list');
+  if(!list.length){
+    el.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:var(--sp-4)">No hay resellers registrados</td></tr>';
+    return;
+  }
+  el.innerHTML=list.map((r,i)=>{
+    const logo=r.logo?`<img src="data:image/png;base64,${r.logo}" style="width:46px;height:46px;border-radius:6px;border:1px solid #DDDEDF;object-fit:contain">`:'<div style="width:46px;height:46px;background:#F7F9FC;border:1px solid #DDDEDF;border-radius:6px"></div>';
+    return `<tr>
+      <td style="text-align:center">${logo}</td>
+      <td style="font-weight:700">${r.nombre}</td>
+      <td style="color:var(--text-muted);font-family:monospace;font-size:var(--text-xs)">${r.user}</td>
+      <td style="text-align:center;font-weight:700">${r.descuento}%</td>
+      <td style="text-align:center;color:var(--teal-600);font-weight:700">${(1-r.descuento/100).toFixed(4)}</td>
+      <td style="text-align:center">
+        <button class="btn-s" onclick="openEditReseller(${i})" style="margin-right:var(--sp-2);font-size:var(--text-xs);padding:4px 10px">✏️ Editar</button>
+        <button class="btn-danger" onclick="removeReseller(${i})">Eliminar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function createNewReseller(){
+  const nombre=document.getElementById('new-rs-nombre').value.trim();
+  const user=document.getElementById('new-rs-user').value.trim().toLowerCase();
+  const pass=document.getElementById('new-rs-pass').value;
+  const desc=parseFloat(document.getElementById('new-rs-desc').value)||0;
+  const msg=document.getElementById('new-rs-msg');
+  if(!nombre){msg.innerHTML='<span style="color:var(--danger)">Ingresa nombre del reseller</span>';return;}
+  if(!user){msg.innerHTML='<span style="color:var(--danger)">Ingresa usuario (login)</span>';return;}
+  if(!pass){msg.innerHTML='<span style="color:var(--danger)">Ingresa contraseña</span>';return;}
+  if(!_rsLogoB64){msg.innerHTML='<span style="color:var(--danger)">Carga un logo</span>';return;}
+  if(desc<0||desc>90){msg.innerHTML='<span style="color:var(--danger)">Descuento debe ser 0-90%</span>';return;}
+  const users=getUsers();
+  if(users.find(u=>u.user===user)){msg.innerHTML='<span style="color:var(--danger)">El usuario ya existe</span>';return;}
+  hashPass(pass).then(h=>{
+    users.push({user,passHash:h,role:'reseller',nombre:nombre.toUpperCase()});
+    saveUsers(users);
+    const resellers=getResellers();
+    resellers.push({nombre,user,descuento:desc,logo:_rsLogoB64,fechaCreacion:new Date().toISOString()});
+    saveResellers(resellers);
+    document.getElementById('new-rs-nombre').value='';
+    document.getElementById('new-rs-user').value='';
+    document.getElementById('new-rs-pass').value='';
+    document.getElementById('new-rs-desc').value='45';
+    document.getElementById('logo-fname').textContent='';
+    document.getElementById('logo-preview').style.display='none';
+    _rsLogoB64='';
+    msg.innerHTML=`<span style="color:var(--success)">✓ Reseller "${nombre}" creado</span>`;
+    renderResellersTable();
+    renderUserList();
+  });
+}
+
+function openEditReseller(idx){
+  const r=getResellers()[idx];
+  document.getElementById('edit-rs-nombre').value=r.nombre;
+  document.getElementById('edit-rs-desc').value=r.descuento;
+  document.getElementById('edit-rs-card').dataset.idx=idx;
+  document.getElementById('edit-rs-card').style.display='block';
+  document.getElementById('edit-rs-card').scrollIntoView({behavior:'smooth'});
+}
+function closeEditReseller(){document.getElementById('edit-rs-card').style.display='none';}
+function saveEditReseller(){
+  const idx=parseInt(document.getElementById('edit-rs-card').dataset.idx);
+  const desc=parseFloat(document.getElementById('edit-rs-desc').value)||0;
+  if(desc<0||desc>90){alert('Descuento debe ser 0-90%');return;}
+  const resellers=getResellers();
+  resellers[idx].descuento=desc;
+  saveResellers(resellers);
+  closeEditReseller();
+  renderResellersTable();
+}
+function removeReseller(idx){
+  if(!confirm('¿Eliminar reseller?'))return;
+  const resellers=getResellers();
+  const user=resellers[idx].user;
+  resellers.splice(idx,1);
+  saveResellers(resellers);
+  const users=getUsers();
+  const ui=users.findIndex(u=>u.user===user);
+  if(ui>=0)users.splice(ui,1);
+  saveUsers(users);
+  renderResellersTable();
+  renderUserList();
 }
 </script>
 </body>

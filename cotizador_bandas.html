@@ -57,6 +57,7 @@ td{padding:7px 6px;vertical-align:top}
 <!-- ═══ AUTH GUARD ═══ -->
 <script>
 (function(){
+  if(localStorage.getItem('jdm_reseller_user')){window._isReseller=true;return;}
   function getSession(){try{return JSON.parse(localStorage.getItem('jdm_session')||'null');}catch{return null;}}
   const s=getSession();
   const allowed=['vendedor','director','admin'];
@@ -64,7 +65,14 @@ td{padding:7px 6px;vertical-align:top}
   else window._session=s;
 })();
 function logout(){localStorage.removeItem('jdm_session');location.href='index.html';}
+function logoutReseller(){['jdm_reseller_user','jdm_reseller_nombre','jdm_reseller_discount','jdm_reseller_logo'].forEach(k=>localStorage.removeItem(k));location.href='index.html';}
 function renderNav(){
+  if(window._isReseller){
+    const nav=document.getElementById('app-nav');
+    nav.querySelector('#nav-links').innerHTML=`<span style="font-size:12px;font-weight:700;color:#f0b429">${_RS_NOMBRE||_RS_USER}</span>`;
+    nav.querySelector('#nav-user').textContent=`Descuento: ${_RS_DISCOUNT}%`;
+    return;
+  }
   const s=window._session;if(!s)return;
   const role=s.role;
   const ROLE_LABEL={vendedor:'Vendedor',director:'Director',admin:'Admin'};
@@ -89,7 +97,7 @@ function renderNav(){
   <div id="nav-links" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
   <div style="display:flex;align-items:center;gap:8px">
     <span id="nav-user" style="font-size:11px;color:#475569"></span>
-    <button onclick="logout()" style="padding:4px 10px;background:transparent;border:1px solid #334155;border-radius:5px;color:#64748b;font-size:11px;cursor:pointer;font-family:inherit">Salir</button>
+    <button onclick="window._isReseller?logoutReseller():logout()" style="padding:4px 10px;background:transparent;border:1px solid #334155;border-radius:5px;color:#64748b;font-size:11px;cursor:pointer;font-family:inherit">Salir</button>
   </div>
 </div>
 
@@ -273,8 +281,16 @@ const TIER={"BANDA ABIERTA":0,"BANDA SINCRONICA":1,"BANDA RPP":2,"BANDA SILVER":
 const TIER_LABEL={0:"Abierta",1:"HTD",2:"RPP",3:"Silver",4:"Gold",5:"Platinum",6:"Titanium"};
 const TIER_COL=["#555","#4a9eff","#7c5cbf","#aaa","#d4a017","#6af","#ff8c42"];
 
+/* ── Reseller ── */
+const _RS_USER=localStorage.getItem('jdm_reseller_user')||'';
+const _RS_NOMBRE=localStorage.getItem('jdm_reseller_nombre')||'';
+const _RS_DISCOUNT=parseFloat(localStorage.getItem('jdm_reseller_discount')||'0');
+const _RS_LOGO=localStorage.getItem('jdm_reseller_logo')||'';
+const _IS_RESELLER=!!_RS_USER;
+
 /* ── State ── */
 const _sessionVendedor=(function(){
+  if(_IS_RESELLER)return _RS_NOMBRE||_RS_USER;
   try{const s=JSON.parse(localStorage.getItem('jdm_session')||'null');
   const u=JSON.parse(localStorage.getItem('jdm_users')||'[]').find(x=>x.user===s?.user);
   return u?.nombre||s?.user||'ISMAEL ULISES HERNANDEZ FRAYLE';}catch{return 'ISMAEL ULISES HERNANDEZ FRAYLE';}
@@ -290,7 +306,10 @@ let state={
 function genFolio(){const d=new Date();return`COT-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*900+100)}`;}
 function hoy(){return new Date().toLocaleDateString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric"});}
 function vigencia(){const d=new Date();d.setDate(d.getDate()+5);return d.toLocaleDateString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric"});}
-function precioCliente(p,cli){const k=CLI_KEY[cli];return(k&&p[k]!=null)?p[k]:p.l;}
+function precioCliente(p,cli){
+  if(_IS_RESELLER)return Math.round(p.l*(1-_RS_DISCOUNT/100)*100)/100;
+  const k=CLI_KEY[cli];return(k&&p[k]!=null)?p[k]:p.l;
+}
 function fmt(n){return n.toFixed(2);}
 function fmtMXN(n){return`$${fmt(n)}`;}
 
@@ -838,7 +857,7 @@ function renderPreview(){
   const sub=items.reduce((s,i)=>s+i.total,0);
   const iva=sub*0.16,tot=sub+iva;
   const entTxt=state.entrega==='inmediata'?'24-48 horas. Salvo previa venta.':'8-12 semanas. Salvo previa orden.';
-  const logo=LOGO_B64?`<img src="data:image/png;base64,${LOGO_B64}" style="width:100%;max-width:130px" alt="Logo">`:'<strong>JASON DE MEXICO</strong>';
+  const logo=(_IS_RESELLER&&_RS_LOGO)?`<img src="data:image/png;base64,${_RS_LOGO}" style="width:100%;max-width:130px" alt="Logo">`:(LOGO_B64?`<img src="data:image/png;base64,${LOGO_B64}" style="width:100%;max-width:130px" alt="Logo">`:`<strong>${_IS_RESELLER?_RS_NOMBRE:'JASON DE MEXICO'}</strong>`);
 
   const rows=items.map((it,i)=>{const _et=entregaTextoItem(it.c,it.totalQty);return`
     <tr>
@@ -858,10 +877,10 @@ function renderPreview(){
       <tr>
         <td style="width:22%;vertical-align:top;padding-right:8px">${logo}</td>
         <td style="text-align:center;vertical-align:middle">
-          <div style="font-weight:bold;font-size:12px">JASON DE MEXICO</div>
-          <div>JESUS REYES HEROLES, Nº 6 - MODULO 4</div>
+          <div style="font-weight:bold;font-size:12px">${_IS_RESELLER?_RS_NOMBRE:'JASON DE MEXICO'}</div>
+          ${_IS_RESELLER?'':`<div>JESUS REYES HEROLES, Nº 6 - MODULO 4</div>
           <div>SAN PABLO XALPA (PUEBLO), TLALNEPANTLA</div>
-          <div>MEXICO, CP: 54090 · Tel: 55 8950 6254</div>
+          <div>MEXICO, CP: 54090 · Tel: 55 8950 6254</div>`}
         </td>
         <td style="width:28%;vertical-align:top">
           <table style="width:100%;border-collapse:collapse;border:1px solid #555">
@@ -975,6 +994,13 @@ function saveQuoteToStorage(){
 /* ── INIT ── */
 initConfig();
 renderNav();
+
+// Reseller: saltar pantalla de cliente, ir directo al cotizador
+if(_IS_RESELLER){
+  state.cliente=_RS_NOMBRE||_RS_USER;
+  state.vendedor=_RS_NOMBRE||_RS_USER;
+  goToCotizar();
+}
 </script>
 </body>
 </html>

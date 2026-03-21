@@ -104,6 +104,21 @@ async function doLogin(){
   const h=await hashPass(pass);
   const found=getUsers().find(u=>u.user===user&&u.passHash===h);
   if(!found){err.textContent='Usuario o contrasena incorrectos';return;}
+  // Reseller: guardar info en localStorage y redirigir al cotizador
+  if(found.role==='reseller'){
+    try{
+      const resellers=JSON.parse(localStorage.getItem('jdm_resellers')||'[]');
+      const ri=resellers.find(r=>r.user===user);
+      if(ri){
+        localStorage.setItem('jdm_reseller_user',user);
+        localStorage.setItem('jdm_reseller_nombre',ri.nombre);
+        localStorage.setItem('jdm_reseller_discount',String(ri.descuento));
+        localStorage.setItem('jdm_reseller_logo',ri.logo||'');
+      }
+    }catch{}
+    location.href='cotizador_tpl.html';
+    return;
+  }
   setSession(found.user,found.role);
   redirectByRole(found.role);
 }
