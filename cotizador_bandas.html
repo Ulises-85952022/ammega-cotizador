@@ -69,15 +69,16 @@ function renderNav(){
   const role=s.role;
   const ROLE_LABEL={vendedor:'Vendedor',director:'Director',admin:'Admin'};
   const links=[
-    {href:'cotizador_mangueras.html',label:'🔴 Mangueras',roles:['vendedor','director','admin']},
-    {href:'cotizador_bandas.html',label:'💛 Bandas',roles:['vendedor','director','admin']},
+    {href:'cotizador_tpl.html',label:'← Inicio',roles:['vendedor','director','admin']},
+    {href:'cotizador_mangueras_tpl.html',label:'💧 Mangueras',roles:['vendedor','director','admin']},
+    {href:'cotizador_bandas.html',label:'⚡ Bandas',roles:['vendedor','director','admin']},
     {href:'dashboard.html',label:'📊 Dashboard',roles:['director','admin']},
     {href:'admin.html',label:'⚙️ Admin',roles:['admin']},
   ];
   const nav=document.getElementById('app-nav');
   nav.querySelector('#nav-links').innerHTML=links
     .filter(l=>l.roles.includes(role))
-    .map(l=>`<a href="${l.href}" style="padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;${l.href==='cotizador_bandas.html'?'background:#1a1200;color:#f0b429;border:1px solid #92400e':'color:#64748b'}">${l.label}</a>`)
+    .map(l=>`<a href="${l.href}" style="padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;${l.href==='cotizador_bandas.html'?'background:#1a1200;color:#f0b429;border:1px solid #92400e':l.href==='cotizador_tpl.html'?'color:#94a3b8':'color:#64748b'}">${l.label}</a>`)
     .join('');
   nav.querySelector('#nav-user').textContent=`${s.user} · ${ROLE_LABEL[role]||role}`;
 }
@@ -105,7 +106,7 @@ function renderNav(){
     </div>
     <div style="margin-bottom:12px">
       <p class="sec">Vendedor</p>
-      <input class="inp" id="vendedor-inp" value="ISMAEL ULISES HERNANDEZ FRAYLE">
+      <input class="inp" id="vendedor-inp" value="" placeholder="Nombre del vendedor">
     </div>
     <button class="btn-p" id="btn-next" disabled onclick="goToCotizar()">Cotizar →</button>
   </div>
@@ -272,8 +273,13 @@ const TIER_LABEL={0:"Abierta",1:"HTD",2:"RPP",3:"Silver",4:"Gold",5:"Platinum",6
 const TIER_COL=["#555","#4a9eff","#7c5cbf","#aaa","#d4a017","#6af","#ff8c42"];
 
 /* ── State ── */
+const _sessionVendedor=(function(){
+  try{const s=JSON.parse(localStorage.getItem('jdm_session')||'null');
+  const u=JSON.parse(localStorage.getItem('jdm_users')||'[]').find(x=>x.user===s?.user);
+  return u?.nombre||s?.user||'ISMAEL ULISES HERNANDEZ FRAYLE';}catch{return 'ISMAEL ULISES HERNANDEZ FRAYLE';}
+})();
 let state={
-  cliente:"",vendedor:"ISMAEL ULISES HERNANDEZ FRAYLE",
+  cliente:"",vendedor:_sessionVendedor,
   items:[],entrega:null,
   sel:null,pz:"1",ex:"",
   folio:genFolio()
@@ -482,8 +488,10 @@ function initConfig(){
     document.querySelectorAll('.cli-btn').forEach(b=>b.classList.remove('on'));
     document.getElementById('btn-next').disabled=!this.value;
   };
-  // Vendedor
-  document.getElementById('vendedor-inp').oninput=function(){state.vendedor=this.value;};
+  // Vendedor: pre-llenar desde sesión y permitir editar
+  const vInp=document.getElementById('vendedor-inp');
+  vInp.value=state.vendedor;
+  vInp.oninput=function(){state.vendedor=this.value;};
 }
 
 function selectCli(c){

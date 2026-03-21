@@ -268,8 +268,12 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
     <div class="card">
       <h3>Agregar Usuario</h3>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-        <div><label class="sec">Usuario</label><input class="inp" id="new-user" placeholder="nombre"></div>
-        <div><label class="sec">Contrasena</label><input class="inp" id="new-pass" type="password" placeholder="••••••"></div>
+        <div><label class="sec">Usuario (login)</label><input class="inp" id="new-user" placeholder="usuario123"></div>
+        <div><label class="sec">Contrasena</label><input class="inp" id="new-pass" type="password" placeholder="......"></div>
+      </div>
+      <div style="margin-bottom:var(--sp-3)">
+        <label class="sec">Nombre completo (aparece en cotizaciones)</label>
+        <input class="inp" id="new-nombre" placeholder="Ej: ISMAEL ULISES HERNANDEZ FRAYLE">
       </div>
       <div style="margin-bottom:var(--sp-3)">
         <label class="sec" style="margin-bottom:6px;display:block">Rol y permisos:</label>
@@ -365,6 +369,7 @@ function renderUserList(){
     <div class="user-row">
       <div>
         <span class="ur-name">${u.user}</span>
+        ${u.nombre&&u.nombre!==u.user.toUpperCase()?`<span style="font-size:var(--text-xs);color:var(--text-muted);margin-left:6px">${u.nombre}</span>`:''}
         <span class="ur-role ${ROLE_CSS[u.role]||'role-dashboard'}">${ROLE_LABEL[u.role]||u.role}</span>
       </div>
       ${u.user!==(_currentUser&&_currentUser.user)?`<button class="btn-danger" onclick="removeUser(${i})">Eliminar</button>`:'<span style="font-size:var(--text-xs);color:var(--text-muted)">(tu)</span>'}
@@ -375,6 +380,7 @@ function renderUserList(){
 async function addUser(){
   const user=document.getElementById('new-user').value.trim().toLowerCase();
   const pass=document.getElementById('new-pass').value;
+  const nombre=document.getElementById('new-nombre').value.trim().toUpperCase();
   const role=document.querySelector('input[name="new-role"]:checked').value;
   const msg=document.getElementById('add-user-msg');
 
@@ -385,10 +391,11 @@ async function addUser(){
   if(users.find(u=>u.user===user)){msg.innerHTML='<span style="color:var(--danger)">El usuario ya existe</span>';return;}
 
   const h=await hashPass(pass);
-  users.push({user, passHash:h, role});
+  users.push({user, passHash:h, role, nombre:nombre||user.toUpperCase()});
   saveUsers(users);
   document.getElementById('new-user').value='';
   document.getElementById('new-pass').value='';
+  document.getElementById('new-nombre').value='';
   msg.innerHTML=`<span style="color:var(--success)">Usuario "${user}" (${role}) creado</span>`;
   renderUserList();
 }

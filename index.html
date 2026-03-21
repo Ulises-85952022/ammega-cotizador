@@ -92,7 +92,7 @@ function setSession(user,role){localStorage.setItem('jdm_session',JSON.stringify
 function redirectByRole(role){
   if(role==='admin')         location.href='admin.html';
   else if(role==='director') location.href='dashboard.html';
-  else                       location.href='cotizador_mangueras.html';
+  else                       location.href='cotizador_tpl.html';
 }
 
 async function doLogin(){
