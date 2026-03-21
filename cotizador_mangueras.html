@@ -184,6 +184,7 @@ td{padding:7px 6px;vertical-align:top}
 <div id="sc-preview" class="screen">
   <div class="noPrint" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
     <button onclick="window.print()" style="padding:10px 16px;background:#38bdf8;color:#0a0a15;border:none;border-radius:7px;font-weight:800;cursor:pointer">🖨 PDF / Imprimir</button>
+    <button onclick="saveQuoteToStorage();this.textContent='✓ Guardada';this.style.background='#4ade80';this.style.color='#0a0a15';setTimeout(()=>{this.textContent='💾 Guardar';this.style.background='#22c55e';this.style.color='#fff'},2000)" style="padding:10px 16px;background:#22c55e;color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer">💾 Guardar</button>
     <button onclick="goToCotizar()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">← Editar</button>
     <button onclick="nuevaCot()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">+ Nueva</button>
   </div>
@@ -202,6 +203,7 @@ const BRAND_XREF=[{"j": "JCHP2TR-04", "cat": "CONEXION", "j2": "0053-JCHP2TR-04"
 <!-- ═══ APP ═══ -->
 <script>
 /* ── Constants ── */
+const COTIZADOR_TIPO='mangueras';
 const CLIENTES=["Brr","Applied","Motion","Binasa"];
 const CLI_KEY={Brr:"b",Applied:"a",Motion:"m",Binasa:"n"};
 const CLI_DESC={Brr:"Brr",Applied:"Applied Ind.",Motion:"Motion Industries",Binasa:"BINASA"};
@@ -360,7 +362,7 @@ function goToCotizar(){
   document.getElementById('search-inp').value='';
   closeDrop();
 }
-function goToPreview(){renderPreview();show('sc-preview');}
+function goToPreview(){renderPreview();saveQuoteToStorage();show('sc-preview');}
 function nuevaCot(){
   state.items=[];state.entrega=null;state.sel=null;state.cliente="";state.pz="1";state.ex="";state.folio=genFolio();
   document.querySelectorAll('.cli-btn').forEach(b=>b.classList.remove('on'));
@@ -816,6 +818,26 @@ function renderPreview(){
     <div style="margin-top:6px;font-size:8px;color:#888;text-align:center">
       Lista de Precios Fluid Power ABR 2025 · Precios en MXN + IVA · Válida hasta ${vigencia()} · Sujeto a disponibilidad
     </div>`;
+}
+
+/* ── localStorage: Guardar cotización ── */
+function saveQuoteToStorage(){
+  try{
+    const quotes=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
+    const sub=state.items.reduce((s,i)=>s+i.total,0);
+    const rec={
+      id:state.folio,tipo:COTIZADOR_TIPO,
+      cliente:state.cliente,clienteKey:CLI_KEY[state.cliente]||null,
+      vendedor:state.vendedor,fecha:new Date().toISOString(),
+      entrega:state.entrega,
+      items:state.items.map(it=>({c:it.c,d:it.d,t:it.t,u:it.u,totalQty:it.totalQty,precio:it.precio,total:it.total,stockOk:it.stockOk})),
+      subtotal:sub,iva:sub*0.16,total:sub*1.16
+    };
+    const idx=quotes.findIndex(q=>q.id===state.folio);
+    if(idx>=0)quotes[idx]=rec;else quotes.push(rec);
+    if(quotes.length>500)quotes.splice(0,quotes.length-500);
+    localStorage.setItem('jdm_quotes',JSON.stringify(quotes));
+  }catch(e){console.warn('saveQuote error',e);}
 }
 
 /* ── INIT ── */
