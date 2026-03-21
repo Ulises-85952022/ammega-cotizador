@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard — Jason de Mexico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+/* ─── Design Tokens (Light KPI Theme) ─── */
+:root{
+  --teal-600:#005762;--teal-700:#004550;--teal-800:#003A42;--teal-900:#002D33;
+  --cyan-50:#E6FCFF;--lime-200:#E6EDAA;--lime-300:#D4DD7A;--lime-100:#F2F6D0;
+  --bg-page:#EAECEE;--bg-card:#FFFFFF;--bg-card-lime:#E6EDAA;--bg-card-lime-light:#F0F4CC;
+  --bg-card-teal:#005762;--bg-card-dark:#1A1A1A;
+  --text-dark:#111111;--text-secondary:#595959;--text-muted:#757575;--text-on-dark:#FFFFFF;--text-on-teal:#E6FCFF;
+  --accent:#005762;--accent-light:#E6FCFF;
+  --success:#22c55e;--warning:#f97316;--danger:#ef4444;
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;
+  --font-mono:'Cascadia Code','Fira Code',monospace;
+  --text-xs:clamp(0.625rem,0.6rem + 0.15vw,0.75rem);
+  --text-sm:clamp(0.75rem,0.7rem + 0.2vw,0.8125rem);
+  --text-base:clamp(0.8125rem,0.78rem + 0.2vw,0.9375rem);
+  --text-lg:clamp(1rem,0.95rem + 0.3vw,1.125rem);
+  --text-xl:clamp(1.125rem,1rem + 0.5vw,1.375rem);
+  --text-2xl:clamp(1.375rem,1.2rem + 0.8vw,1.75rem);
+  --text-3xl:clamp(1.75rem,1.5rem + 1.2vw,2.5rem);
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;--sp-8:32px;--sp-10:40px;
+  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;--radius-2xl:24px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.1);
+  --shadow-card:0 2px 12px rgba(0,0,0,0.06);
+  --ease-out:cubic-bezier(0.16,1,0.3,1);--ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+  --dur-fast:150ms;--dur-normal:250ms;
+}
+
+/* ─── Animations ─── */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+@keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.reveal{animation:fadeInUp 0.5s var(--ease-out) forwards;opacity:0}
+.reveal-d1{animation-delay:.05s}.reveal-d2{animation-delay:.1s}.reveal-d3{animation-delay:.15s}
+.reveal-d4{animation-delay:.2s}.reveal-d5{animation-delay:.25s}.reveal-d6{animation-delay:.3s}
+
+/* ─── Base ─── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg-page);font-family:var(--font-sans);color:var(--text-dark);min-height:100vh;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#C4C4C4;border-radius:99px}::-webkit-scrollbar-thumb:hover{background:#999}
+
+/* ─── Layout ─── */
+.wrap{max-width:1060px;margin:0 auto;padding:var(--sp-6) var(--sp-4);display:none}
+.header{text-align:center;padding:var(--sp-4) 0 var(--sp-5)}
+.header h1{font-size:var(--text-xl);font-weight:900;letter-spacing:2px;color:var(--teal-600)}
+.header sub{color:var(--text-muted);font-size:var(--text-xs);letter-spacing:1.5px;display:block;margin-top:var(--sp-1)}
+.session-info{margin-top:var(--sp-2);font-size:var(--text-xs);color:var(--text-muted)}
+.session-info span{color:var(--teal-600);font-weight:700}
+.session-info a{color:var(--danger);text-decoration:none;transition:opacity var(--dur-fast)}
+.session-info a:hover{opacity:.7}
+
+/* ─── Tabs ─── */
+.tabs{display:flex;gap:var(--sp-1);margin-bottom:var(--sp-5);border-bottom:2px solid #DDDEDF;flex-wrap:wrap}
+.tab{padding:var(--sp-3) var(--sp-5);background:transparent;color:var(--text-muted);border:none;font-weight:600;font-size:var(--text-sm);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color var(--dur-fast),border-color var(--dur-fast);font-family:var(--font-sans);letter-spacing:.3px}
+.tab:hover{color:var(--text-secondary)}
+.tab.on{color:var(--teal-600);border-bottom-color:var(--teal-600)}
+
+/* ─── White Card (default) ─── */
+.card{background:var(--bg-card);border-radius:var(--radius-xl);padding:var(--sp-5);margin-bottom:var(--sp-4);box-shadow:var(--shadow-card);transition:transform var(--dur-fast) var(--ease-spring),box-shadow var(--dur-normal)}
+.card:hover{box-shadow:var(--shadow-md)}
+.card h3{font-size:var(--text-sm);font-weight:700;color:var(--text-dark);letter-spacing:.5px;margin-bottom:var(--sp-3)}
+
+/* ─── KPI Stat Cards (3 variants) ─── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-4)}
+
+.stat{border-radius:var(--radius-xl);padding:var(--sp-5) var(--sp-4);position:relative;overflow:hidden;transition:transform var(--dur-fast) var(--ease-spring),box-shadow var(--dur-normal)}
+.stat:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+
+/* 3-dot menu icon */
+.stat::after{content:'\2022  \2022  \2022';position:absolute;top:12px;right:14px;font-size:10px;letter-spacing:1px;opacity:.3}
+
+.stat .lbl{font-size:var(--text-xs);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:var(--sp-2);line-height:1.2}
+.stat .val{font-size:var(--text-3xl);font-weight:900;line-height:1;animation:countUp 0.6s var(--ease-out) forwards}
+.stat .change{font-size:var(--text-xs);font-weight:700;margin-top:var(--sp-1);opacity:.7}
+
+/* Variant: Lime (light green) */
+.stat-lime{background:var(--bg-card-lime);color:var(--text-dark);box-shadow:var(--shadow-card)}
+.stat-lime::after{color:var(--text-dark)}
+
+/* Variant: Lime Light */
+.stat-lime-light{background:var(--bg-card-lime-light);color:var(--text-dark);box-shadow:var(--shadow-card)}
+
+/* Variant: Teal */
+.stat-teal{background:var(--bg-card-teal);color:var(--text-on-teal);box-shadow:var(--shadow-card)}
+.stat-teal::after{color:var(--text-on-teal)}
+
+/* Variant: Dark */
+.stat-dark{background:var(--bg-card-dark);color:var(--text-on-dark);box-shadow:var(--shadow-card)}
+.stat-dark::after{color:#666}
+.stat-dark .val{color:var(--lime-200)}
+.stat-dark .change{color:var(--lime-200)}
+
+/* Variant: White */
+.stat-white{background:var(--bg-card);color:var(--text-dark);box-shadow:var(--shadow-card)}
+
+/* ─── Inputs ─── */
+.inp{background:#F7F9FC;border:1.5px solid #DDDEDF;border-radius:var(--radius-sm);padding:var(--sp-3) var(--sp-4);color:var(--text-dark);width:100%;outline:none;font-size:var(--text-base);font-family:var(--font-sans);transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
+.inp:focus{border-color:var(--teal-600);box-shadow:0 0 0 3px rgba(0,87,98,0.12)}
+.inp::placeholder{color:#BBBBBB}
+
+/* ─── Buttons ─── */
+.btn-p{padding:var(--sp-3) var(--sp-5);background:var(--teal-600);color:#FFF;border:none;border-radius:var(--radius-sm);font-weight:800;font-size:var(--text-base);cursor:pointer;transition:transform var(--dur-fast) var(--ease-spring),box-shadow var(--dur-normal),background var(--dur-fast);font-family:var(--font-sans)}
+.btn-p:hover{background:var(--teal-700);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,87,98,0.25)}
+.btn-p:active{transform:translateY(0)}
+.btn-dl{padding:var(--sp-2) var(--sp-4);background:var(--bg-card-teal);color:#FFF;border:none;border-radius:var(--radius-sm);font-weight:700;cursor:pointer;font-size:var(--text-xs);transition:all var(--dur-fast);font-family:var(--font-sans)}
+.btn-dl:hover{background:var(--teal-700);box-shadow:0 4px 12px rgba(0,87,98,0.2)}
+
+/* ─── Tables ─── */
+table{width:100%;border-collapse:collapse}
+th{padding:var(--sp-2) var(--sp-3);font-size:var(--text-xs);color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;border-bottom:2px solid #EAECEE;text-align:left}
+td{padding:var(--sp-2) var(--sp-3);font-size:var(--text-sm);border-bottom:1px solid #F2F2F2;color:var(--text-dark)}
+tbody tr{transition:background var(--dur-fast)}
+tbody tr:hover{background:rgba(0,87,98,0.04)}
+tbody tr:nth-child(even){background:#FAFBFC}
+tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
+
+/* ─── Badges ─── */
+.badge{display:inline-block;border-radius:99px;padding:2px 10px;font-size:var(--text-xs);font-weight:700;letter-spacing:.3px}
+.badge-bandas{background:rgba(230,237,170,0.4);color:#5A6B00;border:1px solid rgba(230,237,170,0.7)}
+.badge-mangueras{background:rgba(0,87,98,0.1);color:var(--teal-600);border:1px solid rgba(0,87,98,0.2)}
+
+/* ─── Panels ─── */
+.panel{display:none}.panel.active{display:block;animation:fadeIn .3s var(--ease-out)}
+
+/* ─── Filters ─── */
+.filters{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-4);align-items:center}
+.filters select,.filters input[type=date]{background:#F7F9FC;border:1.5px solid #DDDEDF;border-radius:var(--radius-sm);padding:var(--sp-2) var(--sp-3);color:var(--text-dark);font-size:var(--text-sm);outline:none;font-family:var(--font-sans);transition:border-color var(--dur-fast)}
+.filters select:focus,.filters input[type=date]:focus{border-color:var(--teal-600);box-shadow:0 0 0 2px rgba(0,87,98,0.1)}
+.filters label{font-size:var(--text-xs);color:var(--text-muted);font-weight:700}
+
+/* ─── Bar Chart ─── */
+.bar-wrap{display:flex;align-items:flex-end;gap:var(--sp-2);height:140px;margin-top:var(--sp-3);padding-bottom:22px;position:relative}
+.bar{border-radius:8px 8px 0 0;min-width:36px;flex:1;position:relative;transition:height 0.6s var(--ease-out)}
+.bar-teal{background:var(--teal-600)}
+.bar-lime{background:var(--lime-200)}
+.bar:hover{opacity:.85;box-shadow:0 -4px 16px rgba(0,87,98,0.15)}
+.bar .bl{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:var(--text-xs);color:var(--text-muted);white-space:nowrap;font-weight:500}
+.bar .bv{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:var(--text-xs);color:var(--teal-600);font-weight:700}
+
+/* ─── Login ─── */
+#login-overlay{position:fixed;inset:0;background:var(--bg-page);z-index:9999;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--bg-card);border-radius:var(--radius-2xl);padding:var(--sp-10) var(--sp-8);max-width:420px;width:92%;text-align:center;animation:scaleIn 0.5s var(--ease-out) forwards;position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--teal-600),var(--lime-200))}
+.login-icon{width:60px;height:60px;margin:0 auto var(--sp-4);border-radius:var(--radius-lg);background:var(--teal-600);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,87,98,0.25)}
+.login-icon svg{width:28px;height:28px}
+.login-box h2{color:var(--text-dark);margin-bottom:var(--sp-1);font-size:var(--text-lg);font-weight:800}
+.login-box .sub{color:var(--text-muted);font-size:var(--text-xs);margin-bottom:var(--sp-6);letter-spacing:1.5px}
+.login-box .field{margin-bottom:var(--sp-4);text-align:left}
+.login-box label{font-size:var(--text-xs);color:var(--text-muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px}
+.login-box .err-msg{color:var(--danger);font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px}
+
+/* ─── Expand Rows ─── */
+.expand-row{display:none;background:#F7F9FC}
+.expand-row.open{display:table-row;animation:fadeIn .3s var(--ease-out)}
+.expand-btn{cursor:pointer;color:var(--teal-600);font-size:var(--text-xs);text-decoration:none;padding:2px 10px;border-radius:99px;border:1px solid rgba(0,87,98,0.2);transition:all var(--dur-fast);font-weight:600}
+.expand-btn:hover{background:rgba(0,87,98,0.08)}
+
+/* ─── Gauge Progress (for summary) ─── */
+.gauge-wrap{display:flex;align-items:center;gap:var(--sp-3);margin-top:var(--sp-2)}
+.gauge-bar{flex:1;height:10px;background:#EAECEE;border-radius:99px;overflow:hidden}
+.gauge-fill{height:100%;border-radius:99px;transition:width 1s var(--ease-out)}
+.gauge-fill-teal{background:linear-gradient(90deg,var(--lime-200),var(--teal-600))}
+.gauge-label{font-size:var(--text-xs);color:var(--text-muted);font-weight:600;min-width:40px;text-align:right}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#E6FCFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+    </div>
+    <h2>Dashboard</h2>
+    <div class="sub">ESTADISTICAS Y REPORTES</div>
+    <div id="login-form">
+      <div class="field"><label>Usuario</label><input class="inp" id="login-user" placeholder="usuario" autocomplete="username"></div>
+      <div class="field"><label>Contrasena</label><input class="inp" id="login-pass" type="password" placeholder="••••••" autocomplete="current-password"></div>
+      <button class="btn-p" style="width:100%;margin-top:var(--sp-1)" onclick="doLogin()">Entrar</button>
+      <div class="err-msg" id="login-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="wrap" id="main-wrap">
+  <div class="header">
+    <h1>DASHBOARD — JASON DE MEXICO</h1>
+    <sub>ESTADISTICAS · COTIZACIONES · BACK ORDERS · REPORTES</sub>
+    <div class="session-info">Sesion: <span id="session-user"></span> · <a href="#" onclick="doLogout()">Cerrar sesion</a></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" onclick="showTab('resumen')">Resumen</button>
+    <button class="tab" onclick="showTab('cotizaciones')">Cotizaciones</button>
+    <button class="tab" onclick="showTab('backorders')">Back Orders</button>
+    <button class="tab" onclick="showTab('stats')">Estadisticas</button>
+  </div>
+
+  <!-- RESUMEN -->
+  <div id="tab-resumen" class="panel active">
+    <div class="stat-grid" id="resumen-stats"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-4)">
+      <div class="card"><h3>Actividad por Dia de la Semana</h3><div class="bar-wrap" id="weekday-chart"></div></div>
+      <div class="card" id="tipo-breakdown-card"><h3>Distribucion por Tipo</h3><div id="tipo-breakdown"></div></div>
+    </div>
+    <div class="card"><h3>Top 10 Productos Mas Cotizados</h3><table id="top-products"></table></div>
+  </div>
+
+  <!-- COTIZACIONES -->
+  <div id="tab-cotizaciones" class="panel">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)">
+        <h3 style="margin:0">Historial de Cotizaciones</h3>
+        <button class="btn-dl" onclick="exportQuotes()">Descargar Excel</button>
+      </div>
+      <div class="filters">
+        <label>Tipo:</label><select id="fq-tipo" onchange="renderQuotes()"><option value="">Todos</option><option value="bandas">Bandas</option><option value="mangueras">Mangueras</option></select>
+        <label>Cliente:</label><select id="fq-cli" onchange="renderQuotes()"><option value="">Todos</option></select>
+        <label>Desde:</label><input type="date" id="fq-from" onchange="renderQuotes()">
+        <label>Hasta:</label><input type="date" id="fq-to" onchange="renderQuotes()">
+      </div>
+      <div style="overflow-x:auto"><table id="quotes-table"></table></div>
+    </div>
+  </div>
+
+  <!-- BACK ORDERS -->
+  <div id="tab-backorders" class="panel">
+    <div class="stat-grid" id="bo-stats"></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)">
+        <h3 style="margin:0">Listado de Back Orders</h3>
+        <button class="btn-dl" onclick="exportBO()">Descargar Excel</button>
+      </div>
+      <div class="filters">
+        <label>Cliente:</label><select id="fb-cli" onchange="renderBO()"><option value="">Todos</option></select>
+        <label>Desde:</label><input type="date" id="fb-from" onchange="renderBO()">
+        <label>Hasta:</label><input type="date" id="fb-to" onchange="renderBO()">
+      </div>
+      <div style="overflow-x:auto"><table id="bo-table"></table></div>
+    </div>
+    <div class="card"><h3>Productos Mas Solicitados en B.O.</h3><table id="bo-top"></table></div>
+  </div>
+
+  <!-- ESTADISTICAS -->
+  <div id="tab-stats" class="panel">
+    <div class="card"><h3>Productos CON Stock Mas Cotizados</h3><table id="stock-top"></table></div>
+    <div class="card"><h3>Clientes que Mas Cotizan</h3><table id="client-top"></table></div>
+    <div class="card"><h3>Dias Mas Activos (Calendario)</h3><table id="date-top"></table></div>
+  </div>
+</div>
+
+<script>
+/* REVEAL HELPER */
+function revealChildren(container){
+  const els=container.querySelectorAll('.card,.stat,.stat-grid,.stat-lime,.stat-teal,.stat-dark,.stat-white,.stat-lime-light');
+  els.forEach((el,i)=>{
+    el.classList.remove('reveal','reveal-d1','reveal-d2','reveal-d3','reveal-d4','reveal-d5','reveal-d6');
+    void el.offsetWidth;
+    el.classList.add('reveal','reveal-d'+Math.min(i+1,6));
+  });
+}
+
+/* AUTH */
+async function hashPass(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin(){
+  const user=document.getElementById('login-user').value.trim().toLowerCase();
+  const pass=document.getElementById('login-pass').value;
+  const err=document.getElementById('login-err');
+  if(!user||!pass){err.textContent='Ingresa usuario y contrasena';return;}
+  const users=JSON.parse(localStorage.getItem('jdm_users')||'[]');
+  if(!users.length){err.textContent='No hay usuarios configurados. Primero configura desde Admin.';return;}
+  const h=await hashPass(pass);
+  const found=users.find(u=>u.user===user&&u.passHash===h);
+  if(!found){err.textContent='Usuario o contrasena incorrectos';return;}
+  document.getElementById('login-overlay').style.display='none';
+  document.getElementById('main-wrap').style.display='block';
+  document.getElementById('session-user').textContent=found.user;
+  initDashboard();
+}
+function doLogout(){location.reload();}
+document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
+
+/* DATA */
+let _quotes=[],_bos=[];
+
+function loadData(){
+  _quotes=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
+  _bos=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
+}
+
+function fmtDate(iso){if(!iso)return'-';const d=new Date(iso);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function fmtMXN(n){return'$'+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+function fmtShort(n){if(n>=1e6)return'$'+(n/1e6).toFixed(1)+'M';if(n>=1e3)return'$'+(n/1e3).toFixed(1)+'k';return'$'+n.toFixed(0);}
+const DAYS=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+
+/* TABS */
+function showTab(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('tab-'+id).classList.add('active');
+  document.querySelector(`.tab[onclick*="'${id}'"]`).classList.add('on');
+  revealChildren(document.getElementById('tab-'+id));
+}
+
+/* RESUMEN */
+function renderResumen(){
+  const now=new Date();
+  const today=now.toISOString().slice(0,10);
+  const weekAgo=new Date(now-7*864e5).toISOString().slice(0,10);
+  const monthAgo=new Date(now-30*864e5).toISOString().slice(0,10);
+
+  const qToday=_quotes.filter(q=>q.fecha&&q.fecha.slice(0,10)===today);
+  const qWeek=_quotes.filter(q=>q.fecha&&q.fecha.slice(0,10)>=weekAgo);
+  const qMonth=_quotes.filter(q=>q.fecha&&q.fecha.slice(0,10)>=monthAgo);
+  const totalVal=_quotes.reduce((s,q)=>s+(q.total||0),0);
+
+  document.getElementById('resumen-stats').innerHTML=`
+    <div class="stat stat-lime reveal reveal-d1">
+      <div class="lbl">Cotizaciones Total</div>
+      <div class="val">${_quotes.length}</div>
+    </div>
+    <div class="stat stat-lime-light reveal reveal-d2">
+      <div class="lbl">Esta Semana</div>
+      <div class="val">${qWeek.length}</div>
+    </div>
+    <div class="stat stat-teal reveal reveal-d3">
+      <div class="lbl">Hoy</div>
+      <div class="val">${qToday.length}</div>
+    </div>
+    <div class="stat stat-white reveal reveal-d4">
+      <div class="lbl">Valor Total Cotizado</div>
+      <div class="val">${fmtShort(totalVal)}</div>
+      <div class="change" style="color:var(--success)">${fmtMXN(totalVal)}</div>
+    </div>
+    <div class="stat stat-dark reveal reveal-d5">
+      <div class="lbl">Back Orders</div>
+      <div class="val">${_bos.length}</div>
+      <div class="change">Pendientes</div>
+    </div>
+  `;
+
+  // Tipo breakdown
+  const bandas=_quotes.filter(q=>q.tipo==='bandas').length;
+  const mangueras=_quotes.filter(q=>q.tipo==='mangueras').length;
+  const total=Math.max(_quotes.length,1);
+  const pctB=Math.round(bandas/total*100);
+  const pctM=Math.round(mangueras/total*100);
+  document.getElementById('tipo-breakdown').innerHTML=`
+    <div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-4)">
+      <div style="flex:1;text-align:center;padding:var(--sp-3);background:var(--bg-card-lime);border-radius:var(--radius-md)">
+        <div style="font-size:var(--text-2xl);font-weight:900">${bandas}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted);font-weight:600">Bandas</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:var(--sp-3);background:var(--bg-card-teal);color:var(--text-on-teal);border-radius:var(--radius-md)">
+        <div style="font-size:var(--text-2xl);font-weight:900">${mangueras}</div>
+        <div style="font-size:var(--text-xs);opacity:.7;font-weight:600">Mangueras</div>
+      </div>
+    </div>
+    <div class="gauge-wrap"><span style="font-size:var(--text-xs);color:var(--text-muted);min-width:55px">Bandas</span><div class="gauge-bar"><div class="gauge-fill gauge-fill-teal" style="width:${pctB}%"></div></div><span class="gauge-label">${pctB}%</span></div>
+    <div class="gauge-wrap" style="margin-top:6px"><span style="font-size:var(--text-xs);color:var(--text-muted);min-width:55px">Mangueras</span><div class="gauge-bar"><div class="gauge-fill" style="width:${pctM}%;background:var(--teal-600)"></div></div><span class="gauge-label">${pctM}%</span></div>
+  `;
+
+  // Top products
+  const prodCount={};
+  _quotes.forEach(q=>(q.items||[]).forEach(it=>{
+    const k=it.c;
+    if(!prodCount[k])prodCount[k]={c:it.c,d:it.d,t:it.t,count:0,qty:0};
+    prodCount[k].count++;prodCount[k].qty+=it.totalQty||0;
+  }));
+  const topProds=Object.values(prodCount).sort((a,b)=>b.count-a.count).slice(0,10);
+  let html='<thead><tr><th>#</th><th>Codigo</th><th>Descripcion</th><th>Categoria</th><th style="text-align:right">Veces</th><th style="text-align:right">Qty Total</th></tr></thead><tbody>';
+  topProds.forEach((p,i)=>{html+=`<tr><td style="color:var(--text-muted)">${i+1}</td><td style="color:var(--teal-600);font-family:var(--font-mono);font-weight:700">${p.c}</td><td style="color:var(--text-secondary);font-size:var(--text-xs)">${(p.d||'').substring(0,40)}</td><td style="font-size:var(--text-xs)">${p.t||''}</td><td style="text-align:right;font-weight:700">${p.count}</td><td style="text-align:right">${p.qty}</td></tr>`;});
+  if(!topProds.length)html+='<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Sin datos</td></tr>';
+  html+='</tbody>';
+  document.getElementById('top-products').innerHTML=html;
+
+  // Weekday chart
+  const dayCounts=[0,0,0,0,0,0,0];
+  _quotes.forEach(q=>{if(q.fecha){const d=new Date(q.fecha).getDay();dayCounts[d]++;}});
+  const maxDay=Math.max(...dayCounts,1);
+  document.getElementById('weekday-chart').innerHTML=dayCounts.map((c,i)=>{
+    const h=Math.max(6,Math.round(c/maxDay*110));
+    const isWeekend=i===0||i===6;
+    const cls=isWeekend?'bar-lime':'bar-teal';
+    return`<div class="bar ${cls}" style="height:${h}px;${isWeekend?'opacity:.6':''}"><div class="bv">${c}</div><div class="bl">${DAYS[i]}</div></div>`;
+  }).join('');
+}
+
+/* COTIZACIONES */
+function populateClientFilters(){
+  const clients=new Set();
+  _quotes.forEach(q=>{if(q.cliente)clients.add(q.cliente);});
+  _bos.forEach(b=>{if(b.cliente)clients.add(b.cliente);});
+  ['fq-cli','fb-cli'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const cur=sel.value;
+    sel.innerHTML='<option value="">Todos</option>';
+    [...clients].sort().forEach(c=>{sel.innerHTML+=`<option value="${c}">${c}</option>`;});
+    sel.value=cur;
+  });
+}
+
+function getFilteredQuotes(){
+  let q=[..._quotes];
+  const tipo=document.getElementById('fq-tipo').value;
+  const cli=document.getElementById('fq-cli').value;
+  const from=document.getElementById('fq-from').value;
+  const to=document.getElementById('fq-to').value;
+  if(tipo)q=q.filter(x=>x.tipo===tipo);
+  if(cli)q=q.filter(x=>x.cliente===cli);
+  if(from)q=q.filter(x=>x.fecha&&x.fecha.slice(0,10)>=from);
+  if(to)q=q.filter(x=>x.fecha&&x.fecha.slice(0,10)<=to);
+  return q.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+}
+
+function renderQuotes(){
+  const filtered=getFilteredQuotes();
+  let html=`<thead><tr><th>Folio</th><th>Tipo</th><th>Cliente</th><th>Vendedor</th><th>Fecha</th><th style="text-align:right">Total</th><th>Items</th></tr></thead><tbody>`;
+  filtered.slice(0,100).forEach((q,i)=>{
+    const badge=q.tipo==='bandas'?'badge-bandas':'badge-mangueras';
+    html+=`<tr>
+      <td style="font-family:var(--font-mono);font-size:var(--text-xs);color:var(--teal-600)">${q.id}</td>
+      <td><span class="badge ${badge}">${q.tipo}</span></td>
+      <td style="font-weight:700">${q.cliente||'-'}</td>
+      <td style="color:var(--text-secondary);font-size:var(--text-xs)">${q.vendedor||'-'}</td>
+      <td style="font-size:var(--text-xs)">${fmtDate(q.fecha)}</td>
+      <td style="text-align:right;font-weight:700;color:var(--teal-600)">${fmtMXN(q.total||0)}</td>
+      <td><span class="expand-btn" onclick="toggleExpand('qe-${i}')">Ver ${(q.items||[]).length}</span></td>
+    </tr>`;
+    html+=`<tr class="expand-row" id="qe-${i}"><td colspan="7" style="padding:var(--sp-2) var(--sp-5)">`;
+    html+='<table style="font-size:var(--text-xs)"><thead><tr><th>Codigo</th><th>Descripcion</th><th>Cant</th><th>Precio</th><th>Total</th><th>Stock</th></tr></thead><tbody>';
+    (q.items||[]).forEach(it=>{
+      const stockColor=it.stockOk===true?'var(--success)':it.stockOk===false?'var(--danger)':'var(--text-secondary)';
+      const stockTxt=it.stockOk===true?'OK':it.stockOk===false?'Sin stock':'?';
+      html+=`<tr><td style="color:var(--teal-600);font-family:var(--font-mono)">${it.c}</td><td style="color:var(--text-secondary)">${(it.d||'').substring(0,35)}</td><td>${it.totalQty} ${it.u||''}</td><td style="text-align:right">${fmtMXN(it.precio||0)}</td><td style="text-align:right;font-weight:700">${fmtMXN(it.total||0)}</td><td style="color:${stockColor};font-weight:700">${stockTxt}</td></tr>`;
+    });
+    html+='</tbody></table></td></tr>';
+  });
+  if(!filtered.length)html+='<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Sin cotizaciones</td></tr>';
+  html+='</tbody>';
+  document.getElementById('quotes-table').innerHTML=html;
+}
+
+function toggleExpand(id){document.getElementById(id).classList.toggle('open');}
+
+function exportQuotes(){
+  const data=getFilteredQuotes();
+  const rows=[['Folio','Tipo','Cliente','Vendedor','Fecha','Entrega','Subtotal','IVA','Total','# Items']];
+  data.forEach(q=>{rows.push([q.id,q.tipo,q.cliente,q.vendedor,fmtDate(q.fecha),q.entrega,q.subtotal,q.iva,q.total,(q.items||[]).length]);});
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:22},{wch:12},{wch:14},{wch:28},{wch:12},{wch:14},{wch:12},{wch:12},{wch:12},{wch:8}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Cotizaciones');
+  const detRows=[['Folio','Codigo','Descripcion','Categoria','Unidad','Cantidad','Precio Unit','Total','Stock OK']];
+  data.forEach(q=>(q.items||[]).forEach(it=>{
+    detRows.push([q.id,it.c,it.d,it.t,it.u,it.totalQty,it.precio,it.total,it.stockOk===true?'Si':it.stockOk===false?'No':'?']);
+  }));
+  const ws2=XLSX.utils.aoa_to_sheet(detRows);
+  ws2['!cols']=[{wch:22},{wch:18},{wch:40},{wch:20},{wch:6},{wch:10},{wch:12},{wch:12},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Detalle Items');
+  XLSX.writeFile(wb,`Cotizaciones_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+/* BACK ORDERS */
+function getFilteredBO(){
+  let b=[..._bos];
+  const cli=document.getElementById('fb-cli').value;
+  const from=document.getElementById('fb-from').value;
+  const to=document.getElementById('fb-to').value;
+  if(cli)b=b.filter(x=>x.cliente===cli);
+  if(from)b=b.filter(x=>x.fecha&&x.fecha.slice(0,10)>=from);
+  if(to)b=b.filter(x=>x.fecha&&x.fecha.slice(0,10)<=to);
+  return b.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+}
+
+function renderBO(){
+  const filtered=getFilteredBO();
+  const totalItems=filtered.reduce((s,b)=>s+(b.items||[]).length,0);
+
+  document.getElementById('bo-stats').innerHTML=`
+    <div class="stat stat-dark reveal reveal-d1"><div class="lbl">Back Orders</div><div class="val">${filtered.length}</div></div>
+    <div class="stat stat-dark reveal reveal-d2"><div class="lbl">Items Sin Stock</div><div class="val">${totalItems}</div><div class="change">Pendientes</div></div>
+  `;
+
+  let html='<thead><tr><th>ID</th><th>Folio Cot.</th><th>Cliente</th><th>Vendedor</th><th>Fecha</th><th>Items</th><th>Notas</th></tr></thead><tbody>';
+  filtered.slice(0,100).forEach(b=>{
+    html+=`<tr>
+      <td style="font-family:var(--font-mono);font-size:var(--text-xs);color:var(--warning)">${b.id}</td>
+      <td style="font-family:var(--font-mono);font-size:var(--text-xs)">${b.quoteId||'-'}</td>
+      <td style="font-weight:700">${b.cliente||'-'}</td>
+      <td style="color:var(--text-secondary);font-size:var(--text-xs)">${b.vendedor||'-'}</td>
+      <td style="font-size:var(--text-xs)">${fmtDate(b.fecha)}</td>
+      <td>${(b.items||[]).map(it=>`<div style="font-size:var(--text-xs)"><span style="color:var(--teal-600)">${it.c}</span> x${it.totalQty}</div>`).join('')}</td>
+      <td style="color:var(--text-secondary);font-size:var(--text-xs);max-width:150px;overflow:hidden;text-overflow:ellipsis">${b.notas||'-'}</td>
+    </tr>`;
+  });
+  if(!filtered.length)html+='<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Sin back orders</td></tr>';
+  html+='</tbody>';
+  document.getElementById('bo-table').innerHTML=html;
+
+  // Top B.O. products
+  const boProds={};
+  filtered.forEach(b=>(b.items||[]).forEach(it=>{
+    if(!boProds[it.c])boProds[it.c]={c:it.c,d:it.d,t:it.t,count:0,totalQty:0};
+    boProds[it.c].count++;boProds[it.c].totalQty+=it.totalQty||0;
+  }));
+  const topBO=Object.values(boProds).sort((a,b)=>b.count-a.count).slice(0,15);
+  let boHtml='<thead><tr><th>#</th><th>Codigo</th><th>Descripcion</th><th style="text-align:right">Veces en B.O.</th><th style="text-align:right">Qty Total</th></tr></thead><tbody>';
+  topBO.forEach((p,i)=>{boHtml+=`<tr><td style="color:var(--text-muted)">${i+1}</td><td style="color:var(--warning);font-family:var(--font-mono);font-weight:700">${p.c}</td><td style="color:var(--text-secondary);font-size:var(--text-xs)">${(p.d||'').substring(0,40)}</td><td style="text-align:right;font-weight:700;color:var(--warning)">${p.count}</td><td style="text-align:right">${p.totalQty}</td></tr>`;});
+  if(!topBO.length)boHtml+='<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Sin datos</td></tr>';
+  boHtml+='</tbody>';
+  document.getElementById('bo-top').innerHTML=boHtml;
+}
+
+function exportBO(){
+  const data=getFilteredBO();
+  const rows=[['ID B.O.','Folio Cotizacion','Cliente','Vendedor','Fecha','Codigo','Descripcion','Categoria','Unidad','Cantidad','Stock Disponible','Notas']];
+  data.forEach(b=>(b.items||[]).forEach(it=>{
+    rows.push([b.id,b.quoteId,b.cliente,b.vendedor,fmtDate(b.fecha),it.c,it.d,it.t,it.u,it.totalQty,it.stockAvailable,b.notas||'']);
+  }));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:18},{wch:22},{wch:14},{wch:28},{wch:12},{wch:18},{wch:40},{wch:20},{wch:6},{wch:10},{wch:14},{wch:30}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Back Orders');
+  XLSX.writeFile(wb,`BackOrders_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+/* ESTADISTICAS */
+function renderStats(){
+  const stockProds={};
+  _quotes.forEach(q=>(q.items||[]).forEach(it=>{
+    if(it.stockOk===true){
+      if(!stockProds[it.c])stockProds[it.c]={c:it.c,d:it.d,count:0,qty:0};
+      stockProds[it.c].count++;stockProds[it.c].qty+=it.totalQty||0;
+    }
+  }));
+  const topStock=Object.values(stockProds).sort((a,b)=>b.count-a.count).slice(0,15);
+  let html='<thead><tr><th>#</th><th>Codigo</th><th>Descripcion</th><th style="text-align:right">Veces</th><th style="text-align:right">Qty Total</th></tr></thead><tbody>';
+  topStock.forEach((p,i)=>{html+=`<tr><td style="color:var(--text-muted)">${i+1}</td><td style="color:var(--success);font-family:var(--font-mono);font-weight:700">${p.c}</td><td style="color:var(--text-secondary);font-size:var(--text-xs)">${(p.d||'').substring(0,40)}</td><td style="text-align:right;font-weight:700">${p.count}</td><td style="text-align:right">${p.qty}</td></tr>`;});
+  if(!topStock.length)html+='<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Sin datos</td></tr>';
+  html+='</tbody>';
+  document.getElementById('stock-top').innerHTML=html;
+
+  const clientStats={};
+  _quotes.forEach(q=>{
+    const c=q.cliente||'Otro';
+    if(!clientStats[c])clientStats[c]={name:c,count:0,total:0};
+    clientStats[c].count++;clientStats[c].total+=q.total||0;
+  });
+  const topClients=Object.values(clientStats).sort((a,b)=>b.count-a.count);
+  let cHtml='<thead><tr><th>#</th><th>Cliente</th><th style="text-align:right">Cotizaciones</th><th style="text-align:right">Valor Total</th></tr></thead><tbody>';
+  topClients.forEach((c,i)=>{cHtml+=`<tr><td style="color:var(--text-muted)">${i+1}</td><td style="font-weight:700">${c.name}</td><td style="text-align:right;font-weight:700;color:var(--teal-600)">${c.count}</td><td style="text-align:right;color:var(--success)">${fmtMXN(c.total)}</td></tr>`;});
+  if(!topClients.length)cHtml+='<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">Sin datos</td></tr>';
+  cHtml+='</tbody>';
+  document.getElementById('client-top').innerHTML=cHtml;
+
+  const dateCounts={};
+  _quotes.forEach(q=>{if(q.fecha){const d=q.fecha.slice(0,10);dateCounts[d]=(dateCounts[d]||0)+1;}});
+  const topDates=Object.entries(dateCounts).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  let dHtml='<thead><tr><th>#</th><th>Fecha</th><th>Dia</th><th style="text-align:right">Cotizaciones</th></tr></thead><tbody>';
+  topDates.forEach(([d,c],i)=>{
+    const day=DAYS[new Date(d+'T12:00:00').getDay()];
+    dHtml+=`<tr><td style="color:var(--text-muted)">${i+1}</td><td style="font-weight:700">${d}</td><td style="color:var(--text-secondary)">${day}</td><td style="text-align:right;font-weight:700;color:var(--teal-600)">${c}</td></tr>`;
+  });
+  if(!topDates.length)dHtml+='<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">Sin datos</td></tr>';
+  dHtml+='</tbody>';
+  document.getElementById('date-top').innerHTML=dHtml;
+}
+
+/* INIT */
+function initDashboard(){
+  loadData();
+  populateClientFilters();
+  renderResumen();
+  renderQuotes();
+  renderBO();
+  renderStats();
+  revealChildren(document.getElementById('tab-resumen'));
+}
+</script>
+</body>
+</html>

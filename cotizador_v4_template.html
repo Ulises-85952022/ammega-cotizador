@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Cotizador Bandas PT</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#0a0a14;font-family:'Segoe UI',system-ui,sans-serif;color:#ddd;overscroll-behavior:none}
+input,button,select{font-family:inherit}
+button{cursor:pointer}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#0d0d1a}::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:4px}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@media print{
+  .noPrint{display:none!important}
+  body{background:#fff!important;color:#000!important}
+  @page{margin:1cm;size:Letter}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback}=React;
+
+/* ═══════════════════════════════════════════════════════
+   DATA — injected by build script
+   ═══════════════════════════════════════════════════════ */
+const LOGO_B64=/*LOGO_PLACEHOLDER*/"";
+const RAW_CAT=/*CAT_PLACEHOLDER*/[];
+const INV=/*INV_PLACEHOLDER*/{};
+
+/* ═══════════════════════════════════════════════════════
+   CONSTANTS
+   ═══════════════════════════════════════════════════════ */
+const CLIENTES=["Brr","Applied","Motion","Binasa"];
+const CLI_KEY={Brr:"b",Applied:"a",Motion:"m",Binasa:"n"};
+const CLI_DESC={Brr:"Brr",Applied:"Applied Ind.",Motion:"Motion Industries",Binasa:"BINASA"};
+
+const TIER={"BANDA ABIERTA":0,"BANDA SINCRONICA":1,"BANDA RPP":2,"BANDA SILVER":3,"BANDA GOLD":4,"BANDA PLATINUM":5,"BANDA TITANIUM":6};
+const TIER_LABEL={0:"Abierta",1:"HTD",2:"RPP",3:"Silver",4:"Gold",5:"Platinum",6:"Titanium"};
+const TIER_COL=["#555","#4a9eff","#7c5cbf","#aaa","#d4a017","#6af","#ff8c42"];
+
+const APP_FACTORS={
+  "Ventiladores / Bombas centrifugas":1.2,
+  "Agitadores / Mezcladores":1.3,
+  "Compresores rotativos":1.4,
+  "Bandas transportadoras":1.4,
+  "Compresores alternativos":1.6,
+  "Molinos / Trituradoras":1.8,
+  "Maquinaria pesada / Minería":2.0,
+};
+
+/* ═══════════════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════════════ */
+function genFolio(){const d=new Date();return `COT-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*900+100)}`;}
+function hoy(){return new Date().toLocaleDateString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric"});}
+function vigencia(){const d=new Date();d.setDate(d.getDate()+30);return d.toLocaleDateString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric"});}
+function precioCliente(p,cli){return p[CLI_KEY[cli]??'x']??p.l;}
+
+function extractLength(desc){
+  const m=(desc||"").match(/\b(\d{3,5})\b/g)||[];
+  for(const n of m){const v=parseInt(n);if(v>=500&&v<=9999)return v;}
+  return null;
+}
+
+function buscarGral(q){
+  const up=q.toUpperCase().trim();
+  if(!up||up.length<2)return[];
+  return RAW_CAT.filter(p=>p.c.toUpperCase().includes(up)||p.d.toUpperCase().includes(up)).slice(0,40);
+}
+
+function buscarPorLargo(len,hints){
+  const grupos={};
+  RAW_CAT.filter(p=>{
+    const L=extractLength(p.d);
+    if(!L)return false;
+    const diff=Math.abs(L-len);
+    if(diff>200)return false;
+    if(hints.length&&!hints.some(h=>p.d.toUpperCase().includes(h.toUpperCase())&&p.c.toUpperCase().includes(h.toUpperCase())))return false;
+    return true;
+  }).forEach(p=>{
+    const L=extractLength(p.d)||0;
+    if(!grupos[L])grupos[L]=[];
+    grupos[L].push(p);
+  });
+  return Object.entries(grupos).map(([l,ps])=>({largo:+l,items:ps})).sort((a,b)=>Math.abs(a.largo-len)-Math.abs(b.largo-len)).slice(0,5);
+}
+
+function parseQuery(q){
+  const up=q.toUpperCase();
+  const numMatch=up.match(/\b(\d{3,5})\b/);
+  const length=numMatch?parseInt(numMatch[1]):null;
+  const profiles=["HTD","RPP","3M","5M","8M","14M","20M","XL","L","H","XH","3L","4L","5L"];
+  const profileHint=profiles.filter(p=>up.includes(p));
+  const isSync=profileHint.length>0||up.includes("HTD")||up.includes("SINCRONI");
+  return{type:isSync?"sync":"gral",length,profileHint};
+}
+
+function calcQty(u,pz,ex){
+  const p=parseFloat(pz)||0;
+  const e=parseFloat(ex)||0;
+  if(u==="rib")return(parseInt(pz)||1)*(parseInt(ex)||1);
+  if(u==="mm")return p*e;
+  if(u==="pl")return e*100;
+  return p;
+}
+
+function buildDescCorte(desc,cuts,widthMm){
+  const c=parseInt(cuts)||1;
+  const w=parseFloat(widthMm)||0;
+  const clean=desc.replace(/\s*\d+\s*mm\s*/gi,'').trim();
+  return `${c} banda${c>1?'s':''} ${clean} en ${w}mm`;
+}
+
+function checkStock(code,qty,u){
+  const stock=INV[code];
+  if(stock==null)return null;
+  return stock>=qty;
+}
+
+function detectEntrega(items){
+  if(!items.length)return null;
+  for(const it of items){
+    const ok=checkStock(it.c,it.totalQty,it.u);
+    if(ok===null||ok===false)return"fabricacion";
+  }
+  return"inmediata";
+}
+
+/* ══════ Number to words ══════ */
+const UNI=["","UN","DOS","TRES","CUATRO","CINCO","SEIS","SIETE","OCHO","NUEVE","DIEZ","ONCE","DOCE","TRECE","CATORCE","QUINCE","DIECISEIS","DIECISIETE","DIECIOCHO","DIECINUEVE"];
+const DEC=["","","VEINTE","TREINTA","CUARENTA","CINCUENTA","SESENTA","SETENTA","OCHENTA","NOVENTA"];
+function cientos(n){
+  if(n===100)return"CIEN";
+  const c=Math.floor(n/100),r=n%100;
+  const cc=c===0?"":c===1?"CIENTO":c===2?"DOSCIENTOS":c===3?"TRESCIENTOS":c===4?"CUATROCIENTOS":c===5?"QUINIENTOS":c===6?"SEISCIENTOS":c===7?"SETECIENTOS":c===8?"OCHOCIENTOS":"NOVECIENTOS";
+  if(r===0)return cc;
+  if(r<20)return`${cc} ${UNI[r]}`.trim();
+  const d=Math.floor(r/10),u=r%10;
+  return`${cc} ${DEC[d]}${u>0?` Y ${UNI[u]}`:``}`.trim();
+}
+function nToLetras(n){
+  if(n===0)return"CERO";
+  const m=Math.floor(n/1000000),mi=Math.floor((n%1000000)/1000),c=n%1000;
+  let s="";
+  if(m)s+=`${m===1?"UN MILLON":`${cientos(m)} MILLONES`} `;
+  if(mi)s+=`${mi===1?"MIL":`${cientos(mi)} MIL`} `;
+  if(c)s+=cientos(c);
+  return s.trim();
+}
+function montoLetras(tot){
+  const [e,d=""]=tot.toFixed(2).split(".");
+  return`${nToLetras(parseInt(e))} PESOS ${d}/100 M.N.`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   POWER TRANSMISSION CALCULATOR
+   ═══════════════════════════════════════════════════════ */
+function calcTransmision({potVal,unidadPot,rpmMotriz,rpmConducida,tipoB,appFactor,dPeq}){
+  const hp=unidadPot==="kW"?potVal*1.341:potVal;
+  const ratio=rpmMotriz/rpmConducida;
+  const hpD=hp*appFactor;
+  const dGrande=dPeq?+(dPeq*ratio).toFixed(1):null;
+
+  let seccion="",sugerencia="",criterio="";
+  const rpm=rpmMotriz;
+
+  if(tipoB==="clasica"){
+    if(hpD<=1.5&&rpm>=720)seccion="A";
+    else if(hpD<=3)seccion="A";
+    else if(hpD<=7.5&&rpm>=720)seccion="B";
+    else if(hpD<=15)seccion="B";
+    else if(hpD<=25)seccion="C";
+    else if(hpD<=60)seccion="D";
+    else seccion="E";
+    sugerencia=`Sección ${seccion} — buscar "${seccion}${dPeq?Math.round(dPeq*3.1416):'XXX'}"`;
+    criterio=`Busca en catálogo: BANDA CLASICA / ${seccion}`;
+  }else if(tipoB==="estrecha"){
+    if(hpD<=5)seccion="3V";
+    else if(hpD<=20)seccion="5V";
+    else seccion="8V";
+    sugerencia=`Sección ${seccion} — alta capacidad`;
+    criterio=`Busca en catálogo: ALTA CAPACIDAD / ${seccion}`;
+  }else if(tipoB==="multirib"){
+    if(hpD<=3)seccion="J";
+    else if(hpD<=10)seccion="K";
+    else if(hpD<=30)seccion="L";
+    else seccion="M";
+    sugerencia=`Perfil ${seccion} — buscar "Multi Rib ${seccion}"`;
+    criterio=`Busca en catálogo: BANDA MULTI RIB / ${seccion}`;
+  }else if(tipoB==="sincronica"){
+    if(hpD<=2)seccion="3M o XL";
+    else if(hpD<=8)seccion="5M o L";
+    else if(hpD<=25)seccion="8M o H";
+    else seccion="14M o XH";
+    sugerencia=`Paso ${seccion} — banda sincrónica`;
+    criterio=`Busca en catálogo: SINCRONICA / HTD / RPP`;
+  }
+
+  return{hp:+hp.toFixed(2),hpDiseno:+hpD.toFixed(2),ratio:+ratio.toFixed(2),dGrande,seccion,sugerencia,criterio};
+}
+
+/* ═══════════════════════════════════════════════════════
+   STYLES
+   ═══════════════════════════════════════════════════════ */
+const S={
+  wrap:{maxWidth:600,margin:"0 auto",padding:"10px 8px",minHeight:"100vh",background:"#0a0a14"},
+  card:{background:"#111122",border:"1px solid #1e1e38",borderRadius:12,padding:"14px 14px",marginBottom:12},
+  sec:{margin:"0 0 8px",fontSize:"0.62rem",fontWeight:700,color:"#555",letterSpacing:1.5,textTransform:"uppercase"},
+  inp:{background:"#0d0d1a",border:"1px solid #2a2a4a",borderRadius:8,padding:"10px 12px",color:"#ddd",fontSize:"0.9rem",width:"100%",outline:"none"},
+  btnP:{padding:"11px 18px",background:"#f0b429",color:"#0a0a15",border:"none",borderRadius:8,fontWeight:800,fontSize:"0.9rem"},
+  btnS:{padding:"10px 14px",background:"transparent",color:"#888",border:"1px solid #2a2a4a",borderRadius:8,fontWeight:600,fontSize:"0.86rem"},
+  btnSm:{padding:"7px 12px",background:"transparent",color:"#666",border:"1px solid #222",borderRadius:6,fontSize:"0.78rem"},
+  drop:{position:"absolute",top:"100%",left:0,right:0,zIndex:200,background:"#111122",border:"1px solid #2a2a4a",borderTop:"none",borderRadius:"0 0 10px 10px",maxHeight:360,overflowY:"auto",boxShadow:"0 8px 32px rgba(0,0,0,.7)"},
+  th:{padding:"6px 8px",fontSize:"0.62rem",color:"#555",fontWeight:700,letterSpacing:.8,textTransform:"uppercase",borderBottom:"1px solid #1a1a2e",textAlign:"left"},
+  td:{padding:"7px 6px",verticalAlign:"top",fontSize:"0.82rem"},
+  cliBtn:{padding:"14px 10px",background:"#0d0d1a",border:"2px solid #2a2a4a",borderRadius:10,color:"#777",fontWeight:700,fontSize:"0.9rem",width:"100%"},
+  cliOn:{background:"#1a1400",borderColor:"#f0b429",color:"#f0b429"},
+  badge:{borderRadius:4,padding:"1px 6px",fontSize:"0.62rem",fontWeight:700,letterSpacing:.3,whiteSpace:"nowrap"},
+  // Delivery buttons
+  btnEntr:{padding:"10px 14px",borderRadius:8,border:"2px solid",fontWeight:700,fontSize:"0.8rem",flex:1},
+  btnInm:{background:"#0d2014",borderColor:"#4ade80",color:"#4ade80"},
+  btnInmOn:{background:"#4ade80",borderColor:"#4ade80",color:"#0a0a14"},
+  btnFab:{background:"#1a0d00",borderColor:"#f97316",color:"#f97316"},
+  btnFabOn:{background:"#f97316",borderColor:"#f97316",color:"#0a0a14"},
+};
+
+/* ═══════════════════════════════════════════════════════
+   MINI COMPONENTS
+   ═══════════════════════════════════════════════════════ */
+function TBadge({cat}){
+  const t=TIER[cat]??0;
+  const c=TIER_COL[t]||"#555";
+  return <span style={{...S.badge,background:c+"22",color:c,border:`1px solid ${c}44`}}>{TIER_LABEL[t]||cat}</span>;
+}
+
+function StockDot({code,qty}){
+  const stock=INV[code];
+  if(stock==null)return null;
+  const ok=stock>=qty;
+  return <span title={`Stock: ${stock}`} style={{display:"inline-block",width:7,height:7,borderRadius:"50%",background:ok?"#4ade80":"#f97316",marginLeft:5,verticalAlign:"middle"}}/>;
+}
+
+function DropRow({p,cliente,onClick}){
+  const pr=precioCliente(p,cliente);
+  return(
+    <div onClick={onClick} style={{display:"flex",alignItems:"center",gap:6,padding:"9px 12px",cursor:"pointer",borderBottom:"1px solid #1a1a1a"}}
+      onTouchStart={e=>{e.currentTarget.style.background="#0d0d22"}}
+      onTouchEnd={e=>{e.currentTarget.style.background="transparent"}}
+      onMouseEnter={e=>{e.currentTarget.style.background="#0d0d22"}}
+      onMouseLeave={e=>{e.currentTarget.style.background="transparent"}}>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{color:"#f0b429",fontFamily:"monospace",fontSize:"0.75rem"}}>{p.c}</div>
+        <div style={{color:"#ddd",fontSize:"0.82rem",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.d}</div>
+        <TBadge cat={p.t}/>
+      </div>
+      <div style={{textAlign:"right",flexShrink:0}}>
+        <div style={{color:"#4ade80",fontWeight:700,fontSize:"0.88rem"}}>${pr.toFixed(2)}</div>
+        <div style={{color:"#555",fontSize:"0.7rem"}}/{p.u}</div>
+        <StockDot code={p.c} qty={1}/>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   QTY INPUTS
+   ═══════════════════════════════════════════════════════ */
+function QtyInputs({item,pz,setPz,ex,setEx,precio,cliente}){
+  const u=item.u;
+  const stock=INV[item.c];
+  const totalQty=calcQty(u,pz,ex);
+  const total=totalQty*precio;
+  const stockOk=stock!=null?(stock>=totalQty?true:false):null;
+
+  return(
+    <div style={{marginTop:10}}>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"flex-end"}}>
+        {/* pz / mt units */}
+        {(u==="pz"||u==="mt")&&(
+          <label style={{display:"flex",flexDirection:"column",gap:3,flex:1,minWidth:80}}>
+            <span style={{...S.sec,margin:0}}>{u==="mt"?"Metros":"Piezas"}</span>
+            <input type="number" min="1" step={u==="mt"?"0.5":"1"} style={S.inp} value={pz} onChange={e=>setPz(e.target.value)}/>
+          </label>
+        )}
+        {/* mm: cortes × ancho */}
+        {u==="mm"&&(
+          <>
+            <label style={{display:"flex",flexDirection:"column",gap:3,flex:1,minWidth:70}}>
+              <span style={{...S.sec,margin:0}}>Cortes</span>
+              <input type="number" min="1" step="1" style={S.inp} value={pz} onChange={e=>setPz(e.target.value)}/>
+            </label>
+            <label style={{display:"flex",flexDirection:"column",gap:3,flex:1,minWidth:70}}>
+              <span style={{...S.sec,margin:0}}>Ancho mm</span>
+              <input type="number" min="1" style={S.inp} value={ex} onChange={e=>setEx(e.target.value)} placeholder="ej: 50"/>
+            </label>
+          </>
+        )}
+        {/* rib */}
+        {u==="rib"&&(
+          <>
+            <label style={{display:"flex",flexDirection:"column",gap:3,flex:1,minWidth:70}}>
+              <span style={{...S.sec,margin:0}}>Piezas</span>
+              <input type="number" min="1" style={S.inp} value={pz} onChange={e=>setPz(e.target.value)}/>
+            </label>
+            <label style={{display:"flex",flexDirection:"column",gap:3,flex:1,minWidth:70}}>
+              <span style={{...S.sec,margin:0}}>Costillas/pz</span>
+              <input type="number" min="1" style={S.inp} value={ex} onChange={e=>setEx(e.target.value)}/>
+            </label>
+          </>
+        )}
+        {/* pl */}
+        {u==="pl"&&(
+          <label style={{display:"flex",flexDirection:"column",gap:3,flex:1,minWidth:80}}>
+            <span style={{...S.sec,margin:0}}>Metros</span>
+            <input type="number" min="0.1" step="0.1" style={S.inp} value={ex} onChange={e=>setEx(e.target.value)}/>
+          </label>
+        )}
+      </div>
+
+      {/* Description preview for mm type */}
+      {u==="mm"&&pz&&ex&&(
+        <div style={{marginTop:6,padding:"5px 8px",background:"#0a0a20",borderRadius:6,fontSize:"0.75rem",color:"#a78bfa"}}>
+          Desc: {buildDescCorte(item.d,pz,ex)}
+        </div>
+      )}
+
+      {/* Stock indicator */}
+      {stock!=null&&totalQty>0&&(
+        <div style={{marginTop:6,fontSize:"0.72rem",color:stockOk?"#4ade80":"#f97316"}}>
+          {stockOk?`✓ En stock (${stock} ${u} disp.)`:`⚠ Stock insuf. (${stock} ${u} disp., se piden ${totalQty})`}
+        </div>
+      )}
+
+      {/* Totals */}
+      {totalQty>0&&(
+        <div style={{marginTop:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{color:"#777",fontSize:"0.78rem"}}>${precio.toFixed(2)}/{u} × {totalQty}</span>
+          <span style={{color:"#4ade80",fontWeight:800,fontSize:"1rem"}}>${total.toFixed(2)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   CALCULATOR PANEL
+   ═══════════════════════════════════════════════════════ */
+function Calculator({onClose,onSearch}){
+  const[pot,setPot]=useState("");
+  const[unidad,setUnidad]=useState("HP");
+  const[rpmM,setRpmM]=useState("");
+  const[rpmC,setRpmC]=useState("");
+  const[tipo,setTipo]=useState("clasica");
+  const[app,setApp]=useState(Object.keys(APP_FACTORS)[0]);
+  const[dPeq,setDPeq]=useState("");
+  const[res,setRes]=useState(null);
+
+  function calcular(){
+    const pv=parseFloat(pot);
+    const rm=parseFloat(rpmM);
+    const rc=parseFloat(rpmC);
+    if(!pv||!rm||!rc||rc===0)return;
+    const r=calcTransmision({potVal:pv,unidadPot:unidad,rpmMotriz:rm,rpmConducida:rc,tipoB:tipo,appFactor:APP_FACTORS[app],dPeq:parseFloat(dPeq)||null});
+    setRes(r);
+  }
+
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:500,display:"flex",flexDirection:"column",justifyContent:"flex-end",background:"rgba(0,0,0,.6)"}} onClick={onClose}>
+      <div style={{background:"#111122",borderRadius:"16px 16px 0 0",padding:"16px 14px 28px",maxHeight:"85vh",overflowY:"auto",animation:"slideUp .25s ease"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+          <span style={{fontWeight:800,fontSize:"1rem",color:"#f0b429"}}>⚙ Calculadora PT</span>
+          <button style={{...S.btnSm,fontSize:"1rem",padding:"4px 10px"}} onClick={onClose}>✕</button>
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+          <label style={{display:"flex",flexDirection:"column",gap:4}}>
+            <span style={S.sec}>Potencia</span>
+            <div style={{display:"flex",gap:4}}>
+              <input type="number" style={{...S.inp,flex:1}} value={pot} onChange={e=>setPot(e.target.value)} placeholder="ej: 10"/>
+              <select style={{...S.inp,width:64,padding:"10px 4px"}} value={unidad} onChange={e=>setUnidad(e.target.value)}>
+                <option>HP</option><option>kW</option>
+              </select>
+            </div>
+          </label>
+          <label style={{display:"flex",flexDirection:"column",gap:4}}>
+            <span style={S.sec}>Tipo de banda</span>
+            <select style={S.inp} value={tipo} onChange={e=>setTipo(e.target.value)}>
+              <option value="clasica">Clásica (A/B/C/D)</option>
+              <option value="estrecha">Estrecha (3V/5V/8V)</option>
+              <option value="multirib">Multi Rib (J/K/L/M)</option>
+              <option value="sincronica">Sincrónica (HTD/RPP)</option>
+            </select>
+          </label>
+          <label style={{display:"flex",flexDirection:"column",gap:4}}>
+            <span style={S.sec}>RPM Motriz</span>
+            <input type="number" style={S.inp} value={rpmM} onChange={e=>setRpmM(e.target.value)} placeholder="ej: 1750"/>
+          </label>
+          <label style={{display:"flex",flexDirection:"column",gap:4}}>
+            <span style={S.sec}>RPM Conducida</span>
+            <input type="number" style={S.inp} value={rpmC} onChange={e=>setRpmC(e.target.value)} placeholder="ej: 875"/>
+          </label>
+          <label style={{display:"flex",flexDirection:"column",gap:4}}>
+            <span style={S.sec}>Ø Polea chica (mm)</span>
+            <input type="number" style={S.inp} value={dPeq} onChange={e=>setDPeq(e.target.value)} placeholder="opcional"/>
+          </label>
+          <label style={{display:"flex",flexDirection:"column",gap:4}}>
+            <span style={S.sec}>Aplicación</span>
+            <select style={S.inp} value={app} onChange={e=>setApp(e.target.value)}>
+              {Object.keys(APP_FACTORS).map(k=><option key={k}>{k}</option>)}
+            </select>
+          </label>
+        </div>
+
+        <button style={{...S.btnP,width:"100%",marginBottom:12}} onClick={calcular}>Calcular</button>
+
+        {res&&(
+          <div style={{background:"#0a0a20",borderRadius:10,padding:"12px 14px",animation:"fadeIn .2s"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
+              <div style={{textAlign:"center"}}>
+                <div style={{color:"#555",fontSize:"0.65rem",marginBottom:2}}>HP DISEÑO</div>
+                <div style={{color:"#f0b429",fontWeight:800,fontSize:"1.1rem"}}>{res.hpDiseno}</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{color:"#555",fontSize:"0.65rem",marginBottom:2}}>RELACIÓN</div>
+                <div style={{color:"#a78bfa",fontWeight:800,fontSize:"1.1rem"}}>{res.ratio}:1</div>
+              </div>
+              {res.dGrande&&(
+                <div style={{textAlign:"center"}}>
+                  <div style={{color:"#555",fontSize:"0.65rem",marginBottom:2}}>Ø GRANDE</div>
+                  <div style={{color:"#4ade80",fontWeight:800,fontSize:"1.1rem"}}>{res.dGrande}mm</div>
+                </div>
+              )}
+            </div>
+            <div style={{padding:"8px 10px",background:"#111133",borderRadius:8,marginBottom:8}}>
+              <div style={{color:"#f0b429",fontWeight:700,fontSize:"0.88rem",marginBottom:3}}>Sección recomendada: {res.seccion}</div>
+              <div style={{color:"#aaa",fontSize:"0.78rem"}}>{res.sugerencia}</div>
+            </div>
+            <div style={{color:"#555",fontSize:"0.72rem",marginBottom:8}}>{res.criterio}</div>
+            <button style={{...S.btnS,width:"100%",fontSize:"0.8rem"}}
+              onClick={()=>{onSearch(res.seccion);onClose();}}>
+              🔍 Buscar "{res.seccion}" en catálogo
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCREEN 1 — CONFIG
+   ═══════════════════════════════════════════════════════ */
+function Config({cliente,setCliente,vendedor,setVendedor,onNext}){
+  const[customCli,setCustomCli]=useState("");
+  const[showCustom,setShowCustom]=useState(false);
+
+  function selecionar(c){setCliente(c);setShowCustom(false);}
+
+  return(
+    <div style={S.wrap}>
+      <div style={{...S.card,maxWidth:480,margin:"40px auto 0"}}>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          {LOGO_B64?<img src={`data:image/png;base64,${LOGO_B64}`} style={{height:60,maxWidth:"80%"}} alt="Logo"/>:<div style={{color:"#f0b429",fontWeight:800,fontSize:"1.2rem"}}>JASON DE MEXICO</div>}
+        </div>
+        <p style={{...S.sec,textAlign:"center",marginBottom:16}}>Selecciona el cliente</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+          {CLIENTES.map(c=>(
+            <button key={c} onClick={()=>selecionar(c)} style={{...S.cliBtn,...(cliente===c&&!showCustom?S.cliOn:{})}}>
+              {cliente===c&&!showCustom&&<span style={{marginRight:6}}>✓</span>}{c}
+            </button>
+          ))}
+          <button onClick={()=>setShowCustom(!showCustom)} style={{...S.cliBtn,...(showCustom?S.cliOn:{})}}>
+            + Otro
+          </button>
+        </div>
+        {showCustom&&(
+          <div style={{marginBottom:12}}>
+            <input style={S.inp} placeholder="Nombre del cliente" value={customCli}
+              onChange={e=>{setCustomCli(e.target.value);setCliente(e.target.value);}}/>
+          </div>
+        )}
+        <div style={{marginBottom:12}}>
+          <p style={{...S.sec,marginBottom:6}}>Vendedor</p>
+          <input style={S.inp} value={vendedor} onChange={e=>setVendedor(e.target.value)} placeholder="Nombre del vendedor"/>
+        </div>
+        <button style={{...S.btnP,width:"100%",padding:"13px",opacity:cliente?1:0.3}} disabled={!cliente} onClick={onNext}>
+          Cotizar para {cliente||"..."} →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCREEN 2 — COTIZAR
+   ═══════════════════════════════════════════════════════ */
+function Cotizar({cliente,items,setItems,onBack,onPreview,entrega,setEntrega}){
+  const[q,setQ]=useState("");
+  const[sr,setSr]=useState(null);
+  const[drop,setDrop]=useState(false);
+  const[sel,setSel]=useState(null);
+  const[pz,setPz]=useState("1");
+  const[ex,setEx]=useState("");
+  const[showCalc,setShowCalc]=useState(false);
+  const ref=useRef();
+
+  useEffect(()=>{
+    if(q.length<2){setSr(null);setDrop(false);return;}
+    const p=parseQuery(q.toUpperCase());
+    if(p.type==="sync"&&p.length&&p.profileHint.length){
+      const g=buscarPorLargo(p.length,p.profileHint);
+      if(g.length){setSr({mode:"largo",grupos:g,target:p.length});setDrop(true);return;}
+    }
+    const r=buscarGral(q);
+    setSr({mode:"gral",r});setDrop(r.length>0);
+  },[q]);
+
+  // Auto-detect entrega when items change
+  useEffect(()=>{
+    if(items.length>0)setEntrega(detectEntrega(items));
+  },[items]);
+
+  function pick(p){setSel(p);setQ(p.d);setDrop(false);setPz("1");setEx("");}
+
+  function add(){
+    if(!sel)return;
+    const totalQty=calcQty(sel.u,pz,ex);
+    if(totalQty<=0)return;
+    const precio=precioCliente(sel,cliente);
+    const stockOk=checkStock(sel.c,totalQty,sel.u);
+    let descFinal=sel.d;
+    if(sel.u==="mm"&&ex)descFinal=buildDescCorte(sel.d,pz,ex);
+    setItems(prev=>[...prev,{
+      ...sel,
+      precio,totalQty,
+      pzStr:pz,exStr:ex,
+      descFinal,
+      total:precio*totalQty,
+      stockOk,
+      uid:Date.now()
+    }]);
+    setQ("");setSel(null);setPz("1");setEx("");setDrop(false);
+    ref.current?.focus();
+  }
+
+  function delItem(uid){setItems(prev=>prev.filter(x=>x.uid!==uid));}
+
+  const sub=items.reduce((s,i)=>s+i.total,0);
+  const iva=sub*0.16;
+  const tot=sub+iva;
+
+  const autoEntrega=detectEntrega(items);
+
+  return(
+    <div style={S.wrap}>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+        <div style={{background:"#1a1400",border:"2px solid #f0b429",borderRadius:8,padding:"6px 14px",color:"#f0b429",fontWeight:800,fontSize:"0.9rem"}}>{cliente}</div>
+        <button style={{...S.btnSm,marginLeft:"auto"}} onClick={()=>setShowCalc(true)}>⚙ Calc. PT</button>
+        <button style={S.btnSm} onClick={onBack}>← Cliente</button>
+      </div>
+
+      {/* Search */}
+      <div style={{...S.card,paddingBottom:8}}>
+        <p style={S.sec}>Buscar producto</p>
+        <div style={{position:"relative"}}>
+          <input ref={ref} autoFocus style={{...S.inp,paddingRight:40}} value={q}
+            onChange={e=>{setQ(e.target.value);if(sel)setSel(null);}}
+            placeholder="Código o descripción: B044 · 8V1600 · HTD 1890 8M"/>
+          {q&&<button style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#555",fontSize:"1.1rem",padding:"4px 6px"}} onClick={()=>{setQ("");setSel(null);setDrop(false);}}>✕</button>}
+          {drop&&sr&&(
+            <div style={S.drop}>
+              {sr.mode==="gral"&&sr.r.map(p=>(
+                <DropRow key={p.c} p={p} cliente={cliente} onClick={()=>pick(p)}/>
+              ))}
+              {sr.mode==="largo"&&(
+                <div>
+                  <div style={{padding:"6px 12px",background:"#0d0d0d",color:"#f0b429",fontSize:"0.72rem",borderBottom:"1px solid #1a1a1a"}}>
+                    ⚠ Largo <strong>{sr.target}mm</strong> — largos disponibles:
+                  </div>
+                  {sr.grupos.map(g=>(
+                    <div key={g.largo}>
+                      <div style={{padding:"4px 12px",background:"#0a0a18",color:"#a78bfa",fontSize:"0.72rem",fontWeight:700}}>{g.largo}mm</div>
+                      {g.items.map(p=><DropRow key={p.c} p={p} cliente={cliente} onClick={()=>pick(p)}/>)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Selected item */}
+        {sel&&(
+          <div style={{marginTop:10,padding:"10px 12px",background:"#0a0a1e",borderRadius:8,border:"1px solid #2a2a4a"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+              <div>
+                <span style={{color:"#f0b429",fontFamily:"monospace",fontSize:"0.78rem"}}>{sel.c}</span>
+                <TBadge cat={sel.t}/>
+              </div>
+              <span style={{color:"#4ade80",fontWeight:800}}>${precioCliente(sel,cliente).toFixed(2)}/{sel.u}</span>
+            </div>
+            <div style={{color:"#ddd",fontSize:"0.82rem",marginBottom:8}}>{sel.d}</div>
+            <QtyInputs item={sel} pz={pz} setPz={setPz} ex={ex} setEx={setEx} precio={precioCliente(sel,cliente)} cliente={cliente}/>
+            <button style={{...S.btnP,width:"100%",marginTop:10,opacity:calcQty(sel.u,pz,ex)>0?1:0.3}}
+              disabled={calcQty(sel.u,pz,ex)<=0} onClick={add}>
+              + Agregar
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Items list */}
+      {items.length>0&&(
+        <div style={S.card}>
+          <p style={S.sec}>Productos ({items.length})</p>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",minWidth:340}}>
+              <thead>
+                <tr>
+                  <th style={S.th}>#</th>
+                  <th style={S.th}>Producto</th>
+                  <th style={S.th}>Ctd</th>
+                  <th style={S.th}>Total</th>
+                  <th style={S.th}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((it,i)=>(
+                  <tr key={it.uid} style={{borderBottom:"1px solid #1a1a2e"}}>
+                    <td style={{...S.td,color:"#555",width:24}}>{i+1}</td>
+                    <td style={S.td}>
+                      <div style={{color:"#f0b429",fontFamily:"monospace",fontSize:"0.72rem"}}>{it.c} <StockDot code={it.c} qty={it.totalQty}/></div>
+                      <div style={{color:"#ddd",fontSize:"0.8rem"}}>{it.descFinal}</div>
+                      <TBadge cat={it.t}/>
+                    </td>
+                    <td style={{...S.td,color:"#aaa",fontSize:"0.78rem",whiteSpace:"nowrap"}}>{it.totalQty} {it.u}</td>
+                    <td style={{...S.td,color:"#4ade80",fontWeight:700,whiteSpace:"nowrap"}}>${it.total.toFixed(2)}</td>
+                    <td style={S.td}>
+                      <button onClick={()=>delItem(it.uid)} style={{background:"none",border:"none",color:"#f87171",fontSize:"1.1rem",padding:"2px 6px",cursor:"pointer"}}>✕</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Totals */}
+          <div style={{borderTop:"1px solid #1e1e38",marginTop:10,paddingTop:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",color:"#777",fontSize:"0.85rem",marginBottom:4}}>
+              <span>Subtotal</span><span>${sub.toFixed(2)}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",color:"#777",fontSize:"0.85rem",marginBottom:4}}>
+              <span>IVA 16%</span><span>${iva.toFixed(2)}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",color:"#f0b429",fontWeight:800,fontSize:"1rem"}}>
+              <span>Total MXN</span><span>${tot.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delivery time */}
+      {items.length>0&&(
+        <div style={S.card}>
+          <p style={S.sec}>Tiempo de entrega
+            {autoEntrega&&<span style={{marginLeft:8,color:autoEntrega==="inmediata"?"#4ade80":"#f97316",fontSize:"0.7rem"}}>(auto-sugerido por stock)</span>}
+          </p>
+          <div style={{display:"flex",gap:10}}>
+            <button style={{...S.btnEntr,...(entrega==="inmediata"?S.btnInmOn:S.btnInm)}}
+              onClick={()=>setEntrega("inmediata")}>
+              ✓ 24-48 hrs{entrega==="inmediata"&&" ✓"}
+            </button>
+            <button style={{...S.btnEntr,...(entrega==="fabricacion"?S.btnFabOn:S.btnFab)}}
+              onClick={()=>setEntrega("fabricacion")}>
+              ⏱ Fabricación{entrega==="fabricacion"&&" ✓"}
+            </button>
+          </div>
+          {entrega&&(
+            <div style={{marginTop:8,padding:"7px 10px",background:"#0a0a20",borderRadius:7,fontSize:"0.75rem",color:entrega==="inmediata"?"#86efac":"#fdba74",fontStyle:"italic"}}>
+              {entrega==="inmediata"?"Entrega en 24-48 hrs. Salvo previa venta.":"Tiempo de fabricación: 8-12 semanas. Salvo previa orden."}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div style={{display:"flex",gap:10,marginBottom:20}}>
+        <button style={{...S.btnP,flex:1,opacity:items.length?1:0.3}} disabled={!items.length} onClick={onPreview}>
+          Ver cotización →
+        </button>
+      </div>
+
+      {/* Calculator modal */}
+      {showCalc&&<Calculator onClose={()=>setShowCalc(false)} onSearch={q=>{setQ(q);ref.current?.focus();}}/>}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCREEN 3 — PREVIEW
+   ═══════════════════════════════════════════════════════ */
+function Preview({cliente,vendedor,items,folio,entrega,onBack,onNew}){
+  const sub=items.reduce((s,i)=>s+i.total,0);
+  const iva=sub*0.16;
+  const tot=sub+iva;
+
+  const C={
+    lk:{padding:"3px 6px",background:"#f0f0f0",fontWeight:"bold",fontSize:"10px",width:"15%",border:"1px solid #ccc"},
+    lv:{padding:"3px 6px",fontSize:"10px",border:"1px solid #ccc"},
+  };
+
+  const entregaTexto=entrega==="inmediata"?"24-48 horas. Salvo previa venta.":"8-12 semanas. Salvo previa orden.";
+
+  return(
+    <div style={{fontFamily:"Arial,Helvetica,sans-serif",fontSize:"11px",color:"#000",background:"#e0e0e0",padding:16,minHeight:"100vh"}}>
+      <style>{`@media print{body{background:#fff!important;margin:0;padding:0;}.noPrint{display:none!important;}@page{margin:1cm;size:Letter;}}`}</style>
+
+      {/* Botones pantalla */}
+      <div className="noPrint" style={{marginBottom:12,display:"flex",gap:8,flexWrap:"wrap"}}>
+        <button style={{padding:"9px 16px",background:"#f0b429",color:"#0a0a15",border:"none",borderRadius:7,fontWeight:800,cursor:"pointer"}} onClick={()=>window.print()}>🖨 PDF / Imprimir</button>
+        <button style={{padding:"9px 16px",background:"#f5f5f5",color:"#333",border:"1px solid #ccc",borderRadius:7,cursor:"pointer"}} onClick={onBack}>← Editar</button>
+        <button style={{padding:"9px 16px",background:"#f5f5f5",color:"#333",border:"1px solid #ccc",borderRadius:7,cursor:"pointer"}} onClick={onNew}>+ Nueva</button>
+      </div>
+
+      {/* Hoja */}
+      <div style={{background:"#fff",maxWidth:800,margin:"0 auto",padding:"18px 22px",boxShadow:"0 2px 12px rgba(0,0,0,.15)"}}>
+        {/* Header */}
+        <table style={{width:"100%",borderCollapse:"collapse",marginBottom:6}}>
+          <tbody><tr>
+            <td style={{width:"22%",verticalAlign:"top",paddingRight:8}}>
+              {LOGO_B64?<img src={`data:image/png;base64,${LOGO_B64}`} style={{width:"100%",maxWidth:130}} alt="Logo"/>:<div style={{fontWeight:"bold"}}>JASON DE MEXICO</div>}
+            </td>
+            <td style={{textAlign:"center",verticalAlign:"middle"}}>
+              <div style={{fontWeight:"bold",fontSize:"12px"}}>JASON DE MEXICO</div>
+              <div>JESUS REYES HEROLES, Nº 6 - MODULO 4</div>
+              <div>SAN PABLO XALPA (PUEBLO), TLALNEPANTLA</div>
+              <div>MEXICO, CP: 54090 · Tel: 55 8950 6254</div>
+            </td>
+            <td style={{width:"28%",verticalAlign:"top"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",border:"1px solid #555"}}>
+                <tbody>
+                  <tr style={{background:"#ddd"}}><td colSpan={2} style={{textAlign:"center",fontWeight:"bold",padding:"3px 6px",fontSize:"12px",letterSpacing:1}}>COTIZACION</td></tr>
+                  <tr style={{background:"#ddd"}}><td style={{fontWeight:"bold",padding:"2px 6px",borderTop:"1px solid #888",fontSize:"10px"}}>Folio:</td><td/></tr>
+                  <tr><td colSpan={2} style={{textAlign:"center",fontWeight:"bold",padding:"2px 6px"}}>{folio}</td></tr>
+                  <tr style={{background:"#ddd"}}><td colSpan={2} style={{fontWeight:"bold",padding:"2px 6px",borderTop:"1px solid #888",fontSize:"10px"}}>Fecha:</td></tr>
+                  <tr><td colSpan={2} style={{textAlign:"center",padding:"2px 6px"}}>{hoy()}</td></tr>
+                  <tr style={{background:"#ddd"}}><td colSpan={2} style={{fontWeight:"bold",padding:"2px 6px",borderTop:"1px solid #888",fontSize:"10px"}}>Vigencia:</td></tr>
+                  <tr><td colSpan={2} style={{textAlign:"center",padding:"2px 6px"}}>{vigencia()}</td></tr>
+                </tbody>
+              </table>
+            </td>
+          </tr></tbody>
+        </table>
+
+        {/* Cliente */}
+        <div style={{fontWeight:"bold",background:"#ddd",padding:"3px 6px",borderTop:"2px solid #555",borderBottom:"1px solid #888",fontSize:"10px",marginBottom:0}}>DATOS DEL CLIENTE</div>
+        <table style={{width:"100%",borderCollapse:"collapse",border:"1px solid #ccc",marginBottom:6}}>
+          <tbody>
+            <tr>
+              <td style={C.lk}>Cliente:</td>
+              <td style={{...C.lv,width:"45%"}}>{CLI_DESC[cliente]||cliente}</td>
+              <td style={C.lk}>R.F.C.:</td>
+              <td style={C.lv}></td>
+            </tr>
+            <tr>
+              <td style={C.lk}>Atención:</td>
+              <td style={C.lv}></td>
+              <td style={C.lk}>Teléfono:</td>
+              <td style={C.lv}></td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Items */}
+        <table style={{width:"100%",borderCollapse:"collapse",border:"1px solid #ccc",marginBottom:6,fontSize:"10px"}}>
+          <thead style={{background:"#ddd"}}>
+            <tr>
+              <th style={{padding:"4px 6px",border:"1px solid #ccc",textAlign:"center",width:28}}>#</th>
+              <th style={{padding:"4px 6px",border:"1px solid #ccc",textAlign:"center",width:90}}>Código</th>
+              <th style={{padding:"4px 6px",border:"1px solid #ccc",textAlign:"left"}}>Descripción</th>
+              <th style={{padding:"4px 6px",border:"1px solid #ccc",textAlign:"center",width:55}}>Cant.</th>
+              <th style={{padding:"4px 6px",border:"1px solid #ccc",textAlign:"right",width:70}}>P.Unit.</th>
+              <th style={{padding:"4px 6px",border:"1px solid #ccc",textAlign:"right",width:80}}>Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((it,i)=>(
+              <tr key={it.uid} style={{borderBottom:"1px solid #e0e0e0"}}>
+                <td style={{padding:"4px 6px",border:"1px solid #e0e0e0",textAlign:"center"}}>{i+1}</td>
+                <td style={{padding:"4px 6px",border:"1px solid #e0e0e0",fontFamily:"monospace",fontSize:"9px"}}>{it.c}</td>
+                <td style={{padding:"4px 6px",border:"1px solid #e0e0e0"}}>{it.descFinal}</td>
+                <td style={{padding:"4px 6px",border:"1px solid #e0e0e0",textAlign:"center"}}>{it.totalQty} {it.u}</td>
+                <td style={{padding:"4px 6px",border:"1px solid #e0e0e0",textAlign:"right"}}>${it.precio.toFixed(2)}</td>
+                <td style={{padding:"4px 6px",border:"1px solid #e0e0e0",textAlign:"right",fontWeight:"bold"}}>${it.total.toFixed(2)}</td>
+              </tr>
+            ))}
+            {/* Padding rows */}
+            {Array.from({length:Math.max(0,8-items.length)}).map((_,i)=>(
+              <tr key={`p${i}`} style={{height:20}}>
+                <td style={{border:"1px solid #e0e0e0"}} colSpan={6}/>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Totals + notes */}
+        <table style={{width:"100%",borderCollapse:"collapse",marginBottom:6}}>
+          <tbody><tr>
+            <td style={{verticalAlign:"top",width:"55%",paddingRight:8}}>
+              {/* Entrega */}
+              <div style={{border:"1px solid #ccc",padding:"5px 8px",marginBottom:6,fontSize:"10px"}}>
+                <strong>Tiempo de entrega:</strong> {entregaTexto}
+              </div>
+              {/* Monto en letras */}
+              <div style={{border:"1px solid #ccc",padding:"5px 8px",fontSize:"9px"}}>
+                <strong>Son:</strong> {montoLetras(tot)}
+              </div>
+            </td>
+            <td style={{verticalAlign:"top"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",border:"1px solid #ccc",fontSize:"10px"}}>
+                <tbody>
+                  <tr><td style={{padding:"3px 6px",background:"#f5f5f5",fontWeight:"bold"}}>Subtotal:</td><td style={{padding:"3px 6px",textAlign:"right"}}>${sub.toFixed(2)}</td></tr>
+                  <tr><td style={{padding:"3px 6px",background:"#f5f5f5",fontWeight:"bold"}}>IVA 16%:</td><td style={{padding:"3px 6px",textAlign:"right"}}>${iva.toFixed(2)}</td></tr>
+                  <tr style={{background:"#ddd"}}><td style={{padding:"4px 6px",fontWeight:"bold",borderTop:"2px solid #888"}}>TOTAL MXN:</td><td style={{padding:"4px 6px",textAlign:"right",fontWeight:"bold",borderTop:"2px solid #888"}}>${tot.toFixed(2)}</td></tr>
+                </tbody>
+              </table>
+            </td>
+          </tr></tbody>
+        </table>
+
+        {/* Vendedor */}
+        <table style={{width:"100%",borderCollapse:"collapse",border:"1px solid #ccc",fontSize:"10px"}}>
+          <tbody><tr>
+            <td style={{padding:"5px 8px",width:"50%",borderRight:"1px solid #ccc",paddingTop:40}}>
+              <div style={{borderTop:"1px solid #888",paddingTop:4}}>Firma del cliente</div>
+            </td>
+            <td style={{padding:"5px 8px"}}>
+              <div style={{fontWeight:"bold",marginBottom:2}}>Vendedor: {vendedor}</div>
+              <div style={{borderTop:"1px solid #888",paddingTop:4,marginTop:32}}>Firma del vendedor</div>
+            </td>
+          </tr></tbody>
+        </table>
+
+        <div style={{marginTop:8,fontSize:"8px",color:"#888",textAlign:"center"}}>
+          Precios en MXN + IVA · Cotización válida hasta {vigencia()} · Sujeto a disponibilidad de inventario
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   ROOT APP
+   ═══════════════════════════════════════════════════════ */
+function App(){
+  const[fase,setFase]=useState("config");
+  const[cliente,setCliente]=useState("");
+  const[vendedor,setVendedor]=useState("ISMAEL ULISES HERNANDEZ FRAYLE");
+  const[items,setItems]=useState([]);
+  const[entrega,setEntrega]=useState(null);
+  const folio=useRef(genFolio()).current;
+
+  function reset(){setFase("config");setCliente("");setItems([]);setEntrega(null);}
+
+  if(fase==="config")return <Config cliente={cliente} setCliente={setCliente} vendedor={vendedor} setVendedor={setVendedor} onNext={()=>setFase("cotizar")}/>;
+  if(fase==="cotizar")return <Cotizar cliente={cliente} items={items} setItems={setItems} entrega={entrega} setEntrega={setEntrega} onBack={()=>setFase("config")} onPreview={()=>setFase("preview")}/>;
+  return <Preview cliente={cliente} vendedor={vendedor} items={items} folio={folio} entrega={entrega} onBack={()=>setFase("cotizar")} onNew={reset}/>;
+}
+
+const root=ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App/>);
+</script>
+</body>
+</html>

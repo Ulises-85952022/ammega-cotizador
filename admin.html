@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — Jason de México</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+/* ─── Design Tokens (Light KPI Theme) ─── */
+:root{
+  --teal-600:#005762;--teal-700:#004550;--teal-800:#003A42;--teal-900:#002D33;
+  --cyan-50:#E6FCFF;--lime-200:#E6EDAA;--lime-300:#D4DD7A;--lime-100:#F2F6D0;
+  --bg-page:#EAECEE;--bg-card:#FFFFFF;--bg-card-lime:#E6EDAA;--bg-card-lime-light:#F0F4CC;
+  --bg-card-teal:#005762;--bg-card-dark:#1A1A1A;
+  --text-dark:#111111;--text-secondary:#595959;--text-muted:#757575;--text-on-dark:#FFFFFF;--text-on-teal:#E6FCFF;
+  --accent:#005762;--accent-light:#E6FCFF;
+  --success:#22c55e;--warning:#f97316;--danger:#ef4444;
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;
+  --font-mono:'Cascadia Code','Fira Code',monospace;
+  --text-xs:clamp(0.625rem,0.6rem + 0.15vw,0.75rem);
+  --text-sm:clamp(0.75rem,0.7rem + 0.2vw,0.8125rem);
+  --text-base:clamp(0.8125rem,0.78rem + 0.2vw,0.9375rem);
+  --text-lg:clamp(1rem,0.95rem + 0.3vw,1.125rem);
+  --text-xl:clamp(1.125rem,1rem + 0.5vw,1.375rem);
+  --text-2xl:clamp(1.375rem,1.2rem + 0.8vw,1.75rem);
+  --text-3xl:clamp(1.75rem,1.5rem + 1.2vw,2.5rem);
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;--sp-8:32px;--sp-10:40px;
+  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;--radius-2xl:24px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.1);
+  --shadow-card:0 2px 12px rgba(0,0,0,0.06);
+  --ease-out:cubic-bezier(0.16,1,0.3,1);--ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+  --dur-fast:150ms;--dur-normal:250ms;
+}
+
+/* ─── Animations ─── */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+@keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.reveal{animation:fadeInUp 0.5s var(--ease-out) forwards;opacity:0}
+.reveal-d1{animation-delay:.05s}.reveal-d2{animation-delay:.1s}.reveal-d3{animation-delay:.15s}
+.reveal-d4{animation-delay:.2s}.reveal-d5{animation-delay:.25s}.reveal-d6{animation-delay:.3s}
+
+/* ─── Base ─── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg-page);font-family:var(--font-sans);color:var(--text-dark);min-height:100vh;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#C4C4C4;border-radius:99px}::-webkit-scrollbar-thumb:hover{background:#999}
+
+/* ─── Layout ─── */
+.wrap{max-width:960px;margin:0 auto;padding:var(--sp-6) var(--sp-4);display:none}
+.header{text-align:center;padding:var(--sp-4) 0 var(--sp-5)}
+.header h1{font-size:var(--text-xl);font-weight:900;letter-spacing:2px;color:var(--teal-600)}
+.header sub{color:var(--text-muted);font-size:var(--text-xs);letter-spacing:1.5px;display:block;margin-top:var(--sp-1)}
+.session-info{margin-top:var(--sp-2);font-size:var(--text-xs);color:var(--text-muted)}
+.session-info span{color:var(--teal-600);font-weight:700}
+.session-info a{color:var(--danger);text-decoration:none;transition:opacity var(--dur-fast)}
+.session-info a:hover{opacity:.7}
+
+/* ─── Tabs ─── */
+.tabs{display:flex;gap:var(--sp-1);margin-bottom:var(--sp-5);border-bottom:2px solid #DDDEDF;flex-wrap:wrap}
+.tab{padding:var(--sp-3) var(--sp-5);background:transparent;color:var(--text-muted);border:none;font-weight:600;font-size:var(--text-sm);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color var(--dur-fast),border-color var(--dur-fast);font-family:var(--font-sans);letter-spacing:.3px}
+.tab:hover{color:var(--text-secondary)}
+.tab.on{color:var(--teal-600);border-bottom-color:var(--teal-600)}
+
+/* ─── White Card ─── */
+.card{background:var(--bg-card);border-radius:var(--radius-xl);padding:var(--sp-5);margin-bottom:var(--sp-4);box-shadow:var(--shadow-card);transition:transform var(--dur-fast) var(--ease-spring),box-shadow var(--dur-normal)}
+.card:hover{box-shadow:var(--shadow-md)}
+.card h3{font-size:var(--text-sm);font-weight:700;color:var(--text-dark);letter-spacing:.5px;margin-bottom:var(--sp-3)}
+
+/* ─── Inputs ─── */
+.inp{background:#F7F9FC;border:1.5px solid #DDDEDF;border-radius:var(--radius-sm);padding:var(--sp-3) var(--sp-4);color:var(--text-dark);width:100%;outline:none;font-size:var(--text-base);font-family:var(--font-sans);transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
+.inp:focus{border-color:var(--teal-600);box-shadow:0 0 0 3px rgba(0,87,98,0.12)}
+.inp::placeholder{color:#BBBBBB}
+.inp-sm{width:90px;text-align:right;padding:var(--sp-2) var(--sp-3);font-weight:700}
+
+/* ─── Buttons ─── */
+.btn-p{padding:var(--sp-3) var(--sp-5);background:var(--teal-600);color:#FFF;border:none;border-radius:var(--radius-sm);font-weight:800;font-size:var(--text-base);cursor:pointer;transition:transform var(--dur-fast) var(--ease-spring),box-shadow var(--dur-normal),background var(--dur-fast);font-family:var(--font-sans);letter-spacing:.3px}
+.btn-p:hover{background:var(--teal-700);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,87,98,0.25)}
+.btn-p:active{transform:translateY(0)}
+.btn-p:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-s{padding:var(--sp-3) var(--sp-4);background:transparent;color:var(--text-secondary);border:1.5px solid #DDDEDF;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;transition:all var(--dur-fast);font-family:var(--font-sans)}
+.btn-s:hover{border-color:var(--teal-600);color:var(--teal-600);box-shadow:0 0 12px rgba(0,87,98,0.08)}
+.btn-danger{padding:var(--sp-2) var(--sp-3);background:rgba(239,68,68,0.06);color:var(--danger);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-sm);font-weight:600;cursor:pointer;font-size:var(--text-xs);transition:all var(--dur-fast);font-family:var(--font-sans)}
+.btn-danger:hover{background:rgba(239,68,68,0.12);box-shadow:0 0 12px rgba(239,68,68,0.1)}
+
+/* ─── Dropzone ─── */
+.dropzone{border:2px dashed #C4C4C4;border-radius:var(--radius-xl);padding:var(--sp-10) var(--sp-5);text-align:center;cursor:pointer;transition:all var(--dur-normal) var(--ease-out);background:#FAFBFC}
+.dropzone:hover,.dropzone.over{border-color:var(--teal-600);background:rgba(0,87,98,0.03);box-shadow:0 0 30px rgba(0,87,98,0.06)}
+.dropzone .icon{font-size:36px;margin-bottom:var(--sp-2);opacity:.7}
+.dropzone p{color:var(--text-muted);font-size:var(--text-sm)}
+.dropzone .fname{color:var(--success);font-weight:700;font-size:var(--text-base);margin-top:var(--sp-2)}
+
+/* ─── Tables ─── */
+table{width:100%;border-collapse:collapse}
+th{padding:var(--sp-2) var(--sp-3);font-size:var(--text-xs);color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;border-bottom:2px solid #EAECEE;text-align:left}
+td{padding:var(--sp-2) var(--sp-3);font-size:var(--text-sm);border-bottom:1px solid #F2F2F2;color:var(--text-dark)}
+tbody tr{transition:background var(--dur-fast)}
+tbody tr:hover{background:rgba(0,87,98,0.04)}
+tbody tr:nth-child(even){background:#FAFBFC}
+tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
+
+/* ─── Stat Cards (KPI style) ─── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-4)}
+.stat{border-radius:var(--radius-xl);padding:var(--sp-4);text-align:center;position:relative;overflow:hidden;transition:transform var(--dur-fast) var(--ease-spring),box-shadow var(--dur-normal);background:var(--bg-card-lime);box-shadow:var(--shadow-card)}
+.stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat .val{font-size:var(--text-2xl);font-weight:900;color:var(--text-dark);animation:countUp 0.6s var(--ease-out) forwards}
+.stat .lbl{font-size:var(--text-xs);color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-top:var(--sp-1)}
+
+/* ─── Badges ─── */
+.badge{display:inline-block;border-radius:99px;padding:2px 10px;font-size:var(--text-xs);font-weight:700;letter-spacing:.3px}
+.badge-ok{background:rgba(34,197,94,0.1);color:var(--success);border:1px solid rgba(34,197,94,0.2)}
+.badge-warn{background:rgba(249,115,22,0.08);color:var(--warning);border:1px solid rgba(249,115,22,0.2)}
+.badge-info{background:rgba(0,87,98,0.1);color:var(--teal-600);border:1px solid rgba(0,87,98,0.2)}
+
+/* ─── Panels ─── */
+.panel{display:none}.panel.active{display:block;animation:fadeIn .3s var(--ease-out)}
+
+/* ─── Section Labels ─── */
+.sec{font-size:var(--text-xs);font-weight:700;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:var(--sp-2)}
+
+/* ─── Log ─── */
+.log{background:#F7F9FC;border:1px solid #EAECEE;border-left:3px solid var(--teal-600);border-radius:var(--radius-sm);padding:var(--sp-3);font-family:var(--font-mono);font-size:var(--text-xs);color:var(--text-secondary);max-height:200px;overflow-y:auto;margin-top:var(--sp-3);white-space:pre-wrap}
+.log .ok{color:var(--success)}.log .err{color:var(--danger)}.log .hi{color:var(--teal-600);font-weight:700}
+
+/* (cotizador selector removed — unified template) */
+
+/* ─── Login Overlay ─── */
+#login-overlay{position:fixed;inset:0;background:var(--bg-page);z-index:9999;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--bg-card);border-radius:var(--radius-2xl);padding:var(--sp-10) var(--sp-8);max-width:420px;width:92%;text-align:center;animation:scaleIn 0.5s var(--ease-out) forwards;position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--teal-600),var(--lime-200))}
+.login-icon{width:60px;height:60px;margin:0 auto var(--sp-4);border-radius:var(--radius-lg);background:var(--teal-600);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,87,98,0.25)}
+.login-icon svg{width:28px;height:28px}
+.login-box h2{color:var(--text-dark);margin-bottom:var(--sp-1);font-size:var(--text-lg);font-weight:800;letter-spacing:.5px}
+.login-box .sub{color:var(--text-muted);font-size:var(--text-xs);margin-bottom:var(--sp-6);letter-spacing:1.5px}
+.login-box .field{margin-bottom:var(--sp-4);text-align:left}
+.login-box label{font-size:var(--text-xs);color:var(--text-muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px}
+.login-box .err-msg{color:var(--danger);font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px}
+
+/* ─── User Management ─── */
+.user-row{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) var(--sp-4);border-bottom:1px solid #F2F2F2;transition:background var(--dur-fast);border-radius:var(--radius-sm)}
+.user-row:hover{background:rgba(0,87,98,0.03)}
+.user-row .ur-name{font-weight:700;font-size:var(--text-base)}
+.user-row .ur-role{font-size:var(--text-xs);padding:2px 10px;border-radius:99px;margin-left:var(--sp-2)}
+.role-admin{background:rgba(0,87,98,0.1);color:var(--teal-600);border:1px solid rgba(0,87,98,0.2)}
+.role-dashboard{background:rgba(249,115,22,0.08);color:var(--warning);border:1px solid rgba(249,115,22,0.2)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#E6FCFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </div>
+    <h2 id="login-title">Iniciar Sesion</h2>
+    <div class="sub" id="login-sub">PANEL DE ADMINISTRACION</div>
+    <div id="login-form">
+      <div class="field">
+        <label>Usuario</label>
+        <input class="inp" id="login-user" placeholder="admin" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Contrasena</label>
+        <input class="inp" id="login-pass" type="password" placeholder="••••••" autocomplete="current-password">
+      </div>
+      <button class="btn-p" style="width:100%;margin-top:var(--sp-1)" onclick="doLogin()">Entrar</button>
+      <div class="err-msg" id="login-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="wrap" id="main-wrap">
+  <div class="header">
+    <h1>ADMIN — JASON DE MEXICO</h1>
+    <sub>GESTION DE INVENTARIO · PRECIOS · COTIZADORES</sub>
+    <div class="session-info">Sesion: <span id="session-user"></span> · <a href="#" onclick="doLogout()">Cerrar sesion</a></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" onclick="showTab('inv')">Inventario</button>
+    <button class="tab" onclick="showTab('precios')">Precios</button>
+    <button class="tab" onclick="showTab('generar')">Generar</button>
+    <button class="tab" onclick="showTab('acceso')">Acceso</button>
+  </div>
+
+  <!-- TAB: INVENTARIO -->
+  <div id="tab-inv" class="panel active">
+    <div class="card">
+      <h3>Cargar Archivo de Inventario</h3>
+      <div class="dropzone" id="dz-inv" onclick="document.getElementById('file-inv').click()"
+           ondragover="event.preventDefault();this.classList.add('over')"
+           ondragleave="this.classList.remove('over')"
+           ondrop="event.preventDefault();this.classList.remove('over');handleInvFile(event.dataTransfer.files[0])">
+        <div class="icon">📁</div>
+        <p>Arrastra el archivo Excel de inventario aqui<br>o haz clic para seleccionar</p>
+        <p style="color:var(--text-muted);font-size:var(--text-xs);margin-top:var(--sp-2)">Formato esperado: ARTICULO · DESCRIPCION · ALMACEN · DISPONIBLE · UNIDADVENTA</p>
+        <div class="fname" id="inv-fname"></div>
+      </div>
+      <input type="file" id="file-inv" accept=".xlsx,.xls" style="display:none" onchange="handleInvFile(this.files[0])">
+    </div>
+    <div id="inv-stats" style="display:none">
+      <div class="stat-grid" id="inv-stat-grid"></div>
+      <div class="card">
+        <h3>Vista Previa — Primeros 30 articulos con stock</h3>
+        <div style="overflow-x:auto"><table id="inv-preview"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: PRECIOS -->
+  <div id="tab-precios" class="panel">
+    <div class="card">
+      <h3>Incremento Precio de Lista</h3>
+      <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--sp-3)">Incrementa el precio de lista de TODOS los productos por un porcentaje.</p>
+      <div style="display:flex;align-items:center;gap:var(--sp-3)">
+        <span style="font-size:var(--text-sm);color:var(--text-secondary)">Incremento:</span>
+        <input type="number" class="inp inp-sm" id="inp-inc" value="0" min="-50" max="200" step="0.5">
+        <span style="font-size:var(--text-lg);font-weight:900;color:var(--teal-600)">%</span>
+        <span id="inc-preview" style="font-size:var(--text-xs);color:var(--text-muted);margin-left:var(--sp-2)"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Descuentos por Cliente</h3>
+      <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--sp-4)">Porcentaje de descuento sobre el precio de lista para cada cliente.</p>
+      <table>
+        <thead><tr><th>Cliente</th><th>Clave</th><th style="text-align:right">Descuento %</th><th style="text-align:right">Factor</th></tr></thead>
+        <tbody>
+          <tr><td><b>Brr</b></td><td style="color:var(--text-muted)">b</td><td style="text-align:right"><input type="number" class="inp inp-sm disc-inp" data-cli="b" value="30" min="0" max="90" step="0.5"></td><td style="text-align:right;font-weight:700;color:var(--teal-600)" id="f-b">0.70</td></tr>
+          <tr><td><b>Applied Ind.</b></td><td style="color:var(--text-muted)">a</td><td style="text-align:right"><input type="number" class="inp inp-sm disc-inp" data-cli="a" value="40" min="0" max="90" step="0.5"></td><td style="text-align:right;font-weight:700;color:var(--teal-600)" id="f-a">0.60</td></tr>
+          <tr><td><b>Motion Industries</b></td><td style="color:var(--text-muted)">m</td><td style="text-align:right"><input type="number" class="inp inp-sm disc-inp" data-cli="m" value="40" min="0" max="90" step="0.5"></td><td style="text-align:right;font-weight:700;color:var(--teal-600)" id="f-m">0.60</td></tr>
+          <tr><td><b>BINASA</b></td><td style="color:var(--text-muted)">n</td><td style="text-align:right"><input type="number" class="inp inp-sm disc-inp" data-cli="n" value="45" min="0" max="90" step="0.5"></td><td style="text-align:right;font-weight:700;color:var(--teal-600)" id="f-n">0.55</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" id="price-preview-card" style="display:none">
+      <h3>Vista Previa de Precios — Primeros 10 productos</h3>
+      <div style="overflow-x:auto"><table id="price-preview"></table></div>
+    </div>
+  </div>
+
+  <!-- TAB: GENERAR -->
+  <div id="tab-generar" class="panel">
+    <div class="card">
+      <h3>Cargar Catalogo desde Cotizador Existente</h3>
+      <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--sp-3)">Opcional: sube un cotizador HTML anterior para extraer su catalogo de productos.</p>
+      <div class="dropzone" id="dz-html" onclick="document.getElementById('file-html').click()"
+           ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')"
+           ondrop="event.preventDefault();this.classList.remove('over');handleHtmlFile(event.dataTransfer.files[0])">
+        <div class="icon">📄</div>
+        <p>Arrastra un archivo .html de cotizador aqui<br>o haz clic para seleccionar</p>
+        <div class="fname" id="html-fname"></div>
+      </div>
+      <input type="file" id="file-html" accept=".html" style="display:none" onchange="handleHtmlFile(this.files[0])">
+    </div>
+    <div id="gen-summary" style="display:none"><div class="card"><h3>Resumen de Cambios</h3><div id="gen-summary-content"></div></div></div>
+    <div class="card">
+      <button class="btn-p" id="btn-gen" style="width:100%;font-size:var(--text-lg);padding:var(--sp-4)" onclick="generarHTML()">Actualizar Cotizador</button>
+      <p style="font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--sp-2);text-align:center">Los datos se guardan en localStorage. El cotizador (cotizador_tpl.html) los lee automaticamente.</p>
+      <div class="log" id="gen-log" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- TAB: ACCESO -->
+  <div id="tab-acceso" class="panel">
+    <div class="card">
+      <h3>Usuarios Registrados</h3>
+      <div id="user-list"></div>
+    </div>
+    <div class="card">
+      <h3>Agregar Usuario</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div><label class="sec">Usuario</label><input class="inp" id="new-user" placeholder="nombre"></div>
+        <div><label class="sec">Contrasena</label><input class="inp" id="new-pass" type="password" placeholder="••••••"></div>
+      </div>
+      <div style="display:flex;gap:var(--sp-3);align-items:center;margin-bottom:var(--sp-3)">
+        <label class="sec" style="margin:0">Rol:</label>
+        <label style="font-size:var(--text-sm);cursor:pointer;color:var(--text-secondary)"><input type="radio" name="new-role" value="dashboard" checked> Dashboard</label>
+        <label style="font-size:var(--text-sm);cursor:pointer;color:var(--text-secondary)"><input type="radio" name="new-role" value="admin"> Admin</label>
+      </div>
+      <button class="btn-p" onclick="addUser()">+ Agregar Usuario</button>
+      <div id="add-user-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
+    </div>
+    <div class="card">
+      <h3>Cambiar Mi Contrasena</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div><label class="sec">Nueva Contrasena</label><input class="inp" id="chg-pass" type="password" placeholder="••••••"></div>
+        <div><label class="sec">Confirmar</label><input class="inp" id="chg-pass2" type="password" placeholder="••••••"></div>
+      </div>
+      <button class="btn-s" onclick="changeMyPass()">Cambiar Contrasena</button>
+      <div id="chg-pass-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* REVEAL ANIMATION HELPER */
+function revealChildren(container){
+  const els=container.querySelectorAll('.card,.stat,.stat-grid,.dropzone');
+  els.forEach((el,i)=>{
+    el.classList.remove('reveal','reveal-d1','reveal-d2','reveal-d3','reveal-d4','reveal-d5','reveal-d6');
+    void el.offsetWidth;
+    el.classList.add('reveal','reveal-d'+Math.min(i+1,6));
+  });
+}
+
+/* AUTH SYSTEM */
+let _currentUser = null;
+
+async function hashPass(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function getUsers(){ return JSON.parse(localStorage.getItem('jdm_users')||'[]'); }
+function saveUsers(users){ localStorage.setItem('jdm_users', JSON.stringify(users)); }
+
+async function doLogin(){
+  const user = document.getElementById('login-user').value.trim().toLowerCase();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-err');
+
+  if(!user||!pass){errEl.textContent='Ingresa usuario y contraseña';return;}
+
+  const users = getUsers();
+
+  // First-time setup: no users exist yet
+  if(users.length===0){
+    const h = await hashPass(pass);
+    saveUsers([{user, passHash:h, role:'admin'}]);
+    _currentUser = {user, role:'admin'};
+    unlockUI();
+    return;
+  }
+
+  const h = await hashPass(pass);
+  const found = users.find(u=>u.user===user && u.passHash===h);
+  if(!found){errEl.textContent='Usuario o contraseña incorrectos';return;}
+  if(found.role!=='admin'){errEl.textContent='Acceso denegado. Solo administradores.';return;}
+
+  _currentUser = found;
+  unlockUI();
+}
+
+function unlockUI(){
+  document.getElementById('login-overlay').style.display='none';
+  document.getElementById('main-wrap').style.display='block';
+  document.getElementById('session-user').textContent=_currentUser.user;
+  renderUserList();
+  revealChildren(document.getElementById('tab-inv'));
+}
+
+function doLogout(){
+  _currentUser=null;
+  document.getElementById('login-overlay').style.display='flex';
+  document.getElementById('main-wrap').style.display='none';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').textContent='';
+}
+
+// Enter key on login
+document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
+
+// Check if first-time setup
+(function(){
+  const users=getUsers();
+  if(users.length===0){
+    document.getElementById('login-title').textContent='Crear Cuenta Admin';
+    document.getElementById('login-sub').textContent='PRIMERA VEZ — CONFIGURA TU ACCESO';
+  }
+})();
+
+/* User management */
+function renderUserList(){
+  const users=getUsers();
+  const el=document.getElementById('user-list');
+  if(!users.length){el.innerHTML='<p style="color:var(--text-muted);font-size:var(--text-sm)">No hay usuarios registrados.</p>';return;}
+  el.innerHTML=users.map((u,i)=>`
+    <div class="user-row">
+      <div>
+        <span class="ur-name">${u.user}</span>
+        <span class="ur-role ${u.role==='admin'?'role-admin':'role-dashboard'}">${u.role}</span>
+      </div>
+      ${u.user!==_currentUser.user?`<button class="btn-danger" onclick="removeUser(${i})">Eliminar</button>`:'<span style="font-size:var(--text-xs);color:var(--text-muted)">(tu)</span>'}
+    </div>
+  `).join('');
+}
+
+async function addUser(){
+  const user=document.getElementById('new-user').value.trim().toLowerCase();
+  const pass=document.getElementById('new-pass').value;
+  const role=document.querySelector('input[name="new-role"]:checked').value;
+  const msg=document.getElementById('add-user-msg');
+
+  if(!user||!pass){msg.innerHTML='<span style="color:var(--danger)">Ingresa usuario y contraseña</span>';return;}
+  if(pass.length<4){msg.innerHTML='<span style="color:var(--danger)">La contraseña debe tener al menos 4 caracteres</span>';return;}
+
+  const users=getUsers();
+  if(users.find(u=>u.user===user)){msg.innerHTML='<span style="color:var(--danger)">El usuario ya existe</span>';return;}
+
+  const h=await hashPass(pass);
+  users.push({user, passHash:h, role});
+  saveUsers(users);
+  document.getElementById('new-user').value='';
+  document.getElementById('new-pass').value='';
+  msg.innerHTML=`<span style="color:var(--success)">Usuario "${user}" (${role}) creado</span>`;
+  renderUserList();
+}
+
+function removeUser(idx){
+  const users=getUsers();
+  if(users[idx].user===_currentUser.user){alert('No puedes eliminarte a ti mismo');return;}
+  if(!confirm(`¿Eliminar usuario "${users[idx].user}"?`))return;
+  users.splice(idx,1);
+  saveUsers(users);
+  renderUserList();
+}
+
+async function changeMyPass(){
+  const p1=document.getElementById('chg-pass').value;
+  const p2=document.getElementById('chg-pass2').value;
+  const msg=document.getElementById('chg-pass-msg');
+  if(!p1){msg.innerHTML='<span style="color:var(--danger)">Ingresa la nueva contraseña</span>';return;}
+  if(p1!==p2){msg.innerHTML='<span style="color:var(--danger)">Las contraseñas no coinciden</span>';return;}
+  if(p1.length<4){msg.innerHTML='<span style="color:var(--danger)">Mínimo 4 caracteres</span>';return;}
+  const users=getUsers();
+  const u=users.find(u=>u.user===_currentUser.user);
+  if(u){u.passHash=await hashPass(p1);saveUsers(users);}
+  document.getElementById('chg-pass').value='';
+  document.getElementById('chg-pass2').value='';
+  msg.innerHTML='<span style="color:var(--success)">Contraseña actualizada</span>';
+}
+
+/* STATE */
+let _invData=null,_invMeta=null,_htmlRaw=null,_htmlName='',_origCatB=null,_origCatM=null,_htmlIsLegacy=false;
+
+/* TABS */
+function showTab(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('tab-'+id).classList.add('active');
+  document.querySelector(`.tab[onclick*="'${id}'"]`).classList.add('on');
+  if(id==='precios')updatePricePreview();
+  if(id==='generar')updateGenState();
+  if(id==='acceso')renderUserList();
+  revealChildren(document.getElementById('tab-'+id));
+}
+
+/* INVENTARIO */
+function handleInvFile(file){
+  if(!file)return;
+  document.getElementById('inv-fname').textContent='✅ '+file.name;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const wb=XLSX.read(e.target.result,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+    parseInventory(rows,file.name);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseInventory(rows,fname){
+  let hdrIdx=-1,colArt=-1,colDisp=-1,colAlm=-1;
+  for(let i=0;i<Math.min(rows.length,10);i++){
+    const r=rows[i].map(c=>String(c||'').toUpperCase().trim());
+    for(let j=0;j<r.length;j++){
+      if(r[j].includes('ARTICULO')||r[j].includes('CODIGO'))colArt=j;
+      if(r[j].includes('DISPONIBLE')||r[j].includes('STOCK')||r[j].includes('EXISTENCIA'))colDisp=j;
+      if(r[j].includes('ALMACEN'))colAlm=j;
+    }
+    if(colArt>=0&&colDisp>=0){hdrIdx=i;break;}
+  }
+  if(hdrIdx<0){alert('No se encontraron columnas ARTICULO/DISPONIBLE en el Excel');return;}
+
+  const inv={};const almacenes=new Set();let totalRows=0;
+  for(let i=hdrIdx+1;i<rows.length;i++){
+    const r=rows[i];if(!r||!r[colArt])continue;
+    totalRows++;
+    const code=String(r[colArt]).trim();
+    const stock=parseFloat(r[colDisp])||0;
+    if(colAlm>=0)almacenes.add(r[colAlm]);
+    inv[code]=(inv[code]||0)+stock;
+  }
+  const invFiltered={};let withStock=0;
+  for(const[k,v]of Object.entries(inv)){if(v>0){invFiltered[k]=Math.round(v*100)/100;withStock++;}}
+  _invData=invFiltered;
+  _invMeta={totalRows,withStock,totalCodes:Object.keys(inv).length,almacenes:[...almacenes].sort(),date:new Date().toLocaleDateString('es-MX')};
+  renderInvStats();updateGenState();
+}
+
+function renderInvStats(){
+  const m=_invMeta;
+  document.getElementById('inv-stats').style.display='block';
+  document.getElementById('inv-stat-grid').innerHTML=`
+    <div class="stat reveal reveal-d1"><div class="val">${m.totalRows.toLocaleString()}</div><div class="lbl">Filas en Excel</div></div>
+    <div class="stat reveal reveal-d2"><div class="val">${m.totalCodes.toLocaleString()}</div><div class="lbl">Articulos Unicos</div></div>
+    <div class="stat reveal reveal-d3"><div class="val">${m.withStock.toLocaleString()}</div><div class="lbl">Con Stock > 0</div></div>
+    <div class="stat reveal reveal-d4"><div class="val">${m.almacenes.length}</div><div class="lbl">Almacenes</div></div>`;
+  const entries=Object.entries(_invData).sort((a,b)=>b[1]-a[1]).slice(0,30);
+  let html='<thead><tr><th>#</th><th>Articulo</th><th style="text-align:right">Stock Total</th></tr></thead><tbody>';
+  entries.forEach(([c,s],i)=>{html+=`<tr><td style="color:var(--text-muted)">${i+1}</td><td style="font-weight:700">${c}</td><td style="text-align:right;color:var(--success);font-weight:700">${s.toLocaleString()}</td></tr>`;});
+  html+='</tbody>';
+  document.getElementById('inv-preview').innerHTML=html;
+}
+
+/* PRECIOS */
+function getInc(){return parseFloat(document.getElementById('inp-inc').value)||0;}
+function getDiscounts(){const d={};document.querySelectorAll('.disc-inp').forEach(inp=>{d[inp.dataset.cli]=parseFloat(inp.value)||0;});return d;}
+
+function updateFactors(){
+  const disc=getDiscounts();
+  for(const[k,v]of Object.entries(disc)){const el=document.getElementById('f-'+k);if(el)el.textContent=(1-v/100).toFixed(4);}
+  const inc=getInc();const prev=document.getElementById('inc-preview');
+  prev.textContent=inc!==0?`Ej: $100 → $${(100*(1+inc/100)).toFixed(2)}`:'Sin cambio';
+}
+
+function updatePricePreview(){
+  updateFactors();
+  let catB=_origCatB,catM=_origCatM;
+  if(!catB||!catB.length){try{catB=JSON.parse(localStorage.getItem('jdm_cat_bandas')||'[]');}catch(e){catB=[];}}
+  if(!catM||!catM.length){try{catM=JSON.parse(localStorage.getItem('jdm_cat_mangueras')||'[]');}catch(e){catM=[];}}
+  const combined=[...(catB||[]),...(catM||[])];
+  if(!combined.length){document.getElementById('price-preview-card').style.display='none';return;}
+  document.getElementById('price-preview-card').style.display='block';
+  const inc=getInc()/100,disc=getDiscounts(),sample=combined.slice(0,10);
+  let html=`<thead><tr><th>Codigo</th><th style="text-align:right">Lista Orig</th><th style="text-align:right">Lista Nuevo</th><th style="text-align:right">Brr</th><th style="text-align:right">Applied</th><th style="text-align:right">Motion</th><th style="text-align:right">Binasa</th></tr></thead><tbody>`;
+  sample.forEach(p=>{
+    const nl=p.l*(1+inc),nb=nl*(1-disc.b/100),na=nl*(1-disc.a/100),nm=nl*(1-disc.m/100),nn=nl*(1-disc.n/100);
+    html+=`<tr><td style="font-weight:700;font-size:var(--text-xs)">${p.c}</td><td style="text-align:right;color:var(--text-muted)">$${p.l.toFixed(2)}</td><td style="text-align:right;color:${inc!==0?'var(--teal-600)':'var(--text-dark)'};font-weight:700">$${nl.toFixed(2)}</td><td style="text-align:right">$${nb.toFixed(2)}</td><td style="text-align:right">$${na.toFixed(2)}</td><td style="text-align:right">$${nm.toFixed(2)}</td><td style="text-align:right">$${nn.toFixed(2)}</td></tr>`;
+  });
+  html+='</tbody>';
+  document.getElementById('price-preview').innerHTML=html;
+}
+
+document.getElementById('inp-inc').addEventListener('input',()=>{updateFactors();updatePricePreview();updateGenState();});
+document.querySelectorAll('.disc-inp').forEach(inp=>inp.addEventListener('input',()=>{updateFactors();updatePricePreview();updateGenState();}));
+updateFactors();updateGenState();updatePricePreview();
+
+/* GENERAR */
+function handleHtmlFile(file){
+  if(!file)return;
+  document.getElementById('html-fname').textContent='✅ '+file.name;
+  _htmlName=file.name;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    _htmlRaw=e.target.result;
+    _origCatB=null;_origCatM=null;_htmlIsLegacy=false;
+    // Try unified template format first
+    const mB=_htmlRaw.match(/const RAW_CAT_BANDAS=\/\*CAT_BANDAS_PLACEHOLDER\*\/(\[[\s\S]*?\]);/);
+    if(mB){try{_origCatB=JSON.parse(mB[1]);}catch(e){_origCatB=null;}}
+    const mM=_htmlRaw.match(/const RAW_CAT_MANGUERAS=\/\*CAT_MANGUERAS_PLACEHOLDER\*\/(\[[\s\S]*?\]);/);
+    if(mM){try{_origCatM=JSON.parse(mM[1]);}catch(e){_origCatM=null;}}
+    // Fallback: legacy format (cotizador_v4 with const RAW_CAT=[...])
+    if(!mB&&!mM){
+      const mLeg=_htmlRaw.match(/const RAW_CAT=(\[[\s\S]*?\]);/);
+      if(mLeg){try{_origCatB=JSON.parse(mLeg[1]);_htmlIsLegacy=true;}catch(e){_origCatB=null;}}
+      // Legacy mangueras format
+      const mLegM=_htmlRaw.match(/const RAW_CAT=\/\*CAT_PLACEHOLDER\*\/(\[[\s\S]*?\]);/);
+      if(mLegM&&!mLeg){try{_origCatM=JSON.parse(mLegM[1]);_htmlIsLegacy=true;}catch(e){_origCatM=null;}}
+    }
+    updateGenState();updatePricePreview();
+  };
+  reader.readAsText(file);
+}
+
+function updateGenState(){
+  const sumEl=document.getElementById('gen-summary');
+  const hasInv=!!_invData,hasHtml=!!_htmlRaw;
+  const catBCount=_origCatB?_origCatB.length:0;
+  const catMCount=_origCatM?_origCatM.length:0;
+  // Also check localStorage for existing catalogs
+  let lsBCount=0,lsMCount=0,lsInvCount=0;
+  try{lsBCount=JSON.parse(localStorage.getItem('jdm_cat_bandas')||'[]').length;}catch(e){}
+  try{lsMCount=JSON.parse(localStorage.getItem('jdm_cat_mangueras')||'[]').length;}catch(e){}
+  try{lsInvCount=Object.keys(JSON.parse(localStorage.getItem('jdm_inv')||'{}')).length;}catch(e){}
+
+  sumEl.style.display='block';
+  let html='<div style="font-size:var(--text-sm)">';
+  html+=`<div style="margin-bottom:var(--sp-2)">Inventario: ${hasInv?`<span class="badge badge-ok">${_invMeta.withStock.toLocaleString()} items (nuevo)</span>`:(lsInvCount>0?`<span class="badge badge-info">${lsInvCount} items en localStorage</span>`:'<span class="badge badge-warn">No cargado</span>')}</div>`;
+  html+=`<div style="margin-bottom:var(--sp-2)">Catalogo Bandas: ${catBCount>0?`<span class="badge badge-ok">${catBCount} productos (desde archivo)</span>`:(lsBCount>0?`<span class="badge badge-info">${lsBCount} productos en localStorage</span>`:'<span class="badge badge-warn">Sin datos</span>')}</div>`;
+  html+=`<div style="margin-bottom:var(--sp-2)">Catalogo Mangueras: ${catMCount>0?`<span class="badge badge-ok">${catMCount} productos (desde archivo)</span>`:(lsMCount>0?`<span class="badge badge-info">${lsMCount} productos en localStorage</span>`:'<span class="badge badge-warn">Sin datos</span>')}</div>`;
+  const inc=getInc(),disc=getDiscounts();
+  html+=`<div style="margin-bottom:var(--sp-2)">Incremento: <span class="badge badge-info">${inc>0?'+':''}${inc}%</span></div>`;
+  html+=`<div>Descuentos: Brr ${disc.b}% · Applied ${disc.a}% · Motion ${disc.m}% · Binasa ${disc.n}%</div></div>`;
+  document.getElementById('gen-summary-content').innerHTML=html;
+}
+
+function log(msg,cls){const el=document.getElementById('gen-log');el.style.display='block';el.innerHTML+=`<span class="${cls||''}">${msg}</span>\n`;el.scrollTop=el.scrollHeight;}
+
+function generarHTML(){
+  const logEl=document.getElementById('gen-log');logEl.style.display='block';logEl.innerHTML='';
+  let changes=0;
+
+  const inc=getInc()/100,disc=getDiscounts();
+  function applyPrices(cat){
+    return cat.map(p=>{const nl=Math.round(p.l*(1+inc)*100)/100;return{...p,l:nl,b:Math.round(nl*(1-disc.b/100)*100)/100,a:Math.round(nl*(1-disc.a/100)*100)/100,m:Math.round(nl*(1-disc.m/100)*100)/100,n:Math.round(nl*(1-disc.n/100)*100)/100};});
+  }
+
+  // ── Catalogo Bandas ──
+  let catB=_origCatB;
+  if(!catB||!catB.length){try{catB=JSON.parse(localStorage.getItem('jdm_cat_bandas')||'[]');}catch(e){catB=[];}}
+  if(catB&&catB.length>0){
+    log('Recalculando precios BANDAS...','hi');
+    const newCat=applyPrices(catB);
+    log(`   Productos bandas: ${newCat.length}`);
+    localStorage.setItem('jdm_cat_bandas',JSON.stringify(newCat));
+    log('   jdm_cat_bandas guardado en localStorage','ok');changes++;
+  }
+
+  // ── Catalogo Mangueras ──
+  let catM=_origCatM;
+  if(!catM||!catM.length){try{catM=JSON.parse(localStorage.getItem('jdm_cat_mangueras')||'[]');}catch(e){catM=[];}}
+  if(catM&&catM.length>0){
+    log('Recalculando precios MANGUERAS...','hi');
+    const newCat=applyPrices(catM);
+    log(`   Productos mangueras: ${newCat.length}`);
+    localStorage.setItem('jdm_cat_mangueras',JSON.stringify(newCat));
+    log('   jdm_cat_mangueras guardado en localStorage','ok');changes++;
+  }
+
+  // ── Inventario ──
+  if(_invData){
+    log('Actualizando inventario...','hi');
+    const allCatCodes=new Set();
+    [catB,catM].forEach(cat=>{if(cat)cat.forEach(p=>allCatCodes.add(p.c));});
+    // Also check localStorage for existing catalogs if empty
+    if(allCatCodes.size===0){
+      try{const lb=JSON.parse(localStorage.getItem('jdm_cat_bandas')||'[]');lb.forEach(p=>allCatCodes.add(p.c));}catch(e){}
+      try{const lm=JSON.parse(localStorage.getItem('jdm_cat_mangueras')||'[]');lm.forEach(p=>allCatCodes.add(p.c));}catch(e){}
+    }
+    log(`   Codigos en catalogo: ${allCatCodes.size}`);
+    const invFiltered={};let matches=0;
+    for(const[k,v]of Object.entries(_invData)){if(allCatCodes.has(k)){invFiltered[k]=v;matches++;}}
+    log(`   Coincidencias inventario<>catalogo: ${matches}`,'ok');
+    localStorage.setItem('jdm_inv',JSON.stringify(invFiltered));
+    log('   jdm_inv guardado en localStorage','ok');changes++;
+  }else{log('Inventario: sin cambios (no se cargo archivo)');}
+
+  if(inc!==0)log(`Incremento lista: ${inc>0?'+':''}${(inc*100).toFixed(1)}%`,'ok');
+  log(`Descuentos: Brr ${disc.b}% | Applied ${disc.a}% | Motion ${disc.m}% | Binasa ${disc.n}%`);
+
+  if(changes>0){
+    log(`\n═══ LISTO — ${changes} seccion(es) actualizada(s) ═══`,'ok');
+    log('El cotizador (cotizador_tpl.html) ya refleja los cambios.','ok');
+    log('Abre o recarga cotizador_tpl.html para verificar.','ok');
+  }else{log('\nNo se realizaron cambios. Carga inventario y/o catalogo.','err');}
+}
+</script>
+</body>
+</html>
