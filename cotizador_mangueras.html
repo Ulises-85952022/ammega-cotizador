@@ -243,9 +243,10 @@ const BRAND_XREF=[{"j": "JCHP2TR-04", "cat": "CONEXION", "j2": "0053-JCHP2TR-04"
 <script>
 /* ── Constants ── */
 const COTIZADOR_TIPO='mangueras';
-const CLIENTES=["Brr","Applied","Motion","Binasa"];
-const CLI_KEY={Brr:"b",Applied:"a",Motion:"m",Binasa:"n"};
-const CLI_DESC={Brr:"Brr",Applied:"Applied Ind.",Motion:"Motion Industries",Binasa:"BINASA"};
+const _jdmClientes=(function(){try{const c=JSON.parse(localStorage.getItem('jdm_clientes')||'null');if(c&&c.length)return c;}catch{}return[{name:'Brr',key:'b',desc:'Brr',discount:30},{name:'Applied',key:'a',desc:'Applied Ind.',discount:40},{name:'Motion',key:'m',desc:'Motion Industries',discount:40},{name:'Binasa',key:'n',desc:'BINASA',discount:45}];})();
+const CLIENTES=_jdmClientes.map(c=>c.name);
+const CLI_KEY=Object.fromEntries(_jdmClientes.map(c=>[c.name,c.key]));
+const CLI_DESC=Object.fromEntries(_jdmClientes.map(c=>[c.name,c.desc]));
 
 const CAT_META={
   "MANGUERA HIDRAULICA":  {icon:"🔴",color:"#ef4444"},

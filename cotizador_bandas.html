@@ -265,9 +265,10 @@ const INV={"010030040125H":183.0,"010030170418T10":250.0,"011015":321.0,"011016"
 <script>
 /* ── Constants ── */
 const COTIZADOR_TIPO='bandas';
-const CLIENTES=["Brr","Applied","Motion","Binasa"];
-const CLI_KEY={Brr:"b",Applied:"a",Motion:"m",Binasa:"n"};
-const CLI_DESC={Brr:"Brr",Applied:"Applied Ind.",Motion:"Motion Industries",Binasa:"BINASA"};
+const _jdmClientes=(function(){try{const c=JSON.parse(localStorage.getItem('jdm_clientes')||'null');if(c&&c.length)return c;}catch{}return[{name:'Brr',key:'b',desc:'Brr',discount:30},{name:'Applied',key:'a',desc:'Applied Ind.',discount:40},{name:'Motion',key:'m',desc:'Motion Industries',discount:40},{name:'Binasa',key:'n',desc:'BINASA',discount:45}];})();
+const CLIENTES=_jdmClientes.map(c=>c.name);
+const CLI_KEY=Object.fromEntries(_jdmClientes.map(c=>[c.name,c.key]));
+const CLI_DESC=Object.fromEntries(_jdmClientes.map(c=>[c.name,c.desc]));
 const TIER={"BANDA ABIERTA":0,"BANDA SINCRONICA":1,"BANDA RPP":2,"BANDA SILVER":3,"BANDA GOLD":4,"BANDA PLATINUM":5,"BANDA TITANIUM":6};
 const TIER_LABEL={0:"Abierta",1:"HTD",2:"RPP",3:"Silver",4:"Gold",5:"Platinum",6:"Titanium"};
 const TIER_COL=["#555","#4a9eff","#7c5cbf","#aaa","#d4a017","#6af","#ff8c42"];
