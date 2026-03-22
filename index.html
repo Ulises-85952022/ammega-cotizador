@@ -93,24 +93,30 @@ async function doLogin(){
   redirectByRole(found.role);
 }
 
-// Cargar usuarios desde users_seed.json (compartido en el repo)
+// Cargar usuarios y resellers desde access_config.json (auto-publicado por el admin)
 async function loadSeedUsers(){
   try{
-    const r=await fetch('./users_seed.json?v='+Date.now());
+    const r=await fetch('./access_config.json?v='+Date.now());
     if(!r.ok)return;
-    const seed=await r.json();
-    if(!Array.isArray(seed)||!seed.length)return;
-    const existing=getUsers();
-    let changed=false;
-    seed.forEach(su=>{
-      if(su.user&&su.passHash&&su.role){
-        const idx=existing.findIndex(u=>u.user===su.user);
-        if(idx>=0){existing[idx]=su;}// actualiza si cambió
-        else{existing.push(su);changed=true;}
-        changed=true;
-      }
-    });
-    if(changed)saveUsers(existing);
+    const cfg=await r.json();
+    // Soporte para formato nuevo {users,resellers} y formato antiguo []
+    const users=Array.isArray(cfg)?cfg:(cfg.users||[]);
+    const resellers=Array.isArray(cfg)?[]:(cfg.resellers||[]);
+    // Sync usuarios
+    if(users.length){
+      const existing=getUsers();
+      users.forEach(su=>{
+        if(su.user&&su.passHash&&su.role){
+          const idx=existing.findIndex(u=>u.user===su.user);
+          if(idx>=0)existing[idx]=su;else existing.push(su);
+        }
+      });
+      saveUsers(existing);
+    }
+    // Sync resellers
+    if(resellers.length){
+      localStorage.setItem('jdm_resellers',JSON.stringify(resellers));
+    }
   }catch{}
 }
 

@@ -150,6 +150,17 @@ tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
 .role-director{background:rgba(59,130,246,0.08);color:#1d4ed8;border:1px solid rgba(59,130,246,0.2)}
 .role-vendedor{background:rgba(34,197,94,0.08);color:#166534;border:1px solid rgba(34,197,94,0.2)}
 .role-dashboard{background:rgba(249,115,22,0.08);color:var(--warning);border:1px solid rgba(249,115,22,0.2)}
+/* ─── Sync Status ─── */
+.sync-pill{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:4px 12px;font-size:var(--text-xs);font-weight:700;transition:all .2s}
+.sync-idle{background:#F7F9FC;color:var(--text-muted);border:1px solid #DDDEDF}
+.sync-syncing{background:rgba(249,115,22,0.1);color:var(--warning);border:1px solid rgba(249,115,22,0.3)}
+.sync-ok{background:rgba(34,197,94,0.1);color:var(--success);border:1px solid rgba(34,197,94,0.3)}
+.sync-err{background:rgba(239,68,68,0.1);color:var(--danger);border:1px solid rgba(239,68,68,0.2)}
+/* ─── Reseller Rows ─── */
+.rs-row{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border-bottom:1px solid #F2F2F2;transition:background var(--dur-fast)}
+.rs-row:hover{background:rgba(0,87,98,0.03)}
+.rs-logo{width:40px;height:40px;border-radius:var(--radius-sm);object-fit:cover;border:1px solid #EAECEE;flex-shrink:0}
+.rs-logo-ph{width:40px;height:40px;border-radius:var(--radius-sm);background:var(--bg-card-lime);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:1px solid #EAECEE}
 </style>
 </head>
 <body>
@@ -179,8 +190,7 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
     <button class="tab on" onclick="showTab('inv')">Inventario</button>
     <button class="tab" onclick="showTab('precios')">Precios</button>
     <button class="tab" onclick="showTab('generar')">Generar</button>
-    <button class="tab" onclick="showTab('resellers')">Resellers</button>
-    <button class="tab" onclick="showTab('acceso')">Acceso</button>
+    <button class="tab" onclick="showTab('acceso')">Acceso y Usuarios</button>
   </div>
 
   <!-- TAB: INVENTARIO -->
@@ -263,68 +273,42 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
     </div>
   </div>
 
-  <!-- TAB: RESELLERS -->
-  <div id="tab-resellers" class="panel">
-    <div class="card">
-      <h3>Resellers Registrados</h3>
-      <div style="overflow-x:auto">
-        <table><thead><tr>
-          <th>Logo</th><th>Nombre</th><th>Usuario</th><th>Descuento %</th><th>Factor</th><th>Acciones</th>
-        </tr></thead><tbody id="resellers-list"></tbody></table>
-      </div>
-    </div>
-    <div class="card">
-      <h3>Crear Nuevo Reseller</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-        <div><label class="sec">Nombre Reseller</label><input class="inp" id="new-rs-nombre" placeholder="Ej: Binasa · Brr · Applied"></div>
-        <div><label class="sec">Usuario (login)</label><input class="inp" id="new-rs-user" placeholder="ej: felipe"></div>
-        <div><label class="sec">Contraseña</label><input class="inp" id="new-rs-pass" type="password" placeholder="ej: binasa1"></div>
-        <div><label class="sec">Descuento % (0-90)</label><input class="inp" id="new-rs-desc" type="number" min="0" max="90" step="0.5" value="45"></div>
-      </div>
-      <div class="card" style="background:#F7F9FC;border:1px dashed #DDDEDF;padding:var(--sp-4);margin-bottom:var(--sp-3)">
-        <p class="sec">Logo Reseller (PNG/JPG recomendado 100x100px)</p>
-        <div class="dropzone" id="logo-dropzone" style="padding:var(--sp-6) var(--sp-4)"
-             onclick="document.getElementById('file-rs-logo').click()"
-             ondragover="event.preventDefault();this.classList.add('over')"
-             ondragleave="this.classList.remove('over')"
-             ondrop="event.preventDefault();this.classList.remove('over');handleRSLogoFile(event.dataTransfer.files[0])">
-          <div class="icon">🖼️</div>
-          <p>Arrastra logo (PNG/JPG) o haz clic<br><span style="font-size:var(--text-xs);color:#757575">Tamaño recomendado: 100x100px · Máx 500KB</span></p>
-          <div class="fname" id="logo-fname"></div>
-        </div>
-        <input type="file" id="file-rs-logo" accept="image/*" style="display:none" onchange="handleRSLogoFile(this.files[0])">
-        <div id="logo-preview" style="display:none;margin-top:var(--sp-3);text-align:center">
-          <img id="logo-preview-img" style="max-width:100px;max-height:100px;border-radius:8px;border:1px solid #DDDEDF" alt="Logo preview">
-          <div style="font-size:var(--text-xs);color:#757575;margin-top:4px" id="logo-size"></div>
-        </div>
-      </div>
-      <button class="btn-p" onclick="createNewReseller()" style="width:100%">+ Crear Reseller</button>
-      <div id="new-rs-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
-    </div>
-    <div class="card" id="edit-rs-card" style="display:none">
-      <h3>Editar Reseller</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-        <div><label class="sec">Nombre</label><input class="inp" id="edit-rs-nombre" disabled></div>
-        <div><label class="sec">Descuento % actual</label><input class="inp" id="edit-rs-desc" type="number" min="0" max="90" step="0.5"></div>
-      </div>
-      <div style="display:flex;gap:var(--sp-3)">
-        <button class="btn-p" onclick="saveEditReseller()" style="flex:1">Guardar cambios</button>
-        <button class="btn-s" onclick="closeEditReseller()" style="flex:1">Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: ACCESO -->
+  <!-- TAB: ACCESO Y USUARIOS (usuarios + resellers + sync) -->
   <div id="tab-acceso" class="panel">
+
+    <!-- GITHUB AUTO-SYNC -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)">
-        <h3 style="margin:0">Usuarios Registrados</h3>
-        <button class="btn-dl" onclick="exportUsers()" title="Exportar users_seed.json y subirlo al repo para que todos puedan iniciar sesión">⬇ Exportar usuarios</button>
+        <h3 style="margin:0">🔄 Sincronización Automática</h3>
+        <span class="sync-pill sync-idle" id="sync-status-pill">● Sin configurar</span>
       </div>
-      <div style="background:#FFF8E1;border:1px solid #FBC02D;border-radius:8px;padding:10px 14px;font-size:var(--text-xs);color:#5D4037;margin-bottom:var(--sp-3);line-height:1.6">
-        <strong>¿Cómo dar acceso a otros dispositivos?</strong><br>
-        1. Crea los usuarios aquí → 2. Click <strong>Exportar usuarios</strong> → 3. Sube el archivo <code>users_seed.json</code> a la raíz del repositorio → 4. Todos los navegadores cargarán los usuarios automáticamente al abrir el sitio.
+      <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--sp-3);line-height:1.6">
+        Configura tu token de GitHub una vez. Cada vez que crees o elimines un usuario o reseller, los cambios se publican automáticamente y todos los navegadores los reciben al abrir el sitio.
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div>
+          <label class="sec">GitHub Token</label>
+          <input class="inp" id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxx" oninput="saveGHConfig()">
+        </div>
+        <div>
+          <label class="sec">Usuario/Org GitHub</label>
+          <input class="inp" id="gh-owner" placeholder="tu-usuario" oninput="saveGHConfig()">
+        </div>
+        <div>
+          <label class="sec">Nombre del Repositorio</label>
+          <input class="inp" id="gh-repo" placeholder="ammega-cotizador" oninput="saveGHConfig()">
+        </div>
       </div>
+      <div style="display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap">
+        <button class="btn-p" onclick="manualSync()">↑ Sincronizar ahora</button>
+        <button class="btn-s" onclick="autoDetectGH()">Auto-detectar repo</button>
+        <span style="font-size:var(--text-xs);color:var(--text-muted)" id="sync-last"></span>
+      </div>
+    </div>
+
+    <!-- USUARIOS -->
+    <div class="card">
+      <h3>Usuarios del Sistema</h3>
       <div id="user-list"></div>
     </div>
     <div class="card">
@@ -342,24 +326,15 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
         <div style="display:flex;flex-direction:column;gap:8px">
           <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='#22c55e'">
             <input type="radio" name="new-role" value="vendedor" checked style="margin-top:2px">
-            <div>
-              <div style="font-weight:700;font-size:var(--text-sm);color:#166534">🟢 Vendedor</div>
-              <div style="font-size:var(--text-xs);color:var(--text-muted)">Solo cotizadores (Mangueras y Bandas)</div>
-            </div>
+            <div><div style="font-weight:700;font-size:var(--text-sm);color:#166534">🟢 Vendedor</div><div style="font-size:var(--text-xs);color:var(--text-muted)">Solo cotizadores (Mangueras y Bandas)</div></div>
           </label>
           <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='#3b82f6'">
             <input type="radio" name="new-role" value="director" style="margin-top:2px">
-            <div>
-              <div style="font-weight:700;font-size:var(--text-sm);color:#1e40af">🔵 Director</div>
-              <div style="font-size:var(--text-xs);color:var(--text-muted)">Cotizadores + Dashboard y estadisticas</div>
-            </div>
+            <div><div style="font-weight:700;font-size:var(--text-sm);color:#1e40af">🔵 Director</div><div style="font-size:var(--text-xs);color:var(--text-muted)">Cotizadores + Dashboard y estadisticas</div></div>
           </label>
           <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='var(--teal-600)'">
             <input type="radio" name="new-role" value="admin" style="margin-top:2px">
-            <div>
-              <div style="font-weight:700;font-size:var(--text-sm);color:var(--teal-600)">⚙️ Admin</div>
-              <div style="font-size:var(--text-xs);color:var(--text-muted)">Acceso completo: cotizadores + dashboard + administracion</div>
-            </div>
+            <div><div style="font-weight:700;font-size:var(--text-sm);color:var(--teal-600)">⚙️ Admin</div><div style="font-size:var(--text-xs);color:var(--text-muted)">Acceso completo</div></div>
           </label>
         </div>
       </div>
@@ -375,6 +350,52 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
       <button class="btn-s" onclick="changeMyPass()">Cambiar Contrasena</button>
       <div id="chg-pass-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
     </div>
+
+    <!-- RESELLERS -->
+    <div class="card">
+      <h3>Resellers</h3>
+      <div id="resellers-list-acceso"></div>
+    </div>
+    <div class="card">
+      <h3>Agregar Reseller</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div><label class="sec">Nombre Reseller</label><input class="inp" id="new-rs-nombre" placeholder="Ej: Binasa · Brr · Applied"></div>
+        <div><label class="sec">Usuario (login)</label><input class="inp" id="new-rs-user" placeholder="ej: felipe"></div>
+        <div><label class="sec">Contraseña</label><input class="inp" id="new-rs-pass" type="password" placeholder="ej: binasa1"></div>
+        <div><label class="sec">Descuento % (0-90)</label><input class="inp" id="new-rs-desc" type="number" min="0" max="90" step="0.5" value="45"></div>
+      </div>
+      <div style="background:#F7F9FC;border:1px dashed #DDDEDF;border-radius:var(--radius-lg);padding:var(--sp-4);margin-bottom:var(--sp-3)">
+        <p class="sec" style="margin-bottom:var(--sp-2)">Logo Reseller (PNG/JPG · recomendado 100×100px)</p>
+        <div class="dropzone" id="logo-dropzone" style="padding:var(--sp-6) var(--sp-4)"
+             onclick="document.getElementById('file-rs-logo').click()"
+             ondragover="event.preventDefault();this.classList.add('over')"
+             ondragleave="this.classList.remove('over')"
+             ondrop="event.preventDefault();this.classList.remove('over');handleRSLogoFile(event.dataTransfer.files[0])">
+          <div class="icon">🖼️</div>
+          <p>Arrastra logo o haz clic<br><span style="font-size:var(--text-xs);color:#757575">PNG/JPG · Máx 500KB</span></p>
+          <div class="fname" id="logo-fname"></div>
+        </div>
+        <input type="file" id="file-rs-logo" accept="image/*" style="display:none" onchange="handleRSLogoFile(this.files[0])">
+        <div id="logo-preview" style="display:none;margin-top:var(--sp-3);text-align:center">
+          <img id="logo-preview-img" style="max-width:100px;max-height:100px;border-radius:8px;border:1px solid #DDDEDF" alt="Logo preview">
+          <div style="font-size:var(--text-xs);color:#757575;margin-top:4px" id="logo-size"></div>
+        </div>
+      </div>
+      <button class="btn-p" onclick="createNewReseller()" style="width:100%">+ Crear Reseller</button>
+      <div id="new-rs-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
+    </div>
+    <div class="card" id="edit-rs-card" style="display:none">
+      <h3>Editar Reseller</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div><label class="sec">Nombre</label><input class="inp" id="edit-rs-nombre" disabled></div>
+        <div><label class="sec">Descuento %</label><input class="inp" id="edit-rs-desc" type="number" min="0" max="90" step="0.5"></div>
+      </div>
+      <div style="display:flex;gap:var(--sp-3)">
+        <button class="btn-p" onclick="saveEditReseller()" style="flex:1">Guardar</button>
+        <button class="btn-s" onclick="closeEditReseller()" style="flex:1">Cancelar</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -398,6 +419,87 @@ async function hashPass(str){
 function getUsers(){ return JSON.parse(localStorage.getItem('jdm_users')||'[]'); }
 function saveUsers(users){ localStorage.setItem('jdm_users', JSON.stringify(users)); }
 
+/* ── GITHUB AUTO-SYNC ── */
+function saveGHConfig(){
+  const t=document.getElementById('gh-token').value.trim();
+  const o=document.getElementById('gh-owner').value.trim();
+  const r=document.getElementById('gh-repo').value.trim();
+  if(t)localStorage.setItem('jdm_gh_token',t);
+  if(o)localStorage.setItem('jdm_gh_owner',o);
+  if(r)localStorage.setItem('jdm_gh_repo',r);
+  updateSyncUI();
+}
+
+function autoDetectGH(){
+  const host=location.hostname;
+  const path=location.pathname;
+  if(host.endsWith('.github.io')){
+    const owner=host.replace('.github.io','');
+    const repo=path.split('/').filter(Boolean)[0]||'';
+    document.getElementById('gh-owner').value=owner;
+    document.getElementById('gh-repo').value=repo;
+    localStorage.setItem('jdm_gh_owner',owner);
+    localStorage.setItem('jdm_gh_repo',repo);
+    updateSyncUI();
+    setSyncStatus('idle','Repo detectado: '+owner+'/'+repo);
+  } else {
+    setSyncStatus('err','No estás en GitHub Pages. Ingresa owner/repo manualmente.');
+  }
+}
+
+function setSyncStatus(state, msg){
+  const pill=document.getElementById('sync-status-pill');
+  const last=document.getElementById('sync-last');
+  if(!pill)return;
+  pill.className='sync-pill sync-'+state;
+  const icons={idle:'●',syncing:'↑',ok:'✓',err:'✗'};
+  const labels={idle:'Sin configurar',syncing:'Sincronizando…',ok:'Sincronizado',err:'Error'};
+  pill.textContent=(icons[state]||'●')+' '+(msg||labels[state]||state);
+  if(state==='ok'&&last)last.textContent='Última sync: '+new Date().toLocaleTimeString('es-MX');
+}
+
+function updateSyncUI(){
+  const t=localStorage.getItem('jdm_gh_token');
+  const o=localStorage.getItem('jdm_gh_owner');
+  const r=localStorage.getItem('jdm_gh_repo');
+  if(document.getElementById('gh-token')&&!document.getElementById('gh-token').value&&t)
+    document.getElementById('gh-token').value='••••••••';
+  if(document.getElementById('gh-owner')&&!document.getElementById('gh-owner').value&&o)
+    document.getElementById('gh-owner').value=o;
+  if(document.getElementById('gh-repo')&&!document.getElementById('gh-repo').value&&r)
+    document.getElementById('gh-repo').value=r;
+  if(t&&o&&r) setSyncStatus('idle','Listo para sincronizar');
+}
+
+async function manualSync(){ await autoSync(true); }
+
+async function autoSync(manual=false){
+  const token=localStorage.getItem('jdm_gh_token');
+  const owner=localStorage.getItem('jdm_gh_owner');
+  const repo=localStorage.getItem('jdm_gh_repo');
+  if(!token||!owner||!repo){
+    if(manual) setSyncStatus('err','Configura el token y repo primero');
+    return;
+  }
+  setSyncStatus('syncing');
+  try{
+    const config={users:getUsers(),resellers:getResellers()};
+    const jsonStr=JSON.stringify(config,null,2);
+    const content=btoa(unescape(encodeURIComponent(jsonStr)));
+    const apiUrl=`https://api.github.com/repos/${owner}/${repo}/contents/access_config.json`;
+    const headers={Authorization:`token ${token}`,'Content-Type':'application/json',Accept:'application/vnd.github.v3+json'};
+    // Get current SHA
+    let sha;
+    const getRes=await fetch(apiUrl,{headers});
+    if(getRes.ok){const d=await getRes.json();sha=d.sha;}
+    const body={message:'chore: sync acceso y usuarios',content};
+    if(sha)body.sha=sha;
+    const putRes=await fetch(apiUrl,{method:'PUT',headers,body:JSON.stringify(body)});
+    if(putRes.ok){setSyncStatus('ok');}
+    else{const err=await putRes.json();setSyncStatus('err',err.message||'Error al publicar');}
+  }catch(e){setSyncStatus('err',e.message||'Error de red');}
+}
+
 /* SESSION-BASED INIT */
 let _currentUser=window._session||null;
 (function(){
@@ -417,6 +519,8 @@ let _currentUser=window._session||null;
     .map(l=>`<a href="${l.href}" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;${l.href==='admin.html'?'background:var(--teal-600);color:#E6FCFF':'background:#EAECEE;color:var(--text-muted)'}">${l.label}</a>`)
     .join('');
   renderUserList();
+  renderResellersAcceso();
+  updateSyncUI();
   revealChildren(document.getElementById('tab-inv'));
 })();
 
@@ -458,28 +562,22 @@ async function addUser(){
   document.getElementById('new-user').value='';
   document.getElementById('new-pass').value='';
   document.getElementById('new-nombre').value='';
-  msg.innerHTML=`<span style="color:var(--success)">Usuario "${user}" (${role}) creado</span>`;
+  msg.innerHTML=`<span style="color:var(--success)">✓ Usuario "${user}" (${role}) creado — sincronizando…</span>`;
   renderUserList();
+  autoSync().then(()=>{
+    const ok=document.getElementById('sync-status-pill').classList.contains('sync-ok');
+    msg.innerHTML=`<span style="color:var(--success)">✓ Usuario "${user}" ${ok?'creado y publicado':'creado (configura sync para publicar)'}</span>`;
+  });
 }
 
-function exportUsers(){
-  const users=getUsers();
-  if(!users.length){alert('No hay usuarios para exportar');return;}
-  const blob=new Blob([JSON.stringify(users,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='users_seed.json';
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-}
-
-function removeUser(idx){
+async function removeUser(idx){
   const users=getUsers();
   if(users[idx].user===_currentUser.user){alert('No puedes eliminarte a ti mismo');return;}
   if(!confirm(`¿Eliminar usuario "${users[idx].user}"?`))return;
   users.splice(idx,1);
   saveUsers(users);
   renderUserList();
+  await autoSync();
 }
 
 async function changeMyPass(){
@@ -508,8 +606,7 @@ function showTab(id){
   document.querySelector(`.tab[onclick*="'${id}'"]`).classList.add('on');
   if(id==='precios')updatePricePreview();
   if(id==='generar')updateGenState();
-  if(id==='acceso')renderUserList();
-  if(id==='resellers')renderResellersTable();
+  if(id==='acceso'){renderUserList();renderResellersAcceso();updateSyncUI();}
   revealChildren(document.getElementById('tab-'+id));
 }
 
@@ -817,25 +914,33 @@ function handleRSLogoFile(file){
 }
 
 function renderResellersTable(){
+  // kept for backward compat — delegates to renderResellersAcceso
+  renderResellersAcceso();
+}
+
+function renderResellersAcceso(){
   const list=getResellers();
-  const el=document.getElementById('resellers-list');
+  const el=document.getElementById('resellers-list-acceso');
+  if(!el)return;
   if(!list.length){
-    el.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:var(--sp-4)">No hay resellers registrados</td></tr>';
+    el.innerHTML='<p style="color:var(--text-muted);font-size:var(--text-sm)">No hay resellers registrados.</p>';
     return;
   }
   el.innerHTML=list.map((r,i)=>{
-    const logo=r.logo?`<img src="data:image/png;base64,${r.logo}" style="width:46px;height:46px;border-radius:6px;border:1px solid #DDDEDF;object-fit:contain">`:'<div style="width:46px;height:46px;background:#F7F9FC;border:1px solid #DDDEDF;border-radius:6px"></div>';
-    return `<tr>
-      <td style="text-align:center">${logo}</td>
-      <td style="font-weight:700">${r.nombre}</td>
-      <td style="color:var(--text-muted);font-family:monospace;font-size:var(--text-xs)">${r.user}</td>
-      <td style="text-align:center;font-weight:700">${r.descuento}%</td>
-      <td style="text-align:center;color:var(--teal-600);font-weight:700">${(1-r.descuento/100).toFixed(4)}</td>
-      <td style="text-align:center">
-        <button class="btn-s" onclick="openEditReseller(${i})" style="margin-right:var(--sp-2);font-size:var(--text-xs);padding:4px 10px">✏️ Editar</button>
+    const logoHtml=r.logo
+      ?`<img class="rs-logo" src="data:image/png;base64,${r.logo}" alt="${r.nombre}">`
+      :`<div class="rs-logo-ph">🏪</div>`;
+    return `<div class="rs-row">
+      ${logoHtml}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:var(--text-base)">${r.nombre}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">@${r.user} · Descuento: <strong>${r.descuento}%</strong> · Factor: ${(1-r.descuento/100).toFixed(4)}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn-s" onclick="openEditReseller(${i})" style="font-size:var(--text-xs);padding:4px 10px">✏️ Editar</button>
         <button class="btn-danger" onclick="removeReseller(${i})">Eliminar</button>
-      </td>
-    </tr>`;
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -852,7 +957,7 @@ function createNewReseller(){
   if(desc<0||desc>90){msg.innerHTML='<span style="color:var(--danger)">Descuento debe ser 0-90%</span>';return;}
   const users=getUsers();
   if(users.find(u=>u.user===user)){msg.innerHTML='<span style="color:var(--danger)">El usuario ya existe</span>';return;}
-  hashPass(pass).then(h=>{
+  hashPass(pass).then(async h=>{
     users.push({user,passHash:h,role:'reseller',nombre:nombre.toUpperCase()});
     saveUsers(users);
     const resellers=getResellers();
@@ -865,9 +970,12 @@ function createNewReseller(){
     document.getElementById('logo-fname').textContent='';
     document.getElementById('logo-preview').style.display='none';
     _rsLogoB64='';
-    msg.innerHTML=`<span style="color:var(--success)">✓ Reseller "${nombre}" creado</span>`;
-    renderResellersTable();
+    msg.innerHTML=`<span style="color:var(--success)">✓ Reseller "${nombre}" creado — sincronizando…</span>`;
+    renderResellersAcceso();
     renderUserList();
+    await autoSync();
+    const ok=document.getElementById('sync-status-pill').classList.contains('sync-ok');
+    msg.innerHTML=`<span style="color:var(--success)">✓ Reseller "${nombre}" ${ok?'creado y publicado':'creado (configura sync para publicar)'}</span>`;
   });
 }
 
@@ -880,7 +988,7 @@ function openEditReseller(idx){
   document.getElementById('edit-rs-card').scrollIntoView({behavior:'smooth'});
 }
 function closeEditReseller(){document.getElementById('edit-rs-card').style.display='none';}
-function saveEditReseller(){
+async function saveEditReseller(){
   const idx=parseInt(document.getElementById('edit-rs-card').dataset.idx);
   const desc=parseFloat(document.getElementById('edit-rs-desc').value)||0;
   if(desc<0||desc>90){alert('Descuento debe ser 0-90%');return;}
@@ -888,9 +996,10 @@ function saveEditReseller(){
   resellers[idx].descuento=desc;
   saveResellers(resellers);
   closeEditReseller();
-  renderResellersTable();
+  renderResellersAcceso();
+  await autoSync();
 }
-function removeReseller(idx){
+async function removeReseller(idx){
   if(!confirm('¿Eliminar reseller?'))return;
   const resellers=getResellers();
   const user=resellers[idx].user;
@@ -900,8 +1009,9 @@ function removeReseller(idx){
   const ui=users.findIndex(u=>u.user===user);
   if(ui>=0)users.splice(ui,1);
   saveUsers(users);
-  renderResellersTable();
+  renderResellersAcceso();
   renderUserList();
+  await autoSync();
 }
 </script>
 </body>
