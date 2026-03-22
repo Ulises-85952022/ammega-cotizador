@@ -83,7 +83,7 @@ function renderNav(){
   const ROLE_LABEL={vendedor:'Vendedor',director:'Director',admin:'Admin'};
   const links=[
     {href:'cotizador_tpl.html',label:'← Inicio',roles:['vendedor','director','admin']},
-    {href:'cotizador_mangueras_tpl.html',label:'💧 Mangueras',roles:['vendedor','director','admin']},
+    {href:'cotizador_mangueras.html',label:'💧 Mangueras',roles:['vendedor','director','admin']},
     {href:'cotizador_bandas.html',label:'⚡ Bandas',roles:['vendedor','director','admin']},
     {href:'dashboard.html',label:'📊 Dashboard',roles:['director','admin']},
     {href:'admin.html',label:'⚙️ Admin',roles:['admin']},
@@ -91,7 +91,7 @@ function renderNav(){
   const nav=document.getElementById('app-nav');
   nav.querySelector('#nav-links').innerHTML=links
     .filter(l=>l.roles.includes(role))
-    .map(l=>`<a href="${l.href}" style="padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;${l.href==='cotizador_mangueras_tpl.html'?'background:#001a26;color:#38bdf8;border:1px solid #1e3a5f':l.href==='cotizador_tpl.html'?'color:#94a3b8':'color:#64748b'}">${l.label}</a>`)
+    .map(l=>`<a href="${l.href}" style="padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;${l.href==='cotizador_mangueras.html'?'background:#001a26;color:#38bdf8;border:1px solid #1e3a5f':l.href==='cotizador_tpl.html'?'color:#94a3b8':'color:#64748b'}">${l.label}</a>`)
     .join('');
   nav.querySelector('#nav-user').textContent=`${s.user} · ${ROLE_LABEL[role]||role}`;
 }

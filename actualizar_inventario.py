@@ -5,7 +5,7 @@ Uso: python actualizar_inventario.py
   o: arrastra el archivo Excel encima de este script
 
 Sube el nuevo archivo Excel de inventario y este script
-actualiza automaticamente el cotizador_v4.html
+actualiza automaticamente el cotizador_bandas.html
 """
 
 import sys
@@ -22,7 +22,7 @@ except ImportError:
 
 # ── Configuracion ─────────────────────────────────────────────────────────────
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
-HTML_FILE    = os.path.join(SCRIPT_DIR, "cotizador_v4.html")
+HTML_FILE    = os.path.join(SCRIPT_DIR, "cotizador_bandas.html")
 BACKUP_DIR   = os.path.join(SCRIPT_DIR, "backups_inventario")
 
 # ── Buscar el archivo Excel ───────────────────────────────────────────────────
@@ -99,7 +99,7 @@ def inyectar(html, inv_dict, cat_codes):
         count=1
     )
     if n == 0:
-        raise ValueError("No se encontro 'const INV=' en el HTML. Verifica que sea cotizador_v4.html")
+        raise ValueError("No se encontro 'const INV=' en el HTML. Verifica que sea cotizador_bandas.html")
     return nuevo
 
 # ── Backup ────────────────────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ def hacer_backup(html_path):
     from datetime import datetime
     os.makedirs(BACKUP_DIR, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    bak = os.path.join(BACKUP_DIR, f"cotizador_v4_bak_{ts}.html")
+    bak = os.path.join(BACKUP_DIR, f"cotizador_bandas_bak_{ts}.html")
     with open(html_path, "r", encoding="utf-8") as f:
         contenido = f.read()
     with open(bak, "w", encoding="utf-8") as f:
@@ -125,7 +125,7 @@ def main():
     if not os.path.isfile(HTML_FILE):
         print(f"\n ERROR: No se encontro {HTML_FILE}")
         print("  Asegurate de que este script este en la misma")
-        print("  carpeta que cotizador_v4.html")
+        print("  carpeta que cotizador_bandas.html")
         input("\nPresiona Enter para salir...")
         return
 
@@ -178,7 +178,7 @@ def main():
 
     # 5. Listo
     print("\n[4/4] LISTO!")
-    print("  El cotizador_v4.html ya tiene el inventario actualizado.")
+    print("  El cotizador_bandas.html ya tiene el inventario actualizado.")
     print("  Vuelve a subir el HTML a Drive/Netlify para compartirlo.")
     print("=" * 55)
     input("\nPresiona Enter para cerrar...")
