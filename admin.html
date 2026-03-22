@@ -494,7 +494,7 @@ async function autoSync(manual=false){
   }
   setSyncStatus('syncing');
   try{
-    const config={users:getUsers(),resellers:getResellers()};
+    const config={users:getUsers(),resellers:getResellers(),clientes:getClientes(),syncToken:token,syncOwner:owner,syncRepo:repo};
     const jsonStr=JSON.stringify(config,null,2);
     const content=btoa(unescape(encodeURIComponent(jsonStr)));
     const apiUrl=`https://api.github.com/repos/${owner}/${repo}/contents/access_config.json`;

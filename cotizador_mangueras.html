@@ -958,6 +958,30 @@ function saveQuoteToStorage(){
     if(quotes.length>500)quotes.splice(0,quotes.length-500);
     localStorage.setItem('jdm_quotes',JSON.stringify(quotes));
   }catch(e){console.warn('saveQuote error',e);}
+  pushQuotesToGitHub();
+}
+
+/* ── Auto-sync cotizaciones a GitHub ── */
+async function pushQuotesToGitHub(){
+  const token=localStorage.getItem('jdm_sync_token')||localStorage.getItem('jdm_gh_token');
+  const owner=localStorage.getItem('jdm_sync_owner')||localStorage.getItem('jdm_gh_owner');
+  const repo=localStorage.getItem('jdm_sync_repo')||localStorage.getItem('jdm_gh_repo');
+  if(!token||!owner||!repo)return;
+  try{
+    const quotes=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
+    const bos=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
+    const data={quotes,backorders:bos,updatedAt:new Date().toISOString()};
+    const jsonStr=JSON.stringify(data);
+    const content=btoa(unescape(encodeURIComponent(jsonStr)));
+    const apiUrl=`https://api.github.com/repos/${owner}/${repo}/contents/quotes_data.json`;
+    const headers={Authorization:`token ${token}`,'Content-Type':'application/json',Accept:'application/vnd.github.v3+json'};
+    let sha;
+    const getRes=await fetch(apiUrl,{headers});
+    if(getRes.ok){const d=await getRes.json();sha=d.sha;}
+    const body={message:'chore: sync cotizaciones',content};
+    if(sha)body.sha=sha;
+    await fetch(apiUrl,{method:'PUT',headers,body:JSON.stringify(body)});
+  }catch(e){console.warn('pushQuotes error',e);}
 }
 
 /* ── Exportar mis datos ── */
