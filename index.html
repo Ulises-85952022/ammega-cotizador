@@ -93,14 +93,36 @@ async function doLogin(){
   redirectByRole(found.role);
 }
 
-// Al cargar: si ya hay sesion valida, redirigir
-(function(){
+// Cargar usuarios desde users_seed.json (compartido en el repo)
+async function loadSeedUsers(){
+  try{
+    const r=await fetch('./users_seed.json?v='+Date.now());
+    if(!r.ok)return;
+    const seed=await r.json();
+    if(!Array.isArray(seed)||!seed.length)return;
+    const existing=getUsers();
+    let changed=false;
+    seed.forEach(su=>{
+      if(su.user&&su.passHash&&su.role){
+        const idx=existing.findIndex(u=>u.user===su.user);
+        if(idx>=0){existing[idx]=su;}// actualiza si cambió
+        else{existing.push(su);changed=true;}
+        changed=true;
+      }
+    });
+    if(changed)saveUsers(existing);
+  }catch{}
+}
+
+// Al cargar: si ya hay sesion valida, redirigir. Si no, cargar seed.
+(async function(){
   try{
     const s=JSON.parse(localStorage.getItem('jdm_session')||'null');
     if(s&&s.user&&s.role&&getUsers().find(u=>u.user===s.user)){
-      redirectByRole(s.role);
+      redirectByRole(s.role);return;
     }
   }catch{}
+  await loadSeedUsers();
 })();
 
 document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
