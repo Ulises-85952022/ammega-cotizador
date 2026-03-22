@@ -54,11 +54,6 @@ td{padding:7px 6px;vertical-align:top}
   #print-sheet{max-width:none!important;width:100%!important;box-shadow:none!important;padding:0!important;margin:0!important}
   #sc-preview{padding:0!important;margin:0!important}
 }
-@media(max-width:700px){
-  #print-sheet{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px 8px!important}
-  #print-sheet table{min-width:560px}
-  #print-sheet td,#print-sheet th{padding:3px 4px!important;font-size:9px!important}
-}
 </style>
 </head>
 <body>
@@ -66,19 +61,25 @@ td{padding:7px 6px;vertical-align:top}
 <!-- ═══ AUTH GUARD ═══ -->
 <script>
 (function(){
-  if(localStorage.getItem('jdm_reseller_user')){window._isReseller=true;return;}
   function getSession(){try{return JSON.parse(localStorage.getItem('jdm_session')||'null');}catch{return null;}}
   const s=getSession();
+  const _RS_USER=localStorage.getItem('jdm_reseller_user')||'';
+  window._isReseller=!!_RS_USER;
   const allowed=['vendedor','director','admin'];
-  if(!s||!allowed.includes(s.role)){localStorage.removeItem('jdm_session');location.href='index.html';}
+  if(!window._isReseller&&(!s||!allowed.includes(s.role))){localStorage.removeItem('jdm_session');location.href='index.html';}
   else window._session=s;
 })();
-function logout(){localStorage.removeItem('jdm_session');location.href='index.html';}
-function logoutReseller(){['jdm_reseller_user','jdm_reseller_nombre','jdm_reseller_discount','jdm_reseller_logo'].forEach(k=>localStorage.removeItem(k));location.href='index.html';}
+function logout(){
+  if(window._isReseller){['jdm_reseller_user','jdm_reseller_nombre','jdm_reseller_discount','jdm_reseller_logo'].forEach(k=>localStorage.removeItem(k));}
+  else localStorage.removeItem('jdm_session');
+  location.href='index.html';
+}
 function renderNav(){
   if(window._isReseller){
+    const _RS_NOMBRE=localStorage.getItem('jdm_reseller_nombre')||localStorage.getItem('jdm_reseller_user')||'';
+    const _RS_DISCOUNT=parseFloat(localStorage.getItem('jdm_reseller_discount')||'0');
     const nav=document.getElementById('app-nav');
-    nav.querySelector('#nav-links').innerHTML=`<span style="font-size:12px;font-weight:700;color:#38bdf8">${_RS_NOMBRE||_RS_USER}</span>`;
+    nav.querySelector('#nav-links').innerHTML=`<span style="font-size:12px;font-weight:700;color:#38bdf8">${_RS_NOMBRE}</span>`;
     nav.querySelector('#nav-user').textContent=`Descuento: ${_RS_DISCOUNT}%`;
     return;
   }
@@ -106,7 +107,7 @@ function renderNav(){
   <div id="nav-links" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
   <div style="display:flex;align-items:center;gap:8px">
     <span id="nav-user" style="font-size:11px;color:#475569"></span>
-    <button onclick="window._isReseller?logoutReseller():logout()" style="padding:4px 10px;background:transparent;border:1px solid #334155;border-radius:5px;color:#64748b;font-size:11px;cursor:pointer;font-family:inherit">Salir</button>
+    <button onclick="logout()" style="padding:4px 10px;background:transparent;border:1px solid #334155;border-radius:5px;color:#64748b;font-size:11px;cursor:pointer;font-family:inherit">Salir</button>
   </div>
 </div>
 
@@ -231,21 +232,8 @@ function renderNav(){
     <div id="stock-breakdown" style="display:none;margin-top:8px;padding:8px 11px;background:#0a0a20;border-radius:7px;border-left:3px solid #fbbf24;line-height:1.6"></div>
   </div>
 
-  <button class="btn-p" id="btn-preview" onclick="goToPreview()" style="margin-bottom:20px" disabled>Ver cotización →</button>
-</div>
-
-<!-- ═══ SCREEN 4: PREVIEW ═══ -->
-<div id="sc-preview" class="screen">
-  <div class="noPrint" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
-    <button onclick="window.print()" style="padding:10px 16px;background:#38bdf8;color:#0a0a15;border:none;border-radius:7px;font-weight:800;cursor:pointer">🖨 PDF / Imprimir</button>
-    <button onclick="saveQuoteToStorage();this.textContent='✓ Guardada';this.style.background='#4ade80';this.style.color='#0a0a15';setTimeout(()=>{this.textContent='💾 Guardar';this.style.background='#22c55e';this.style.color='#fff'},2000)" style="padding:10px 16px;background:#22c55e;color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer">💾 Guardar</button>
-    <button onclick="goToCotizar()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">← Editar</button>
-    <button onclick="nuevaCot()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">+ Nueva</button>
-    <button id="btn-bo" onclick="openBOModal()" style="display:none;padding:10px 16px;background:#f97316;color:#fff;border:none;border-radius:7px;font-weight:800;cursor:pointer">📋 B.O.</button>
-    <button onclick="exportMisQuotes()" style="padding:10px 16px;background:#334155;color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:12px" title="Exporta tus cotizaciones para que el admin las vea en el dashboard">📤 Exportar mis datos</button>
-  </div>
-  <!-- Panel reseller: margen y nombre de cliente -->
-  <div id="reseller-margin-panel" class="noPrint" style="display:none;background:#f0fdf4;border:1.5px solid #10b981;border-radius:10px;padding:14px 16px;margin-bottom:14px">
+  <!-- Panel reseller: margen y nombre de cliente (solo visible para resellers) -->
+  <div id="reseller-margin-panel" style="display:none;background:#f0fdf4;border:1.5px solid #10b981;border-radius:10px;padding:14px 16px;margin-bottom:14px">
     <div style="font-size:12px;font-weight:800;color:#059669;margin-bottom:10px">Re-cotizar para su cliente</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
       <div style="flex:1;min-width:160px">
@@ -259,9 +247,22 @@ function renderNav(){
       <button onclick="aplicarMargenReseller()" style="padding:8px 16px;background:#059669;color:#fff;border:none;border-radius:7px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap">Re-cotizar →</button>
     </div>
   </div>
+
+  <button class="btn-p" id="btn-preview" onclick="goToPreview()" style="margin-bottom:20px" disabled>Ver cotización →</button>
+</div>
+
+<!-- ═══ SCREEN 4: PREVIEW ═══ -->
+<div id="sc-preview" class="screen">
+  <div class="noPrint" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
+    <button onclick="window.print()" style="padding:10px 16px;background:#38bdf8;color:#0a0a15;border:none;border-radius:7px;font-weight:800;cursor:pointer">🖨 PDF / Imprimir</button>
+    <button onclick="saveQuoteToStorage();this.textContent='✓ Guardada';this.style.background='#4ade80';this.style.color='#0a0a15';setTimeout(()=>{this.textContent='💾 Guardar';this.style.background='#22c55e';this.style.color='#fff'},2000)" style="padding:10px 16px;background:#22c55e;color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer">💾 Guardar</button>
+    <button onclick="goToCotizar()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">← Editar</button>
+    <button onclick="nuevaCot()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">+ Nueva</button>
+    <button id="btn-bo" onclick="openBOModal()" style="display:none;padding:10px 16px;background:#f97316;color:#fff;border:none;border-radius:7px;font-weight:800;cursor:pointer">📋 B.O.</button>
+  </div>
   <!-- B.O. Modal -->
   <div id="bo-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center" onclick="if(event.target===this)closeBOModal()">
-    <div style="background:#FFFFFF;border:1px solid #DDDEDF;border-radius:14px;padding:22px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)">
+    <div style="background:#fff;border:1px solid #ddd;border-radius:14px;padding:22px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <span style="font-weight:800;font-size:15px;color:#f97316">📋 Back Order</span>
         <button onclick="closeBOModal()" style="background:none;border:none;color:#757575;font-size:18px;cursor:pointer">✕</button>
@@ -270,7 +271,7 @@ function renderNav(){
       <div id="bo-items-list" style="margin-bottom:14px"></div>
       <div style="margin-bottom:14px">
         <label style="font-size:11px;color:#757575;font-weight:700;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">Notas / Observaciones</label>
-        <textarea id="bo-notas" rows="3" style="background:#F7F9FC;border:1.5px solid #DDDEDF;border-radius:8px;padding:10px;color:#111;width:100%;font-size:13px;resize:vertical;outline:none" placeholder="Ej: Cliente urgente, pidió alternativa..."></textarea>
+        <textarea id="bo-notas" rows="3" style="background:#f9f9f9;border:1.5px solid #ddd;border-radius:8px;padding:10px;color:#111;width:100%;font-size:13px;resize:vertical;outline:none" placeholder="Ej: Cliente urgente, pidió alternativa..."></textarea>
       </div>
       <button onclick="generateBO()" style="width:100%;padding:12px;background:#f97316;color:#fff;border:none;border-radius:8px;font-weight:800;font-size:14px;cursor:pointer">📥 Generar y Descargar B.O.</button>
     </div>
@@ -291,6 +292,11 @@ const BRAND_XREF=[{"j": "JCHP2TR-04", "cat": "CONEXION", "j2": "0053-JCHP2TR-04"
 <script>
 /* ── Constants ── */
 const COTIZADOR_TIPO='mangueras';
+const _RS_USER=localStorage.getItem('jdm_reseller_user')||'';
+const _RS_NOMBRE=localStorage.getItem('jdm_reseller_nombre')||'';
+const _RS_DISCOUNT=parseFloat(localStorage.getItem('jdm_reseller_discount')||'0');
+const _RS_LOGO=localStorage.getItem('jdm_reseller_logo')||'';
+const _IS_RESELLER=!!_RS_USER;
 const _jdmClientes=(function(){try{const c=JSON.parse(localStorage.getItem('jdm_clientes')||'null');if(c&&c.length)return c;}catch{}return[{name:'Brr',key:'b',desc:'Brr',discount:30},{name:'Applied',key:'a',desc:'Applied Ind.',discount:40},{name:'Motion',key:'m',desc:'Motion Industries',discount:40},{name:'Binasa',key:'n',desc:'BINASA',discount:45}];})();
 const CLIENTES=_jdmClientes.map(c=>c.name);
 const CLI_KEY=Object.fromEntries(_jdmClientes.map(c=>[c.name,c.key]));
@@ -306,26 +312,13 @@ const CAT_META={
   "ADAPTADORES":          {icon:"🔧",color:"#10b981"},
 };
 
-/* ── Reseller ── */
-const _RS_USER=localStorage.getItem('jdm_reseller_user')||'';
-const _RS_NOMBRE=localStorage.getItem('jdm_reseller_nombre')||'';
-const _RS_DISCOUNT=parseFloat(localStorage.getItem('jdm_reseller_discount')||'0');
-const _RS_LOGO=localStorage.getItem('jdm_reseller_logo')||'';
-const _IS_RESELLER=!!_RS_USER;
-
 /* ── State ── */
-const _sessionVendedor=(function(){
-  if(_IS_RESELLER)return _RS_NOMBRE||_RS_USER;
-  try{const s=JSON.parse(localStorage.getItem('jdm_session')||'null');
-  const u=JSON.parse(localStorage.getItem('jdm_users')||'[]').find(x=>x.user===s?.user);
-  return u?.nombre||s?.user||'ISMAEL ULISES HERNANDEZ FRAYLE';}catch{return 'ISMAEL ULISES HERNANDEZ FRAYLE';}
-})();
 let state={
-  cliente:"",vendedor:_sessionVendedor,
+  cliente:"",vendedor:"ISMAEL ULISES HERNANDEZ FRAYLE",
   items:[],entrega:null,sel:null,pz:"1",ex:"",
   currentCat:null,
   folio:genFolio(),
-  clienteNombre:"",margenCliente:0
+  margenCliente:0,clienteNombre:''
 };
 
 /* Build category index */
@@ -463,6 +456,7 @@ function goToCategoria(){
 function goToCotizar(){
   document.getElementById('cli-badge-cot').textContent=state.cliente;
   renderItems();
+  if(_IS_RESELLER)document.getElementById('reseller-margin-panel').style.display='block';
   show('sc-cotizar');
   document.getElementById('search-inp').value='';
   closeDrop();
@@ -472,11 +466,11 @@ function goToPreview(){
   saveQuoteToStorage();
   const st=stockStatus(state.items);
   document.getElementById('btn-bo').style.display=(st.sinStock+st.sinInfo)>0?'inline-block':'none';
-  if(_IS_RESELLER)document.getElementById('reseller-margin-panel').style.display='block';
   show('sc-preview');
 }
 function nuevaCot(){
-  state.items=[];state.entrega=null;state.sel=null;state.cliente="";state.pz="1";state.ex="";state.folio=genFolio();
+  state.items=[];state.entrega=null;state.sel=null;state.cliente="";state.pz="1";state.ex="";
+  state.margenCliente=0;state.clienteNombre='';state.folio=genFolio();
   document.querySelectorAll('.cli-btn').forEach(b=>b.classList.remove('on'));
   document.getElementById('btn-next').disabled=true;
   show('sc-config');
@@ -505,6 +499,11 @@ function initConfig(){
     document.getElementById('btn-next').disabled=!this.value;
   };
   document.getElementById('vendedor-inp').oninput=function(){state.vendedor=this.value;};
+  if(_IS_RESELLER){
+    state.cliente=_RS_NOMBRE||_RS_USER;
+    state.vendedor=_RS_NOMBRE||_RS_USER;
+    goToCategoria();
+  }
 }
 function selectCli(c){
   state.cliente=c;
@@ -817,7 +816,10 @@ function aplicarMargenReseller(){
   const margen=parseFloat(document.getElementById('rs-margen').value)||0;
   state.clienteNombre=nombre;
   state.margenCliente=margen;
-  renderPreview();
+  const btn=document.querySelector('#reseller-margin-panel button');
+  const orig=btn.textContent;
+  btn.textContent='✓ Aplicado';btn.style.background='#10b981';
+  setTimeout(()=>{btn.textContent=orig;btn.style.background='#059669';},1800);
 }
 
 function renderPreview(){
@@ -826,9 +828,10 @@ function renderPreview(){
   const sub=items.reduce((s,i)=>s+i.total*factor,0);
   const iva=sub*0.16,tot=sub+iva;
   const entTxt=state.entrega==='inmediata'?'24-48 horas. Salvo previa venta.':'8-12 semanas. Salvo previa orden.';
-  const nombreCliente=(_IS_RESELLER&&state.clienteNombre)?state.clienteNombre:(CLI_DESC[state.cliente]||state.cliente);
+  const nombreCliente=state.clienteNombre||state.cliente;
 
-  const rows=items.map((it,i)=>{const _et=entregaTextoItem(it.c,it.totalQty);
+  const rows=items.map((it,i)=>{
+    const _et=entregaTextoItem(it.c,it.totalQty);
     const precioFinal=Math.round(it.precio*factor*100)/100;
     const totalFinal=Math.round(it.total*factor*100)/100;
     return`
@@ -841,18 +844,18 @@ function renderPreview(){
       <td style="padding:4px 6px;border:1px solid #e0e0e0;text-align:right">${fmtMXN(precioFinal)}</td>
       <td style="padding:4px 6px;border:1px solid #e0e0e0;text-align:right;font-weight:bold">${fmtMXN(totalFinal)}</td>
     </tr>`}).join('');
-  const padRows=Array.from({length:Math.max(0,4-items.length)}).map(()=>`<tr style="height:18px"><td colspan="7" style="border:1px solid #e0e0e0"></td></tr>`).join('');
+  const padRows=Array.from({length:Math.max(0,8-items.length)}).map(()=>`<tr style="height:20px"><td colspan="7" style="border:1px solid #e0e0e0"></td></tr>`).join('');
 
   document.getElementById('print-sheet').innerHTML=`
     <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
       <tr>
         <td style="width:22%;vertical-align:top;padding-right:8px">
-          ${(_IS_RESELLER&&_RS_LOGO)?`<img src="data:image/png;base64,${_RS_LOGO}" style="width:100%;max-width:130px" alt="Logo">`:(LOGO_B64?`<img src="data:image/png;base64,${LOGO_B64}" style="width:100%;max-width:130px" alt="Logo">`:`<div style="font-weight:900;font-size:14px;color:#0369a1">${_IS_RESELLER?_RS_NOMBRE:'JASON DE MEXICO'}</div>`)}
+          ${_IS_RESELLER&&_RS_LOGO?`<img src="${_RS_LOGO}" style="width:100%;max-width:130px" alt="Logo">`:LOGO_B64?`<img src="data:image/png;base64,${LOGO_B64}" style="width:100%;max-width:130px" alt="Logo">`:`<div style="font-weight:900;font-size:14px;color:#0369a1">JASON DE MEXICO</div>`}
           <div style="font-size:9px;color:#555;margin-top:2px">Fluid Power · Mangueras · Conexiones</div>
         </td>
         <td style="text-align:center;vertical-align:middle">
           <div style="font-weight:bold;font-size:12px">${_IS_RESELLER?_RS_NOMBRE:'JASON DE MEXICO'}</div>
-          ${_IS_RESELLER?'':`<div>JESUS REYES HEROLES, Nº 6 - MODULO 4</div>
+          ${_IS_RESELLER?'':` <div>JESUS REYES HEROLES, Nº 6 - MODULO 4</div>
           <div>SAN PABLO XALPA (PUEBLO), TLALNEPANTLA</div>
           <div>MEXICO, CP: 54090 · Tel: 55 8950 6254</div>`}
         </td>
@@ -874,7 +877,7 @@ function renderPreview(){
     <table style="width:100%;border-collapse:collapse;border:1px solid #ccc;margin-bottom:6px;font-size:10px">
       <tr>
         <td style="padding:3px 6px;background:#f0f0f0;font-weight:bold;width:12%;border:1px solid #ccc">Cliente:</td>
-        <td style="padding:3px 6px;border:1px solid #ccc;width:38%">${nombreCliente}</td>
+        <td style="padding:3px 6px;border:1px solid #ccc;width:38%">${nombreCliente||CLI_DESC[state.cliente]||state.cliente}</td>
         <td style="padding:3px 6px;background:#f0f0f0;font-weight:bold;width:12%;border:1px solid #ccc">R.F.C.:</td>
         <td style="padding:3px 6px;border:1px solid #ccc"></td>
       </tr>
@@ -963,42 +966,6 @@ function saveQuoteToStorage(){
     if(quotes.length>500)quotes.splice(0,quotes.length-500);
     localStorage.setItem('jdm_quotes',JSON.stringify(quotes));
   }catch(e){console.warn('saveQuote error',e);}
-  pushQuotesToGitHub();
-}
-
-/* ── Auto-sync cotizaciones a GitHub ── */
-async function pushQuotesToGitHub(){
-  const token=localStorage.getItem('jdm_sync_token')||localStorage.getItem('jdm_gh_token');
-  const owner=localStorage.getItem('jdm_sync_owner')||localStorage.getItem('jdm_gh_owner');
-  const repo=localStorage.getItem('jdm_sync_repo')||localStorage.getItem('jdm_gh_repo');
-  if(!token||!owner||!repo)return;
-  try{
-    const quotes=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
-    const bos=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
-    const data={quotes,backorders:bos,updatedAt:new Date().toISOString()};
-    const jsonStr=JSON.stringify(data);
-    const content=btoa(unescape(encodeURIComponent(jsonStr)));
-    const apiUrl=`https://api.github.com/repos/${owner}/${repo}/contents/quotes_data.json`;
-    const headers={Authorization:`token ${token}`,'Content-Type':'application/json',Accept:'application/vnd.github.v3+json'};
-    let sha;
-    const getRes=await fetch(apiUrl,{headers});
-    if(getRes.ok){const d=await getRes.json();sha=d.sha;}
-    const body={message:'chore: sync cotizaciones',content};
-    if(sha)body.sha=sha;
-    await fetch(apiUrl,{method:'PUT',headers,body:JSON.stringify(body)});
-  }catch(e){console.warn('pushQuotes error',e);}
-}
-
-/* ── Exportar mis datos ── */
-function exportMisQuotes(){
-  const quotes=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
-  const bos=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
-  const data={jdm_quotes:quotes,jdm_backorders:bos,exportedAt:new Date().toISOString(),exportedBy:state.vendedor||'vendedor'};
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`jdm_datos_${(state.vendedor||'v').split(' ')[0]}_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();URL.revokeObjectURL(url);
 }
 
 /* ── Back Orders ── */
@@ -1009,12 +976,12 @@ function openBOModal(){
   document.getElementById('bo-items-list').innerHTML=boItems.map(it=>{
     const s=INV[it.c];
     const stockTxt=s!=null?`${s} disp.`:'Sin info';
-    return`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #EAECEE;font-size:12px">
-      <div><span style="color:#005762;font-family:monospace">${it.c}</span> <span style="color:#757575">${it.d.substring(0,40)}</span></div>
-      <div><span style="color:#f87171">${it.totalQty} ${it.u}</span> <span style="color:#757575">(${stockTxt})</span></div>
+    return`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:12px">
+      <span style="flex:1">${it.d}</span>
+      <span style="margin-left:10px;color:#f97316;font-weight:700;white-space:nowrap">${it.totalQty} ${it.u} · ${stockTxt}</span>
     </div>`;
   }).join('');
-  document.getElementById('bo-modal').style.display='flex';
+  const m=document.getElementById('bo-modal');m.style.display='flex';
 }
 function closeBOModal(){document.getElementById('bo-modal').style.display='none';}
 
@@ -1026,7 +993,7 @@ function generateBO(){
     const bos=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
     bos.push({
       id:'BO-'+Date.now(),quoteId:state.folio,tipo:COTIZADOR_TIPO,
-      cliente:state.cliente,vendedor:state.vendedor,fecha:new Date().toISOString(),
+      cliente:state.clienteNombre||state.cliente,vendedor:state.vendedor,fecha:new Date().toISOString(),
       items:boItems.map(it=>({c:it.c,d:it.d,t:it.t,u:it.u,totalQty:it.totalQty,stockAvailable:INV[it.c]!=null?INV[it.c]:'N/A'})),
       notas:notas
     });
@@ -1037,11 +1004,13 @@ function generateBO(){
   const wsData=[
     ['BACK ORDER - JASON DE MEXICO'],
     ['Folio Cotización:',state.folio,'','Fecha:',hoy()],
-    ['Cliente:',state.cliente,'','Vendedor:',state.vendedor],
+    ['Cliente:',state.clienteNombre||state.cliente,'','Vendedor:',state.vendedor],
     [],
     ['Categoría','Código','Descripción','Unidad','Cant. Solicitada','Stock Disponible','Fecha Solicitud','Notas']
   ];
-  boItems.forEach(it=>{wsData.push([it.t,it.c,it.d,it.u,it.totalQty,INV[it.c]!=null?INV[it.c]:'Sin info',hoy(),notas]);});
+  boItems.forEach(it=>{
+    wsData.push([it.t,it.c,it.d,it.u,it.totalQty,INV[it.c]!=null?INV[it.c]:'Sin info',hoy(),notas]);
+  });
   const ws=XLSX.utils.aoa_to_sheet(wsData);
   ws['!cols']=[{wch:22},{wch:18},{wch:42},{wch:8},{wch:16},{wch:16},{wch:14},{wch:30}];
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:7}}];
@@ -1056,16 +1025,10 @@ initConfig();
 initCategories();
 renderNav();
 
-// Reseller: saltar pantalla de cliente, ir directo a categorías
-if(_IS_RESELLER){
-  state.cliente=_RS_NOMBRE||_RS_USER;
-  state.vendedor=_RS_NOMBRE||_RS_USER;
-  goToCategoria();
-}
-
 // If app starts with sel already set (from category pick)
 if(state.sel){showSel(state.sel);}
 </script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
 <!-- ═══ GADGET: BUSCADOR DE CONTRAPARTES ═══ -->
 <style>
