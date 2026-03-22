@@ -236,6 +236,21 @@ function renderNav(){
     <button onclick="nuevaCot()" style="padding:10px 16px;background:#F7F9FC;color:#333;border:1px solid #DDDEDF;border-radius:7px;cursor:pointer">+ Nueva</button>
     <button id="btn-bo" onclick="openBOModal()" style="display:none;padding:10px 16px;background:#f97316;color:#fff;border:none;border-radius:7px;font-weight:800;cursor:pointer">📋 B.O.</button>
   </div>
+  <!-- Panel reseller: margen y nombre de cliente -->
+  <div id="reseller-margin-panel" style="display:none;background:#f0fdf4;border:1.5px solid #10b981;border-radius:10px;padding:14px 16px;margin-bottom:14px">
+    <div style="font-size:12px;font-weight:800;color:#059669;margin-bottom:10px">Re-cotizar para su cliente</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:160px">
+        <label style="font-size:11px;color:#555;font-weight:700;display:block;margin-bottom:4px">Nombre del cliente</label>
+        <input id="rs-cliente-nombre" type="text" placeholder="Empresa o nombre..." style="width:100%;padding:8px 10px;border:1.5px solid #a7f3d0;border-radius:7px;font-size:13px;outline:none;box-sizing:border-box">
+      </div>
+      <div style="width:110px">
+        <label style="font-size:11px;color:#555;font-weight:700;display:block;margin-bottom:4px">% Margen</label>
+        <input id="rs-margen" type="number" min="0" max="200" step="0.5" placeholder="0" style="width:100%;padding:8px 10px;border:1.5px solid #a7f3d0;border-radius:7px;font-size:13px;outline:none;box-sizing:border-box">
+      </div>
+      <button onclick="aplicarMargenReseller()" style="padding:8px 16px;background:#059669;color:#fff;border:none;border-radius:7px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap">Re-cotizar →</button>
+    </div>
+  </div>
   <!-- B.O. Modal -->
   <div id="bo-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center" onclick="if(event.target===this)closeBOModal()">
     <div style="background:#FFFFFF;border:1px solid #DDDEDF;border-radius:14px;padding:22px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)">
@@ -301,7 +316,8 @@ let state={
   cliente:"",vendedor:_sessionVendedor,
   items:[],entrega:null,sel:null,pz:"1",ex:"",
   currentCat:null,
-  folio:genFolio()
+  folio:genFolio(),
+  clienteNombre:"",margenCliente:0
 };
 
 /* Build category index */
@@ -448,6 +464,7 @@ function goToPreview(){
   saveQuoteToStorage();
   const st=stockStatus(state.items);
   document.getElementById('btn-bo').style.display=(st.sinStock+st.sinInfo)>0?'inline-block':'none';
+  if(_IS_RESELLER)document.getElementById('reseller-margin-panel').style.display='block';
   show('sc-preview');
 }
 function nuevaCot(){
@@ -790,21 +807,34 @@ function renderEntrega(v){
 }
 
 /* ── PREVIEW ── */
+function aplicarMargenReseller(){
+  const nombre=document.getElementById('rs-cliente-nombre').value.trim();
+  const margen=parseFloat(document.getElementById('rs-margen').value)||0;
+  state.clienteNombre=nombre;
+  state.margenCliente=margen;
+  renderPreview();
+}
+
 function renderPreview(){
   const items=state.items;
-  const sub=items.reduce((s,i)=>s+i.total,0);
+  const factor=(_IS_RESELLER&&state.margenCliente>0)?(1+state.margenCliente/100):1;
+  const sub=items.reduce((s,i)=>s+i.total*factor,0);
   const iva=sub*0.16,tot=sub+iva;
   const entTxt=state.entrega==='inmediata'?'24-48 horas. Salvo previa venta.':'8-12 semanas. Salvo previa orden.';
+  const nombreCliente=(_IS_RESELLER&&state.clienteNombre)?state.clienteNombre:(CLI_DESC[state.cliente]||state.cliente);
 
-  const rows=items.map((it,i)=>{const _et=entregaTextoItem(it.c,it.totalQty);return`
+  const rows=items.map((it,i)=>{const _et=entregaTextoItem(it.c,it.totalQty);
+    const precioFinal=Math.round(it.precio*factor*100)/100;
+    const totalFinal=Math.round(it.total*factor*100)/100;
+    return`
     <tr>
       <td style="padding:4px 6px;border:1px solid #e0e0e0;text-align:center">${i+1}</td>
       <td style="padding:4px 6px;border:1px solid #e0e0e0;font-family:monospace;font-size:9px">${it.c}</td>
       <td style="padding:4px 6px;border:1px solid #e0e0e0">${it.d}</td>
       <td style="padding:4px 6px;border:1px solid #e0e0e0;text-align:center;font-size:9px;font-weight:700;color:${_et.color}">${_et.txt}</td>
       <td style="padding:4px 6px;border:1px solid #e0e0e0;text-align:center">${it.totalQty} ${it.u}</td>
-      <td style="padding:4px 6px;border:1px solid #e0e0e0;text-align:right">${fmtMXN(it.precio)}</td>
-      <td style="padding:4px 6px;border:1px solid #e0e0e0;text-align:right;font-weight:bold">${fmtMXN(it.total)}</td>
+      <td style="padding:4px 6px;border:1px solid #e0e0e0;text-align:right">${fmtMXN(precioFinal)}</td>
+      <td style="padding:4px 6px;border:1px solid #e0e0e0;text-align:right;font-weight:bold">${fmtMXN(totalFinal)}</td>
     </tr>`}).join('');
   const padRows=Array.from({length:Math.max(0,8-items.length)}).map(()=>`<tr style="height:20px"><td colspan="7" style="border:1px solid #e0e0e0"></td></tr>`).join('');
 
@@ -839,7 +869,7 @@ function renderPreview(){
     <table style="width:100%;border-collapse:collapse;border:1px solid #ccc;margin-bottom:6px;font-size:10px">
       <tr>
         <td style="padding:3px 6px;background:#f0f0f0;font-weight:bold;width:12%;border:1px solid #ccc">Cliente:</td>
-        <td style="padding:3px 6px;border:1px solid #ccc;width:38%">${CLI_DESC[state.cliente]||state.cliente}</td>
+        <td style="padding:3px 6px;border:1px solid #ccc;width:38%">${nombreCliente}</td>
         <td style="padding:3px 6px;background:#f0f0f0;font-weight:bold;width:12%;border:1px solid #ccc">R.F.C.:</td>
         <td style="padding:3px 6px;border:1px solid #ccc"></td>
       </tr>
@@ -1120,7 +1150,7 @@ function generateBO(){
     const bos=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
     bos.push({
       id:'BO-'+Date.now(),quoteId:state.folio,tipo:COTIZADOR_TIPO,
-      cliente:state.cliente,vendedor:state.vendedor,fecha:new Date().toISOString(),
+      cliente:state.clienteNombre||state.cliente,vendedor:state.vendedor,fecha:new Date().toISOString(),
       items:boItems.map(it=>({c:it.c,d:it.d,t:it.t,u:it.u,totalQty:it.totalQty,stockAvailable:INV[it.c]!=null?INV[it.c]:'N/A'})),
       notas:notas
     });
