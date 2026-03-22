@@ -448,8 +448,11 @@ function autoDetectGH(){
     localStorage.setItem('jdm_gh_repo',repo);
     updateSyncUI();
     setSyncStatus('idle','Repo detectado: '+owner+'/'+repo+' — ahora pega tu token y guarda');
+  } else if(host.endsWith('.vercel.app')){
+    // En Vercel: el repo no se puede auto-detectar, hay que ingresarlo
+    setSyncStatus('idle','Vercel detectado — ingresa tu usuario GitHub y nombre del repo manualmente, luego guarda');
   } else {
-    setSyncStatus('err','No estás en GitHub Pages. Ingresa owner/repo manualmente y guarda.');
+    setSyncStatus('idle','Ingresa tu usuario GitHub y nombre del repo, luego guarda');
   }
 }
 
