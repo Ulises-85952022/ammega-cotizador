@@ -79,7 +79,7 @@ function renderNav(){
   const ROLE_LABEL={vendedor:'Vendedor',director:'Director',admin:'Admin'};
   const links=[
     {href:'cotizador_tpl.html',label:'← Inicio',roles:['vendedor','director','admin']},
-    {href:'cotizador_mangueras_tpl.html',label:'💧 Mangueras',roles:['vendedor','director','admin']},
+    {href:'cotizador_mangueras.html',label:'💧 Mangueras',roles:['vendedor','director','admin']},
     {href:'cotizador_bandas.html',label:'⚡ Bandas',roles:['vendedor','director','admin']},
     {href:'dashboard.html',label:'📊 Dashboard',roles:['director','admin']},
     {href:'admin.html',label:'⚙️ Admin',roles:['admin']},
@@ -207,7 +207,7 @@ function renderNav(){
     <button id="btn-bo" onclick="openBOModal()" style="display:none;padding:10px 16px;background:#f97316;color:#fff;border:none;border-radius:7px;font-weight:800;cursor:pointer">📋 B.O.</button>
   </div>
   <!-- Panel reseller: margen y nombre de cliente -->
-  <div id="reseller-margin-panel" style="display:none;background:#f0fdf4;border:1.5px solid #10b981;border-radius:10px;padding:14px 16px;margin-bottom:14px">
+  <div id="reseller-margin-panel" class="noPrint" style="display:none;background:#f0fdf4;border:1.5px solid #10b981;border-radius:10px;padding:14px 16px;margin-bottom:14px">
     <div style="font-size:12px;font-weight:800;color:#059669;margin-bottom:10px">Re-cotizar para su cliente</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
       <div style="flex:1;min-width:160px">
