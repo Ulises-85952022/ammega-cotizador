@@ -6,12 +6,6 @@
       "role": "admin"
     },
     {
-      "user": "enrique",
-      "passHash": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
-      "role": "reseller",
-      "nombre": "BINASA MANZANILLO"
-    },
-    {
       "user": "enrique 1",
       "passHash": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
       "role": "director",
