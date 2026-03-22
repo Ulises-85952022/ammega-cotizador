@@ -47,9 +47,9 @@ td{padding:7px 6px;vertical-align:top}
 @media print{
   .noPrint{display:none!important}
   body{background:#fff!important;color:#000!important;padding:0!important;margin:0!important}
-  @page{margin:0.8cm;size:Letter}
-  #print-sheet{max-width:none!important;width:100%!important;box-shadow:none!important;padding:0!important;margin:0!important}
+  @page{margin:0.4cm;size:Letter}
   #sc-preview{padding:0!important;margin:0!important}
+  #print-sheet{max-width:none!important;width:100%!important;box-shadow:none!important;padding:0!important;margin:0 auto!important;zoom:0.82}
 }
 </style>
 </head>
@@ -920,7 +920,7 @@ function renderPreview(){
       <td style="padding:4px 6px;border:1px solid #e0e0e0;text-align:right;font-weight:bold">${fmtMXN(totalFinal)}</td>
     </tr>`;}).join('');
 
-  const padRows=Array.from({length:Math.max(0,8-items.length)}).map(()=>`<tr style="height:20px"><td colspan="7" style="border:1px solid #e0e0e0"></td></tr>`).join('');
+  const padRows=Array.from({length:Math.max(0,4-items.length)}).map(()=>`<tr style="height:18px"><td colspan="7" style="border:1px solid #e0e0e0"></td></tr>`).join('');
 
   document.getElementById('print-sheet').innerHTML=`
     <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
