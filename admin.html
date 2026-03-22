@@ -317,7 +317,14 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
   <!-- TAB: ACCESO -->
   <div id="tab-acceso" class="panel">
     <div class="card">
-      <h3>Usuarios Registrados</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)">
+        <h3 style="margin:0">Usuarios Registrados</h3>
+        <button class="btn-dl" onclick="exportUsers()" title="Exportar users_seed.json y subirlo al repo para que todos puedan iniciar sesión">⬇ Exportar usuarios</button>
+      </div>
+      <div style="background:#FFF8E1;border:1px solid #FBC02D;border-radius:8px;padding:10px 14px;font-size:var(--text-xs);color:#5D4037;margin-bottom:var(--sp-3);line-height:1.6">
+        <strong>¿Cómo dar acceso a otros dispositivos?</strong><br>
+        1. Crea los usuarios aquí → 2. Click <strong>Exportar usuarios</strong> → 3. Sube el archivo <code>users_seed.json</code> a la raíz del repositorio → 4. Todos los navegadores cargarán los usuarios automáticamente al abrir el sitio.
+      </div>
       <div id="user-list"></div>
     </div>
     <div class="card">
@@ -453,6 +460,17 @@ async function addUser(){
   document.getElementById('new-nombre').value='';
   msg.innerHTML=`<span style="color:var(--success)">Usuario "${user}" (${role}) creado</span>`;
   renderUserList();
+}
+
+function exportUsers(){
+  const users=getUsers();
+  if(!users.length){alert('No hay usuarios para exportar');return;}
+  const blob=new Blob([JSON.stringify(users,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='users_seed.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 
 function removeUser(idx){
