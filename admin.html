@@ -288,20 +288,22 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
         <div>
           <label class="sec">GitHub Token</label>
-          <input class="inp" id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxx" oninput="saveGHConfig()">
+          <input class="inp" id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxx">
+          <div id="gh-token-status" style="font-size:10px;margin-top:4px;color:var(--success)"></div>
         </div>
         <div>
           <label class="sec">Usuario/Org GitHub</label>
-          <input class="inp" id="gh-owner" placeholder="tu-usuario" oninput="saveGHConfig()">
+          <input class="inp" id="gh-owner" placeholder="tu-usuario">
         </div>
         <div>
           <label class="sec">Nombre del Repositorio</label>
-          <input class="inp" id="gh-repo" placeholder="ammega-cotizador" oninput="saveGHConfig()">
+          <input class="inp" id="gh-repo" placeholder="ammega-cotizador">
         </div>
       </div>
       <div style="display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap">
-        <button class="btn-p" onclick="manualSync()">↑ Sincronizar ahora</button>
+        <button class="btn-p" onclick="saveGHConfig()">💾 Guardar config</button>
         <button class="btn-s" onclick="autoDetectGH()">Auto-detectar repo</button>
+        <button class="btn-s" onclick="manualSync()">↑ Sincronizar ahora</button>
         <span style="font-size:var(--text-xs);color:var(--text-muted)" id="sync-last"></span>
       </div>
     </div>
@@ -421,13 +423,17 @@ function saveUsers(users){ localStorage.setItem('jdm_users', JSON.stringify(user
 
 /* ── GITHUB AUTO-SYNC ── */
 function saveGHConfig(){
-  const t=document.getElementById('gh-token').value.trim();
+  const tField=document.getElementById('gh-token');
+  const t=tField.value.trim();
   const o=document.getElementById('gh-owner').value.trim();
   const r=document.getElementById('gh-repo').value.trim();
-  if(t)localStorage.setItem('jdm_gh_token',t);
-  if(o)localStorage.setItem('jdm_gh_owner',o);
-  if(r)localStorage.setItem('jdm_gh_repo',r);
+  // Solo guarda el token si el usuario escribió algo nuevo (no sobreescribir con vacío)
+  if(t) localStorage.setItem('jdm_gh_token',t);
+  if(o) localStorage.setItem('jdm_gh_owner',o);
+  if(r) localStorage.setItem('jdm_gh_repo',r);
+  tField.value=''; // Limpia campo tras guardar
   updateSyncUI();
+  setSyncStatus('idle','Config guardada — listo para sincronizar');
 }
 
 function autoDetectGH(){
@@ -441,13 +447,13 @@ function autoDetectGH(){
     localStorage.setItem('jdm_gh_owner',owner);
     localStorage.setItem('jdm_gh_repo',repo);
     updateSyncUI();
-    setSyncStatus('idle','Repo detectado: '+owner+'/'+repo);
+    setSyncStatus('idle','Repo detectado: '+owner+'/'+repo+' — ahora pega tu token y guarda');
   } else {
-    setSyncStatus('err','No estás en GitHub Pages. Ingresa owner/repo manualmente.');
+    setSyncStatus('err','No estás en GitHub Pages. Ingresa owner/repo manualmente y guarda.');
   }
 }
 
-function setSyncStatus(state, msg){
+function setSyncStatus(state,msg){
   const pill=document.getElementById('sync-status-pill');
   const last=document.getElementById('sync-last');
   if(!pill)return;
@@ -462,12 +468,14 @@ function updateSyncUI(){
   const t=localStorage.getItem('jdm_gh_token');
   const o=localStorage.getItem('jdm_gh_owner');
   const r=localStorage.getItem('jdm_gh_repo');
-  if(document.getElementById('gh-token')&&!document.getElementById('gh-token').value&&t)
-    document.getElementById('gh-token').value='••••••••';
-  if(document.getElementById('gh-owner')&&!document.getElementById('gh-owner').value&&o)
-    document.getElementById('gh-owner').value=o;
-  if(document.getElementById('gh-repo')&&!document.getElementById('gh-repo').value&&r)
-    document.getElementById('gh-repo').value=r;
+  const tokenStatus=document.getElementById('gh-token-status');
+  // Muestra estado del token sin revelar ni modificar el campo
+  if(tokenStatus) tokenStatus.textContent=t?'✓ Token guardado':'';
+  // Rellena owner/repo si están vacíos
+  const ownerEl=document.getElementById('gh-owner');
+  const repoEl=document.getElementById('gh-repo');
+  if(ownerEl&&!ownerEl.value&&o) ownerEl.value=o;
+  if(repoEl&&!repoEl.value&&r) repoEl.value=r;
   if(t&&o&&r) setSyncStatus('idle','Listo para sincronizar');
 }
 
