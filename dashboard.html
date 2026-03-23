@@ -204,14 +204,10 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
     <sub>ESTADISTICAS · COTIZACIONES · BACK ORDERS · REPORTES</sub>
     <div id="app-nav-dash" style="margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap"></div>
     <div class="session-info" style="margin-top:8px">Sesion: <span id="session-user"></span> · <a href="#" onclick="logout()">Cerrar sesion</a></div>
-    <!-- Sync de datos entre dispositivos -->
-    <div style="margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;align-items:center">
-      <span id="sync-gh-pill" style="font-size:11px;color:var(--text-muted);font-weight:600;padding:3px 10px;border-radius:99px;border:1px solid #DDDEDF;background:#F7F9FC">⟳ Sincronizando…</span>
-      <button class="btn-dl" onclick="importData()" title="Importar JSON exportado desde un cotizador">⬆ Importar</button>
-      <button class="btn-dl" onclick="exportAllData()" title="Exportar todos los datos" style="background:#595959">⬇ Exportar</button>
-      <button class="btn-dl" onclick="clearAllData()" title="Borrar datos locales" style="background:#ef4444">✕ Limpiar</button>
-      <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImportFile(event)">
-      <span id="import-msg" style="font-size:11px;color:var(--success);font-weight:700"></span>
+    <!-- Sync automático -->
+    <div style="margin-top:8px;display:flex;justify-content:center;align-items:center;gap:10px">
+      <span id="sync-gh-pill" style="font-size:11px;color:var(--text-muted);font-weight:600;padding:3px 12px;border-radius:99px;border:1px solid #DDDEDF;background:#F7F9FC">⟳ Sincronizando…</span>
+      <button class="btn-dl" onclick="clearAllData()" title="Borrar datos locales" style="background:#ef4444;font-size:10px;padding:3px 10px">✕ Limpiar datos</button>
     </div>
   </div>
 

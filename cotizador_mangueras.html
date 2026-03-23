@@ -55,9 +55,8 @@ td{padding:7px 6px;vertical-align:top}
   #sc-preview{padding:0!important;margin:0!important}
 }
 @media(max-width:700px){
-  #print-sheet{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px 8px!important}
-  #print-sheet table{min-width:560px}
-  #print-sheet td,#print-sheet th{padding:3px 4px!important;font-size:9px!important}
+  #print-sheet{transform-origin:top left;box-shadow:none!important}
+  #print-sheet-wrap{overflow:hidden}
 }
 </style>
 </head>
@@ -242,7 +241,6 @@ function renderNav(){
     <button onclick="goToCotizar()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">← Editar</button>
     <button onclick="nuevaCot()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">+ Nueva</button>
     <button id="btn-bo" onclick="openBOModal()" style="display:none;padding:10px 16px;background:#f97316;color:#fff;border:none;border-radius:7px;font-weight:800;cursor:pointer">📋 B.O.</button>
-    <button onclick="exportMisQuotes()" style="padding:10px 16px;background:#334155;color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:12px" title="Exporta tus cotizaciones para que el admin las vea en el dashboard">📤 Exportar mis datos</button>
   </div>
   <!-- Panel reseller: margen y nombre de cliente -->
   <div id="reseller-margin-panel" class="noPrint" style="display:none;background:#f0fdf4;border:1.5px solid #10b981;border-radius:10px;padding:14px 16px;margin-bottom:14px">
@@ -275,7 +273,9 @@ function renderNav(){
       <button onclick="generateBO()" style="width:100%;padding:12px;background:#f97316;color:#fff;border:none;border-radius:8px;font-weight:800;font-size:14px;cursor:pointer">📥 Generar y Descargar B.O.</button>
     </div>
   </div>
-  <div id="print-sheet" style="background:#fff;max-width:800px;margin:0 auto;padding:18px 22px;box-shadow:0 2px 12px rgba(0,0,0,.15);font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#000"></div>
+  <div id="print-sheet-wrap" style="width:100%">
+    <div id="print-sheet" style="background:#fff;width:780px;padding:18px 22px;box-shadow:0 2px 12px rgba(0,0,0,.15);font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#000"></div>
+  </div>
 </div>
 
 <!-- ═══ DATA ═══ -->
@@ -474,6 +474,7 @@ function goToPreview(){
   document.getElementById('btn-bo').style.display=(st.sinStock+st.sinInfo)>0?'inline-block':'none';
   if(_IS_RESELLER)document.getElementById('reseller-margin-panel').style.display='block';
   show('sc-preview');
+  requestAnimationFrame(scalePrintSheet);
 }
 function nuevaCot(){
   state.items=[];state.entrega=null;state.sel=null;state.cliente="";state.pz="1";state.ex="";state.folio=genFolio();
@@ -818,6 +819,7 @@ function aplicarMargenReseller(){
   state.clienteNombre=nombre;
   state.margenCliente=margen;
   renderPreview();
+  requestAnimationFrame(scalePrintSheet);
 }
 
 function renderPreview(){
@@ -989,18 +991,6 @@ async function pushQuotesToGitHub(){
   }catch(e){console.warn('pushQuotes error',e);}
 }
 
-/* ── Exportar mis datos ── */
-function exportMisQuotes(){
-  const quotes=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
-  const bos=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
-  const data={jdm_quotes:quotes,jdm_backorders:bos,exportedAt:new Date().toISOString(),exportedBy:state.vendedor||'vendedor'};
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`jdm_datos_${(state.vendedor||'v').split(' ')[0]}_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();URL.revokeObjectURL(url);
-}
-
 /* ── Back Orders ── */
 function openBOModal(){
   const boItems=state.items.filter(it=>{const s=INV[it.c];return s==null||s<it.totalQty;});
@@ -1050,6 +1040,23 @@ function generateBO(){
   XLSX.writeFile(wb,`BO_${state.folio}_${hoy().replace(/\//g,'-')}.xlsx`);
   closeBOModal();
 }
+
+/* ── Escalar cotización en mobile ── */
+function scalePrintSheet(){
+  const sheet=document.getElementById('print-sheet');
+  const wrap=document.getElementById('print-sheet-wrap');
+  if(!sheet||!wrap)return;
+  if(window.innerWidth>700){
+    sheet.style.transform='';sheet.style.marginBottom='';
+    wrap.style.height='';return;
+  }
+  const available=wrap.clientWidth||window.innerWidth-16;
+  const scale=available/780;
+  sheet.style.transform=`scale(${scale})`;
+  sheet.style.transformOrigin='top left';
+  wrap.style.height=Math.round(sheet.offsetHeight*scale)+'px';
+}
+window.addEventListener('resize',scalePrintSheet);
 
 /* ── INIT ── */
 initConfig();
