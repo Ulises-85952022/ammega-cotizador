@@ -51,6 +51,11 @@ td{padding:7px 6px;vertical-align:top}
   #sc-preview{padding:0!important;margin:0!important}
   #print-sheet{max-width:none!important;width:100%!important;box-shadow:none!important;padding:0!important;margin:0 auto!important;zoom:0.82}
 }
+@media(max-width:700px){
+  #print-sheet{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px 8px!important}
+  #print-sheet table{min-width:560px}
+  #print-sheet td,#print-sheet th{padding:3px 4px!important;font-size:9px!important}
+}
 </style>
 </head>
 <body>
@@ -205,6 +210,7 @@ function renderNav(){
     <button onclick="goToCotizarEdit()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">← Editar</button>
     <button onclick="nuevaCot()" style="padding:10px 16px;background:#f5f5f5;color:#333;border:1px solid #ccc;border-radius:7px;cursor:pointer">+ Nueva</button>
     <button id="btn-bo" onclick="openBOModal()" style="display:none;padding:10px 16px;background:#f97316;color:#fff;border:none;border-radius:7px;font-weight:800;cursor:pointer">📋 B.O.</button>
+    <button onclick="exportMisQuotes()" style="padding:10px 16px;background:#334155;color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:12px" title="Exporta tus cotizaciones para que el admin las vea en el dashboard">📤 Exportar mis datos</button>
   </div>
   <!-- Panel reseller: margen y nombre de cliente -->
   <div id="reseller-margin-panel" class="noPrint" style="display:none;background:#f0fdf4;border:1.5px solid #10b981;border-radius:10px;padding:14px 16px;margin-bottom:14px">
@@ -1039,6 +1045,30 @@ function saveQuoteToStorage(){
     if(quotes.length>500)quotes.splice(0,quotes.length-500);
     localStorage.setItem('jdm_quotes',JSON.stringify(quotes));
   }catch(e){console.warn('saveQuote error',e);}
+  pushQuotesToGitHub();
+}
+
+/* ── Auto-sync cotizaciones a GitHub ── */
+async function pushQuotesToGitHub(){
+  const token=localStorage.getItem('jdm_sync_token')||localStorage.getItem('jdm_gh_token');
+  const owner=localStorage.getItem('jdm_sync_owner')||localStorage.getItem('jdm_gh_owner');
+  const repo=localStorage.getItem('jdm_sync_repo')||localStorage.getItem('jdm_gh_repo');
+  if(!token||!owner||!repo)return;
+  try{
+    const quotes=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
+    const bos=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
+    const data={quotes,backorders:bos,updatedAt:new Date().toISOString()};
+    const jsonStr=JSON.stringify(data);
+    const content=btoa(unescape(encodeURIComponent(jsonStr)));
+    const apiUrl=`https://api.github.com/repos/${owner}/${repo}/contents/quotes_data.json`;
+    const headers={Authorization:`token ${token}`,'Content-Type':'application/json',Accept:'application/vnd.github.v3+json'};
+    let sha;
+    const getRes=await fetch(apiUrl,{headers});
+    if(getRes.ok){const d=await getRes.json();sha=d.sha;}
+    const body={message:'chore: sync cotizaciones',content};
+    if(sha)body.sha=sha;
+    await fetch(apiUrl,{method:'PUT',headers,body:JSON.stringify(body)});
+  }catch(e){console.warn('pushQuotes error',e);}
 }
 
 /* ── Back Orders ── */
@@ -1091,6 +1121,18 @@ function generateBO(){
   XLSX.utils.book_append_sheet(wb,ws,'Back Order');
   XLSX.writeFile(wb,`BO_${state.folio}_${hoy().replace(/\//g,'-')}.xlsx`);
   closeBOModal();
+}
+
+/* ── Exportar mis datos ── */
+function exportMisQuotes(){
+  const quotes=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
+  const bos=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
+  const data={jdm_quotes:quotes,jdm_backorders:bos,exportedAt:new Date().toISOString(),exportedBy:state.vendedor||'vendedor'};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`jdm_datos_${(state.vendedor||'v').split(' ')[0]}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();URL.revokeObjectURL(url);
 }
 
 /* ── INIT ── */

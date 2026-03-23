@@ -45,6 +45,7 @@
 .reveal{animation:fadeInUp 0.5s var(--ease-out) forwards;opacity:0}
 .reveal-d1{animation-delay:.05s}.reveal-d2{animation-delay:.1s}.reveal-d3{animation-delay:.15s}
 .reveal-d4{animation-delay:.2s}.reveal-d5{animation-delay:.25s}.reveal-d6{animation-delay:.3s}
+@media(prefers-reduced-motion:reduce){.reveal,.reveal-d1,.reveal-d2,.reveal-d3,.reveal-d4,.reveal-d5,.reveal-d6{opacity:1!important;animation:none!important;transform:none!important}}
 
 /* ─── Base ─── */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -203,6 +204,15 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
     <sub>ESTADISTICAS · COTIZACIONES · BACK ORDERS · REPORTES</sub>
     <div id="app-nav-dash" style="margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap"></div>
     <div class="session-info" style="margin-top:8px">Sesion: <span id="session-user"></span> · <a href="#" onclick="logout()">Cerrar sesion</a></div>
+    <!-- Sync de datos entre dispositivos -->
+    <div style="margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;align-items:center">
+      <span id="sync-gh-pill" style="font-size:11px;color:var(--text-muted);font-weight:600;padding:3px 10px;border-radius:99px;border:1px solid #DDDEDF;background:#F7F9FC">⟳ Sincronizando…</span>
+      <button class="btn-dl" onclick="importData()" title="Importar JSON exportado desde un cotizador">⬆ Importar</button>
+      <button class="btn-dl" onclick="exportAllData()" title="Exportar todos los datos" style="background:#595959">⬇ Exportar</button>
+      <button class="btn-dl" onclick="clearAllData()" title="Borrar datos locales" style="background:#ef4444">✕ Limpiar</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImportFile(event)">
+      <span id="import-msg" style="font-size:11px;color:var(--success);font-weight:700"></span>
+    </div>
   </div>
 
   <div class="tabs">
@@ -652,6 +662,73 @@ function renderStats(){
   document.getElementById('date-top').innerHTML=dHtml;
 }
 
+/* ─── Importar / Exportar datos ─── */
+function exportAllData(){
+  const data={
+    jdm_quotes:_quotes,
+    jdm_backorders:_bos,
+    exportedAt:new Date().toISOString(),
+    exportedBy:window._session?.user||'unknown'
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`jdm_datos_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();URL.revokeObjectURL(url);
+}
+
+function importData(){
+  document.getElementById('import-file').click();
+}
+
+function handleImportFile(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const data=JSON.parse(ev.target.result);
+      let addedQ=0,addedB=0;
+      // Merge quotes
+      if(Array.isArray(data.jdm_quotes)&&data.jdm_quotes.length){
+        const existing=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
+        const existingIds=new Set(existing.map(q=>q.id));
+        const newQ=data.jdm_quotes.filter(q=>!existingIds.has(q.id));
+        addedQ=newQ.length;
+        const merged=[...existing,...newQ];
+        if(merged.length>1000)merged.splice(0,merged.length-1000);
+        localStorage.setItem('jdm_quotes',JSON.stringify(merged));
+      }
+      // Merge backorders
+      if(Array.isArray(data.jdm_backorders)&&data.jdm_backorders.length){
+        const existing=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
+        const existingIds=new Set(existing.map(b=>b.id));
+        const newB=data.jdm_backorders.filter(b=>!existingIds.has(b.id));
+        addedB=newB.length;
+        const merged=[...existing,...newB];
+        if(merged.length>500)merged.splice(0,merged.length-500);
+        localStorage.setItem('jdm_backorders',JSON.stringify(merged));
+      }
+      const msg=document.getElementById('import-msg');
+      msg.textContent=`✓ ${addedQ} cotizaciones + ${addedB} back orders importados`;
+      setTimeout(()=>{msg.textContent='';},4000);
+      initDashboard();
+    }catch(err){
+      alert('Error al leer el archivo: '+err.message);
+    }
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData(){
+  if(!confirm('¿Borrar TODOS los datos de cotizaciones y back orders de este dispositivo? Esta acción no se puede deshacer.'))return;
+  localStorage.removeItem('jdm_quotes');
+  localStorage.removeItem('jdm_backorders');
+  _quotes=[];_bos=[];
+  initDashboard();
+}
+
 /* INIT */
 function initDashboard(){
   loadData();
@@ -661,6 +738,53 @@ function initDashboard(){
   renderBO();
   renderStats();
   revealChildren(document.getElementById('tab-resumen'));
+  // Auto-fetch desde GitHub (sin bloquear UI)
+  fetchQuotesFromGitHub();
+}
+
+async function fetchQuotesFromGitHub(){
+  const pill=document.getElementById('sync-gh-pill');
+  const setPill=(txt,color)=>{if(pill){pill.textContent=txt;pill.style.color=color||'var(--text-muted)';}};
+  setPill('⟳ Sincronizando…','var(--warning)');
+  try{
+    const r=await fetch('./quotes_data.json?v='+Date.now());
+    if(!r.ok){setPill('● Sin sync','var(--text-muted)');return;}
+    const data=await r.json();
+    let changed=false;
+    if(Array.isArray(data.quotes)&&data.quotes.length){
+      const existing=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
+      const existingIds=new Set(existing.map(q=>q.id));
+      const newQ=data.quotes.filter(q=>!existingIds.has(q.id));
+      if(newQ.length){
+        const merged=[...existing,...newQ];
+        if(merged.length>1000)merged.splice(0,merged.length-1000);
+        localStorage.setItem('jdm_quotes',JSON.stringify(merged));
+        changed=true;
+      }
+    }
+    if(Array.isArray(data.backorders)&&data.backorders.length){
+      const existing=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
+      const existingIds=new Set(existing.map(b=>b.id));
+      const newB=data.backorders.filter(b=>!existingIds.has(b.id));
+      if(newB.length){
+        const merged=[...existing,...newB];
+        if(merged.length>500)merged.splice(0,merged.length-500);
+        localStorage.setItem('jdm_backorders',JSON.stringify(merged));
+        changed=true;
+      }
+    }
+    if(changed){
+      loadData();
+      populateClientFilters();
+      renderResumen();
+      renderQuotes();
+      renderBO();
+      renderStats();
+      setPill('✓ Actualizado','var(--success)');
+    }else{
+      setPill('✓ Al dia','var(--success)');
+    }
+  }catch(e){setPill('● Sin sync','var(--text-muted)');}
 }
 </script>
 </body>

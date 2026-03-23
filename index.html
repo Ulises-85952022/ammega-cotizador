@@ -117,6 +117,16 @@ async function loadSeedUsers(){
     if(resellers.length){
       localStorage.setItem('jdm_resellers',JSON.stringify(resellers));
     }
+    // Sync clientes (descuentos)
+    if(cfg.clientes&&cfg.clientes.length){
+      localStorage.setItem('jdm_clientes',JSON.stringify(cfg.clientes));
+    }
+    // Sync token de cotizaciones (para auto-push a GitHub)
+    if(cfg.syncToken){
+      localStorage.setItem('jdm_sync_token',cfg.syncToken);
+      if(cfg.syncOwner)localStorage.setItem('jdm_sync_owner',cfg.syncOwner);
+      if(cfg.syncRepo)localStorage.setItem('jdm_sync_repo',cfg.syncRepo);
+    }
   }catch{}
 }
 
