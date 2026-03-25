@@ -1139,6 +1139,7 @@ function generateBO(){
     });
     if(bos.length>500)bos.splice(0,bos.length-500);
     localStorage.setItem('jdm_backorders',JSON.stringify(bos));
+    syncQuotesToBin(); // sincronizar BO al bin compartido (fire & forget)
   }catch(e){console.warn('saveBO error',e);}
   if(typeof XLSX==='undefined'){alert('SheetJS no cargado. Recarga la página.');return;}
   const wsData=[
