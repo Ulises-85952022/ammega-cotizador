@@ -659,64 +659,6 @@ function renderStats(){
 }
 
 /* ─── Importar / Exportar datos ─── */
-function exportAllData(){
-  const data={
-    jdm_quotes:_quotes,
-    jdm_backorders:_bos,
-    exportedAt:new Date().toISOString(),
-    exportedBy:window._session?.user||'unknown'
-  };
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`jdm_datos_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();URL.revokeObjectURL(url);
-}
-
-function importData(){
-  document.getElementById('import-file').click();
-}
-
-function handleImportFile(e){
-  const file=e.target.files[0];
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=function(ev){
-    try{
-      const data=JSON.parse(ev.target.result);
-      let addedQ=0,addedB=0;
-      // Merge quotes
-      if(Array.isArray(data.jdm_quotes)&&data.jdm_quotes.length){
-        const existing=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
-        const existingIds=new Set(existing.map(q=>q.id));
-        const newQ=data.jdm_quotes.filter(q=>!existingIds.has(q.id));
-        addedQ=newQ.length;
-        const merged=[...existing,...newQ];
-        if(merged.length>1000)merged.splice(0,merged.length-1000);
-        localStorage.setItem('jdm_quotes',JSON.stringify(merged));
-      }
-      // Merge backorders
-      if(Array.isArray(data.jdm_backorders)&&data.jdm_backorders.length){
-        const existing=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
-        const existingIds=new Set(existing.map(b=>b.id));
-        const newB=data.jdm_backorders.filter(b=>!existingIds.has(b.id));
-        addedB=newB.length;
-        const merged=[...existing,...newB];
-        if(merged.length>500)merged.splice(0,merged.length-500);
-        localStorage.setItem('jdm_backorders',JSON.stringify(merged));
-      }
-      const msg=document.getElementById('import-msg');
-      msg.textContent=`✓ ${addedQ} cotizaciones + ${addedB} back orders importados`;
-      setTimeout(()=>{msg.textContent='';},4000);
-      initDashboard();
-    }catch(err){
-      alert('Error al leer el archivo: '+err.message);
-    }
-    e.target.value='';
-  };
-  reader.readAsText(file);
-}
-
 function clearAllData(){
   if(!confirm('¿Borrar TODOS los datos de cotizaciones y back orders de este dispositivo? Esta acción no se puede deshacer.'))return;
   localStorage.removeItem('jdm_quotes');
