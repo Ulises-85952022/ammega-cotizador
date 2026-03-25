@@ -965,7 +965,29 @@ function saveQuoteToStorage(){
     if(idx>=0)quotes[idx]=rec;else quotes.push(rec);
     if(quotes.length>500)quotes.splice(0,quotes.length-500);
     localStorage.setItem('jdm_quotes',JSON.stringify(quotes));
+    syncQuotesToBin(); // sincronizar al bin compartido (fire & forget)
   }catch(e){console.warn('saveQuote error',e);}
+}
+
+/* ── JSONBin: Sync cotizaciones compartidas ── */
+async function syncQuotesToBin(){
+  const id=localStorage.getItem('jdm_bin_id');
+  if(!id)return;
+  try{
+    const key=localStorage.getItem('jdm_bin_key');
+    const headers={'Content-Type':'application/json'};
+    if(key)headers['X-Access-Key']=key;
+    // Obtener estado remoto actual
+    const getR=await fetch(`https://api.jsonbin.io/v3/b/${id}/latest`,{headers});
+    const remote=getR.ok?(await getR.json()).record:{quotes:[],backorders:[]};
+    // Merge: combinar local + remoto por folio id
+    const localQ=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
+    const localB=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
+    function mergeById(a,b){const m={};[...(a||[]),...(b||[])].forEach(q=>{if(q.id)m[q.id]=q;});return Object.values(m);}
+    const merged={quotes:mergeById(remote.quotes,localQ),backorders:mergeById(remote.backorders,localB)};
+    // Subir merged al bin
+    await fetch(`https://api.jsonbin.io/v3/b/${id}`,{method:'PUT',headers,body:JSON.stringify(merged)});
+  }catch(e){console.warn('syncBin error',e);}
 }
 
 /* ── Back Orders ── */

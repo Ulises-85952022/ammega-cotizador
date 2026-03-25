@@ -212,6 +212,8 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
       <button class="btn-dl" onclick="clearAllData()" title="Borrar datos locales" style="background:#ef4444">✕ Limpiar</button>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImportFile(event)">
       <span id="import-msg" style="font-size:11px;color:var(--success);font-weight:700"></span>
+      <button id="btn-refresh" onclick="refreshDashboard()" style="padding:6px 14px;background:var(--teal-600);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">⟳ Actualizar</button>
+      <span id="bin-sync-status" style="font-size:11px;color:var(--text-muted)"></span>
     </div>
   </div>
 
@@ -315,9 +317,38 @@ function revealChildren(container){
 /* DATA */
 let _quotes=[],_bos=[];
 
-function loadData(){
+function mergeById(a,b){const m={};[...(a||[]),...(b||[])].forEach(q=>{if(q.id)m[q.id]=q;});return Object.values(m);}
+
+async function loadData(){
+  // Cargar desde localStorage primero (rápido)
   _quotes=JSON.parse(localStorage.getItem('jdm_quotes')||'[]');
   _bos=JSON.parse(localStorage.getItem('jdm_backorders')||'[]');
+  // Intentar cargar desde el bin compartido
+  const binId=localStorage.getItem('jdm_bin_id');
+  if(!binId)return;
+  setBinSyncStatus('syncing');
+  try{
+    const binKey=localStorage.getItem('jdm_bin_key');
+    const headers={};
+    if(binKey)headers['X-Access-Key']=binKey;
+    const r=await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`,{headers});
+    if(!r.ok){setBinSyncStatus('err');return;}
+    const data=(await r.json()).record;
+    _quotes=mergeById(_quotes,data.quotes||[]);
+    _bos=mergeById(_bos,data.backorders||[]);
+    // Actualizar caché local
+    localStorage.setItem('jdm_quotes',JSON.stringify(_quotes));
+    localStorage.setItem('jdm_backorders',JSON.stringify(_bos));
+    setBinSyncStatus('ok');
+  }catch(e){console.warn('Bin load error',e);setBinSyncStatus('err');}
+}
+
+function setBinSyncStatus(state){
+  const el=document.getElementById('bin-sync-status');
+  if(!el)return;
+  const map={syncing:'⟳ Actualizando…',ok:'✓ Sincronizado '+new Date().toLocaleTimeString('es-MX'),err:'⚠ Sin conexión al bin'};
+  el.textContent=map[state]||'';
+  el.style.color=state==='ok'?'var(--success)':state==='err'?'var(--danger)':'var(--text-muted)';
 }
 
 function fmtDate(iso){if(!iso)return'-';const d=new Date(iso);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});}
@@ -730,8 +761,8 @@ function clearAllData(){
 }
 
 /* INIT */
-function initDashboard(){
-  loadData();
+async function initDashboard(){
+  await loadData();
   populateClientFilters();
   renderResumen();
   renderQuotes();
@@ -785,6 +816,18 @@ async function fetchQuotesFromGitHub(){
       setPill('✓ Al dia','var(--success)');
     }
   }catch(e){setPill('● Sin sync','var(--text-muted)');}
+}
+
+async function refreshDashboard(){
+  const btn=document.getElementById('btn-refresh');
+  if(btn){btn.disabled=true;btn.textContent='⟳ Actualizando…';}
+  await loadData();
+  populateClientFilters();
+  renderResumen();
+  renderQuotes();
+  renderBO();
+  renderStats();
+  if(btn){btn.disabled=false;btn.textContent='⟳ Actualizar';}
 }
 </script>
 </body>

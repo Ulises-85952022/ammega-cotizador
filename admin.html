@@ -308,6 +308,37 @@ function logout(){localStorage.removeItem('jdm_session');location.href='index.ht
       </div>
     </div>
 
+    <!-- JSONBIN SYNC COTIZACIONES -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)">
+        <h3 style="margin:0">📊 Sincronización de Cotizaciones (JSONBin)</h3>
+        <span class="sync-pill sync-idle" id="bin-status-pill">● Sin configurar</span>
+      </div>
+      <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--sp-3);line-height:1.6">
+        Configura una vez para que las cotizaciones de <strong>todos los vendedores</strong> aparezcan en el dashboard, sin importar el dispositivo.<br>
+        1. Crea cuenta gratis en <strong>jsonbin.io</strong> → crea un nuevo Bin con contenido <code style="background:#f0f0f0;padding:1px 5px;border-radius:3px">{}</code> → copia el Bin ID.<br>
+        2. En tu cuenta JSONBin ve a <em>API Keys</em> → crea un Access Key → pégalo abajo.<br>
+        3. Guarda y sincroniza — todos los usuarios lo recibirán al iniciar sesión.
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div>
+          <label class="sec">JSONBin Bin ID</label>
+          <input class="inp" id="bin-id" placeholder="ej: 6650abc1acd3cb34a8...">
+          <div id="bin-id-status" style="font-size:10px;margin-top:4px;color:var(--success)"></div>
+        </div>
+        <div>
+          <label class="sec">JSONBin Access Key</label>
+          <input class="inp" id="bin-key" type="password" placeholder="$2b$10$...">
+          <div id="bin-key-status" style="font-size:10px;margin-top:4px;color:var(--success)"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap">
+        <button class="btn-p" onclick="saveBinConfig()">💾 Guardar y publicar</button>
+        <button class="btn-s" onclick="testBinConfig()">🔍 Probar conexión</button>
+        <span style="font-size:var(--text-xs);color:var(--text-muted)" id="bin-last"></span>
+      </div>
+    </div>
+
     <!-- USUARIOS -->
     <div class="card">
       <h3>Usuarios del Sistema</h3>
@@ -494,7 +525,9 @@ async function autoSync(manual=false){
   }
   setSyncStatus('syncing');
   try{
-    const config={users:getUsers(),resellers:getResellers(),clientes:getClientes(),syncToken:token,syncOwner:owner,syncRepo:repo};
+    const binId=localStorage.getItem('jdm_bin_id')||'';
+    const binKey=localStorage.getItem('jdm_bin_key')||'';
+    const config={users:getUsers(),resellers:getResellers(),clientes:getClientes(),syncToken:token,syncOwner:owner,syncRepo:repo,...(binId?{quotesBinId:binId}:{}),...(binKey?{quotesBinKey:binKey}:{})};
     const jsonStr=JSON.stringify(config,null,2);
     const content=btoa(unescape(encodeURIComponent(jsonStr)));
     const apiUrl=`https://api.github.com/repos/${owner}/${repo}/contents/access_config.json`;
@@ -509,6 +542,55 @@ async function autoSync(manual=false){
     if(putRes.ok){setSyncStatus('ok');}
     else{const err=await putRes.json();setSyncStatus('err',err.message||'Error al publicar');}
   }catch(e){setSyncStatus('err',e.message||'Error de red');}
+}
+
+/* ── JSONBIN CONFIG ── */
+function saveBinConfig(){
+  const idField=document.getElementById('bin-id');
+  const keyField=document.getElementById('bin-key');
+  const id=idField.value.trim();
+  const key=keyField.value.trim();
+  if(id) localStorage.setItem('jdm_bin_id',id);
+  if(key) localStorage.setItem('jdm_bin_key',key);
+  idField.value=''; keyField.value='';
+  updateBinUI();
+  // Incluir en access_config.json via autoSync
+  setBinStatus('syncing','Guardando y publicando…');
+  autoSync(false).then(()=>{
+    const ok=document.getElementById('sync-status-pill').classList.contains('sync-ok');
+    setBinStatus(ok?'ok':'idle',ok?'Publicado — todos los usuarios lo recibirán al login':'Guardado local — configura GitHub sync para publicar');
+  });
+}
+async function testBinConfig(){
+  const id=document.getElementById('bin-id').value.trim()||localStorage.getItem('jdm_bin_id')||'';
+  const key=document.getElementById('bin-key').value.trim()||localStorage.getItem('jdm_bin_key')||'';
+  if(!id){setBinStatus('err','Ingresa un Bin ID primero');return;}
+  setBinStatus('syncing','Probando conexión…');
+  try{
+    const headers={};
+    if(key) headers['X-Access-Key']=key;
+    const r=await fetch(`https://api.jsonbin.io/v3/b/${id}/latest`,{headers});
+    if(r.ok){setBinStatus('ok','Conexión OK — bin accesible');}
+    else{const d=await r.json().catch(()=>({}));setBinStatus('err',d.message||'Error: '+r.status);}
+  }catch(e){setBinStatus('err',e.message||'Error de red');}
+}
+function setBinStatus(state,msg){
+  const pill=document.getElementById('bin-status-pill');
+  const last=document.getElementById('bin-last');
+  if(!pill)return;
+  pill.className='sync-pill sync-'+state;
+  const icons={idle:'●',syncing:'↑',ok:'✓',err:'✗'};
+  pill.textContent=(icons[state]||'●')+' '+(msg||state);
+  if(state==='ok'&&last)last.textContent='Última prueba: '+new Date().toLocaleTimeString('es-MX');
+}
+function updateBinUI(){
+  const id=localStorage.getItem('jdm_bin_id');
+  const key=localStorage.getItem('jdm_bin_key');
+  const idSt=document.getElementById('bin-id-status');
+  const keySt=document.getElementById('bin-key-status');
+  if(idSt) idSt.textContent=id?'✓ Bin ID guardado':'';
+  if(keySt) keySt.textContent=key?'✓ Access Key guardado':'';
+  if(id&&key) setBinStatus('idle','Listo — probar conexión para verificar');
 }
 
 /* SESSION-BASED INIT */
@@ -532,6 +614,7 @@ let _currentUser=window._session||null;
   renderUserList();
   renderResellersAcceso();
   updateSyncUI();
+  updateBinUI();
   revealChildren(document.getElementById('tab-inv'));
 })();
 
