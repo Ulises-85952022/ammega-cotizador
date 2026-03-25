@@ -253,6 +253,18 @@ function renderNav(){
       <button onclick="aplicarMargenReseller()" style="padding:8px 16px;background:#059669;color:#fff;border:none;border-radius:7px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap">Re-cotizar →</button>
     </div>
   </div>
+
+  <button class="btn-p" id="btn-preview" onclick="goToPreview()" style="margin-bottom:20px" disabled>Ver cotización →</button>
+</div>
+
+<!-- ═══ SCREEN 4: PREVIEW ═══ -->
+<div id="sc-preview" class="screen">
+  <div class="noPrint" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
+    <button onclick="window.print()" style="padding:10px 16px;background:#005762;color:#FFF;border:none;border-radius:7px;font-weight:800;cursor:pointer">🖨 PDF / Imprimir</button>
+    <button onclick="goToCotizar()" style="padding:10px 16px;background:#F7F9FC;color:#333;border:1px solid #DDDEDF;border-radius:7px;cursor:pointer">← Editar</button>
+    <button onclick="nuevaCot()" style="padding:10px 16px;background:#F7F9FC;color:#333;border:1px solid #DDDEDF;border-radius:7px;cursor:pointer">+ Nueva</button>
+    <button id="btn-bo" onclick="openBOModal()" style="display:none;padding:10px 16px;background:#f97316;color:#fff;border:none;border-radius:7px;font-weight:800;cursor:pointer">📋 B.O.</button>
+  </div>
   <!-- B.O. Modal -->
   <div id="bo-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center" onclick="if(event.target===this)closeBOModal()">
     <div style="background:#FFFFFF;border:1px solid #DDDEDF;border-radius:14px;padding:22px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)">
@@ -457,6 +469,7 @@ function goToCategoria(){
 function goToCotizar(){
   document.getElementById('cli-badge-cot').textContent=state.cliente;
   renderItems();
+  if(_IS_RESELLER)document.getElementById('reseller-margin-panel').style.display='block';
   show('sc-cotizar');
   document.getElementById('search-inp').value='';
   closeDrop();
@@ -466,7 +479,6 @@ function goToPreview(){
   saveQuoteToStorage();
   const st=stockStatus(state.items);
   document.getElementById('btn-bo').style.display=(st.sinStock+st.sinInfo)>0?'inline-block':'none';
-  if(_IS_RESELLER)document.getElementById('reseller-margin-panel').style.display='block';
   show('sc-preview');
 }
 function nuevaCot(){
@@ -814,7 +826,10 @@ function aplicarMargenReseller(){
   const margen=parseFloat(document.getElementById('rs-margen').value)||0;
   state.clienteNombre=nombre;
   state.margenCliente=margen;
-  renderPreview();
+  const btn=document.querySelector('#reseller-margin-panel button');
+  const orig=btn.textContent;
+  btn.textContent='✓ Aplicado';btn.style.background='#10b981';
+  setTimeout(()=>{btn.textContent=orig;btn.style.background='#059669';},1800);
 }
 
 function renderPreview(){

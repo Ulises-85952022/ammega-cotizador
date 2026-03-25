@@ -127,6 +127,9 @@ async function loadSeedUsers(){
       if(cfg.syncOwner)localStorage.setItem('jdm_sync_owner',cfg.syncOwner);
       if(cfg.syncRepo)localStorage.setItem('jdm_sync_repo',cfg.syncRepo);
     }
+    // Sync bin config para cotizaciones compartidas (JSONBin)
+    if(cfg.quotesBinId) localStorage.setItem('jdm_bin_id',cfg.quotesBinId);
+    if(cfg.quotesBinKey) localStorage.setItem('jdm_bin_key',cfg.quotesBinKey);
   }catch{}
 }
 
