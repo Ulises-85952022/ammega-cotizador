@@ -235,6 +235,7 @@ td{padding:7px 6px;vertical-align:top}
 <!-- ═══ DATA ═══ -->
 <script>
 const LOGO_B64=/*LOGO_PLACEHOLDER*/"";
+const LOGO_MIME=/*LOGO_MIME_PLACEHOLDER*/"image/png";
 const RAW_CAT=/*CAT_PLACEHOLDER*/[];
 const INV=/*INV_PLACEHOLDER*/{};
 </script>
@@ -432,7 +433,7 @@ function nuevaCot(){
 function initConfig(){
   // Logo
   if(LOGO_B64){
-    document.getElementById('logo-cfg').src=`data:image/png;base64,${LOGO_B64}`;
+    document.getElementById('logo-cfg').src=`data:${LOGO_MIME};base64,${LOGO_B64}`;
   }else{
     document.getElementById('logo-cfg').style.display='none';
   }
@@ -806,7 +807,7 @@ function renderPreview(){
   const sub=items.reduce((s,i)=>s+i.total,0);
   const iva=sub*0.16,tot=sub+iva;
   const entTxt=state.entrega==='inmediata'?'24-48 horas. Salvo previa venta.':'8-12 semanas. Salvo previa orden.';
-  const logo=LOGO_B64?`<img src="data:image/png;base64,${LOGO_B64}" style="width:100%;max-width:130px" alt="Logo">`:'<strong>JASON DE MEXICO</strong>';
+  const logo=LOGO_B64?`<img src="data:${LOGO_MIME};base64,${LOGO_B64}" style="width:100%;max-width:130px" alt="Logo">`:'<strong>JASON DE MEXICO</strong>';
 
   const rows=items.map((it,i)=>{const _et=entregaTextoItem(it.c,it.totalQty);return`
     <tr>

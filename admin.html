@@ -987,6 +987,7 @@ function generarHTML(){
    RESELLERS
    ══════════════════════════════════ */
 let _rsLogoB64='';
+let _rsLogoMime='image/png';
 
 function getResellers(){try{return JSON.parse(localStorage.getItem('jdm_resellers')||'[]');}catch{return[];}}
 function saveResellers(r){localStorage.setItem('jdm_resellers',JSON.stringify(r));}
@@ -997,10 +998,13 @@ function handleRSLogoFile(file){
   if(file.size>500000){alert('Logo muy grande (máx 500KB)');return;}
   const reader=new FileReader();
   reader.onload=function(e){
-    _rsLogoB64=e.target.result.split(',')[1];
+    const dataUrl=e.target.result;
+    const m=/^data:([^;]+);base64,(.+)$/.exec(dataUrl);
+    _rsLogoMime=m?m[1]:(file.type||'image/png');
+    _rsLogoB64=m?m[2]:dataUrl.split(',')[1];
     document.getElementById('logo-fname').textContent='✅ '+file.name;
     const prev=document.getElementById('logo-preview');
-    document.getElementById('logo-preview-img').src='data:image/png;base64,'+_rsLogoB64;
+    document.getElementById('logo-preview-img').src=`data:${_rsLogoMime};base64,${_rsLogoB64}`;
     prev.style.display='block';
     document.getElementById('logo-size').textContent='Tamaño: '+(file.size/1024).toFixed(1)+' KB';
   };
@@ -1022,7 +1026,7 @@ function renderResellersAcceso(){
   }
   el.innerHTML=list.map((r,i)=>{
     const logoHtml=r.logo
-      ?`<img class="rs-logo" src="data:image/png;base64,${r.logo}" alt="${r.nombre}">`
+      ?`<img class="rs-logo" src="data:${r.logoMime||'image/png'};base64,${r.logo}" alt="${r.nombre}">`
       :`<div class="rs-logo-ph">🏪</div>`;
     return `<div class="rs-row">
       ${logoHtml}
@@ -1055,7 +1059,7 @@ function createNewReseller(){
     users.push({user,passHash:h,role:'reseller',nombre:nombre.toUpperCase()});
     saveUsers(users);
     const resellers=getResellers();
-    resellers.push({nombre,user,descuento:desc,logo:_rsLogoB64,fechaCreacion:new Date().toISOString()});
+    resellers.push({nombre,user,descuento:desc,logo:_rsLogoB64,logoMime:_rsLogoMime,fechaCreacion:new Date().toISOString()});
     saveResellers(resellers);
     document.getElementById('new-rs-nombre').value='';
     document.getElementById('new-rs-user').value='';
@@ -1064,6 +1068,7 @@ function createNewReseller(){
     document.getElementById('logo-fname').textContent='';
     document.getElementById('logo-preview').style.display='none';
     _rsLogoB64='';
+    _rsLogoMime='image/png';
     msg.innerHTML=`<span style="color:var(--success)">✓ Reseller "${nombre}" creado — sincronizando…</span>`;
     renderResellersAcceso();
     renderUserList();

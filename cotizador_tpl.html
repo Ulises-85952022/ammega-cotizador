@@ -118,7 +118,7 @@ body{
 })();
 function logout(){localStorage.removeItem('jdm_session');location.href='index.html';}
 function logoutReseller(){
-  ['jdm_reseller_user','jdm_reseller_nombre','jdm_reseller_discount','jdm_reseller_logo'].forEach(k=>localStorage.removeItem(k));
+  ['jdm_reseller_user','jdm_reseller_nombre','jdm_reseller_discount','jdm_reseller_logo','jdm_reseller_logo_mime'].forEach(k=>localStorage.removeItem(k));
   location.href='index.html';
 }
 </script>
@@ -175,15 +175,16 @@ function logoutReseller(){
     const nombre=localStorage.getItem('jdm_reseller_nombre')||'';
     const desc=localStorage.getItem('jdm_reseller_discount')||'0';
     const logo=localStorage.getItem('jdm_reseller_logo')||'';
+    const logoMime=localStorage.getItem('jdm_reseller_logo_mime')||'image/png';
     // Mostrar header reseller
     document.getElementById('reseller-header').style.display='block';
     document.getElementById('reseller-name-header').textContent=nombre;
     document.getElementById('reseller-disc-header').textContent=desc+'%';
-    if(logo) document.getElementById('reseller-logo-header').src='data:image/png;base64,'+logo;
+    if(logo) document.getElementById('reseller-logo-header').src=`data:${logoMime};base64,${logo}`;
     // Logo card: mostrar logo del reseller
     const logoArea=document.getElementById('logo-area');
     if(logo){
-      logoArea.innerHTML=`<img class="logo-img" src="data:image/png;base64,${logo}" alt="Logo">`;
+      logoArea.innerHTML=`<img class="logo-img" src="data:${logoMime};base64,${logo}" alt="Logo">`;
     } else {
       logoArea.innerHTML=`<div class="logo-text-main">${nombre}<span style="font-size:13px;font-weight:600;letter-spacing:4px;opacity:.7;display:block">RESELLER</span></div>`;
     }

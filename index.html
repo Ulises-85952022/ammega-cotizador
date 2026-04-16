@@ -84,6 +84,7 @@ async function doLogin(){
         localStorage.setItem('jdm_reseller_nombre',ri.nombre);
         localStorage.setItem('jdm_reseller_discount',String(ri.descuento));
         localStorage.setItem('jdm_reseller_logo',ri.logo||'');
+        localStorage.setItem('jdm_reseller_logo_mime',ri.logoMime||'image/png');
       }
     }catch{}
     location.href='cotizador_tpl.html';
