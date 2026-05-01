@@ -2,150 +2,1233 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Jason de Mexico — Acceso</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador Ammega — B2B</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="data.js"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0a0a14;font-family:'Inter',system-ui,sans-serif;color:#ddd;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
-.login-wrap{width:100%;max-width:420px;animation:fadeIn .4s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.brand{text-align:center;margin-bottom:28px}
-.brand-logo{font-size:26px;font-weight:900;color:#38bdf8;letter-spacing:2px}
-.brand-sub{font-size:10px;color:#475569;letter-spacing:3px;text-transform:uppercase;margin-top:4px}
-.card{background:#111122;border:1px solid #1e1e38;border-radius:16px;padding:28px 24px;position:relative;overflow:hidden}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#38bdf8,#818cf8)}
-.card-title{font-size:11px;font-weight:700;color:#475569;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px;text-align:center}
-.field{margin-bottom:16px}
-.field label{display:block;font-size:10px;font-weight:700;color:#475569;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
-.inp{background:#0d0d1a;border:1.5px solid #1e293b;border-radius:8px;padding:11px 14px;color:#ddd;width:100%;outline:none;font-size:15px;font-family:inherit;transition:border-color .15s}
-.inp:focus{border-color:#38bdf8}
-.inp::placeholder{color:#334155}
-.btn-login{width:100%;padding:13px;background:#38bdf8;color:#0a0a15;border:none;border-radius:8px;font-weight:800;font-size:15px;cursor:pointer;margin-top:4px;font-family:inherit;transition:background .15s}
-.btn-login:hover{background:#7dd3fc}
-.err-msg{color:#f87171;font-size:13px;margin-top:10px;min-height:18px;text-align:center}
-.contact-note{margin-top:18px;font-size:11px;color:#334155;text-align:center;letter-spacing:.3px}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal: #1a7a78;
+    --teal-dark: #0f5a58;
+    --teal-light: #e8f5f5;
+    --teal-mid: #2a9896;
+    --amber: #d97706;
+    --amber-light: #fef3c7;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-300: #dadce0;
+    --gray-400: #bdc1c6;
+    --gray-500: #9aa0a6;
+    --gray-600: #80868b;
+    --gray-700: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow: 0 4px 12px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,.14), 0 4px 8px rgba(0,0,0,.08);
+  }
+  html, body { height: 100%; overflow: hidden; background: #1a1a2e; font-family: var(--font); }
+  #root { height: 100%; display: flex; align-items: center; justify-content: center; }
+
+  /* App shell */
+  .app-bg {
+    width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 30% 20%, #0f3d3c 0%, #1a1a2e 60%);
+    position: relative; overflow: hidden;
+  }
+  .app-bg::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 70% 80%, rgba(26,122,120,.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .brand-watermark {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    opacity: .15; user-select: none; pointer-events: none;
+    font-size: 11px; font-weight: 600; letter-spacing: 3px; color: #fff; text-transform: uppercase;
+  }
+
+  /* Screen container */
+  .screen { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; background: var(--gray-50); }
+
+  /* Topbar */
+  .topbar {
+    padding: 12px 16px 10px;
+    background: #fff;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center; gap: 10px;
+    flex-shrink: 0;
+  }
+  .topbar-logo { height: 24px; }
+  .topbar-title { font-size: 16px; font-weight: 700; color: var(--teal-dark); }
+  .topbar-sub { font-size: 11px; color: var(--gray-500); margin-top: 1px; }
+  .topbar-spacer { flex: 1; }
+  .topbar-btn {
+    width: 36px; height: 36px; border-radius: 50%; border: none;
+    background: var(--gray-100); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--gray-700); font-size: 16px;
+    transition: background .15s;
+  }
+  .topbar-btn:active { background: var(--gray-200); }
+  .topbar-back {
+    width: 32px; height: 32px; border-radius: 50%; border: none;
+    background: var(--gray-100); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--gray-700); font-size: 18px; flex-shrink: 0;
+    transition: background .15s;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    display: flex; background: #fff;
+    border-top: 1px solid var(--gray-200);
+    flex-shrink: 0; padding-bottom: 4px;
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 8px 4px; cursor: pointer; border: none; background: none;
+    transition: color .15s;
+  }
+  .nav-icon { font-size: 20px; margin-bottom: 2px; }
+  .nav-label { font-size: 10px; font-weight: 500; letter-spacing: .3px; }
+  .nav-item.active { color: var(--teal); }
+  .nav-item:not(.active) { color: var(--gray-400); }
+
+  /* Search bar */
+  .search-wrap { padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--gray-200); flex-shrink: 0; }
+  .search-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--gray-100); border-radius: 10px;
+    padding: 9px 12px;
+  }
+  .search-icon { font-size: 16px; color: var(--gray-500); }
+  .search-input {
+    flex: 1; border: none; background: none; outline: none;
+    font-size: 14px; font-family: var(--font); color: var(--gray-900);
+  }
+  .search-input::placeholder { color: var(--gray-400); }
+  .search-clear { font-size: 14px; color: var(--gray-400); cursor: pointer; padding: 2px; }
+
+  /* Tabs */
+  .tabs { display: flex; padding: 0; gap: 0; background: #fff; border-bottom: 1px solid var(--gray-200); flex-shrink: 0; }
+  .tab {
+    flex: 1; padding: 10px 8px; border: none; background: none; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: var(--gray-500);
+    border-bottom: 2px solid transparent; transition: all .15s;
+    text-align: center;
+  }
+  .tab.active { border-bottom-color: var(--teal); }
+  .tab.tab-logo:first-child.active { border-bottom-color: #e53e3e; }
+  .tab.tab-logo:last-child.active { border-bottom-color: #7b2c2c; }
+
+  /* Category chips */
+  .chips-row { display: flex; gap: 8px; padding: 10px 16px; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+  .chips-row::-webkit-scrollbar { display: none; }
+  .chip {
+    padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--gray-300);
+    background: #fff; font-size: 12px; font-weight: 500; color: var(--gray-600);
+    white-space: nowrap; cursor: pointer; transition: all .15s; flex-shrink: 0;
+  }
+  .chip.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+  /* Product list */
+  .product-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .product-card {
+    margin: 4px 12px; background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow-sm); cursor: pointer; overflow: hidden;
+    transition: transform .12s, box-shadow .12s;
+    border: 1.5px solid var(--gray-200);
+    display: flex; align-items: stretch;
+  }
+  .product-card:active { transform: scale(.98); }
+  .product-card-accent {
+    width: 4px; flex-shrink: 0;
+  }
+  .product-card-body { padding: 12px 12px 12px 10px; flex: 1; min-width: 0; }
+  .product-id { font-size: 11px; font-family: var(--mono); color: var(--gray-500); margin-bottom: 3px; }
+  .product-desc { font-size: 13px; font-weight: 600; color: var(--gray-900); line-height: 1.3; margin-bottom: 6px; }
+  .product-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .product-grupo { font-size: 10px; color: var(--gray-500); background: var(--gray-100); padding: 2px 7px; border-radius: 4px; }
+  .product-price { font-size: 15px; font-weight: 700; color: var(--teal-dark); }
+  .product-lista { font-size: 11px; color: var(--gray-400); text-decoration: line-through; margin-left: 4px; }
+  .stock-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+    margin-left: auto;
+  }
+  .stock-ok { background: var(--green-light); color: var(--green); }
+  .stock-low { background: var(--amber-light); color: var(--amber); }
+  .stock-zero { background: var(--red-light); color: var(--red); }
+  .product-card-right { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; padding: 12px 10px 12px 0; }
+  .btn-add-cart {
+    width: 30px; height: 30px; border-radius: 50%; border: none;
+    background: var(--teal); color: #fff; font-size: 18px; font-weight: 300;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 2px 8px rgba(26,122,120,.3);
+    transition: transform .12s, background .12s;
+  }
+  .btn-add-cart:active { transform: scale(.9); background: var(--teal-dark); }
+
+  /* Section headers */
+  .section-header { padding: 14px 16px 6px; font-size: 11px; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Detail screen */
+  .detail-hero { background: var(--teal); padding: 20px 16px 24px; }
+  .detail-marca { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.6); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+  .detail-desc { font-size: 18px; font-weight: 700; color: #fff; line-height: 1.3; margin-bottom: 8px; }
+  .detail-id { font-size: 12px; font-family: var(--mono); color: rgba(255,255,255,.7); }
+  .detail-body { padding: 16px; flex: 1; overflow-y: auto; }
+  .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--gray-100); }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { font-size: 13px; color: var(--gray-500); }
+  .detail-value { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+  .detail-price-card { background: var(--teal-light); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+  .detail-price-main { font-size: 28px; font-weight: 700; color: var(--teal-dark); }
+  .detail-price-label { font-size: 12px; color: var(--teal-mid); margin-bottom: 4px; }
+  .detail-price-lista { font-size: 13px; color: var(--gray-500); }
+  .detail-price-desc { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+  /* Quantity selector */
+  .qty-row { display: flex; align-items: center; gap: 0; background: var(--gray-100); border-radius: 10px; overflow: hidden; }
+  .qty-btn { width: 40px; height: 40px; border: none; background: none; font-size: 20px; color: var(--teal); cursor: pointer; font-weight: 300; display: flex; align-items: center; justify-content: center; }
+  .qty-val { flex: 1; text-align: center; font-size: 16px; font-weight: 700; color: var(--gray-900); }
+
+  /* Cart / cotizacion */
+  .cart-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 40px; }
+  .cart-empty-icon { font-size: 52px; opacity: .3; }
+  .cart-empty-text { font-size: 14px; color: var(--gray-400); text-align: center; }
+
+  .cart-item { background: #fff; margin: 4px 12px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1.5px solid var(--gray-200); padding: 12px; }
+  .cart-item-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .cart-item-desc { font-size: 13px; font-weight: 600; color: var(--gray-900); flex: 1; margin-right: 8px; line-height: 1.3; }
+  .cart-item-del { font-size: 18px; color: var(--gray-300); cursor: pointer; padding: 2px; flex-shrink: 0; }
+  .cart-item-bottom { display: flex; align-items: center; gap: 8px; }
+  .cart-item-price { font-size: 14px; font-weight: 700; color: var(--teal-dark); margin-left: auto; }
+
+  .margin-section { background: #fff; border-radius: var(--radius); margin: 0 12px 8px; padding: 14px; box-shadow: var(--shadow-sm); border: 1.5px solid var(--gray-200); }
+  .margin-title { font-size: 12px; font-weight: 700; color: var(--gray-700); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; }
+  .margin-slider-row { display: flex; align-items: center; gap: 10px; }
+  .margin-slider { flex: 1; accent-color: var(--teal); cursor: pointer; height: 4px; }
+  .margin-val { font-size: 20px; font-weight: 700; color: var(--teal); min-width: 44px; text-align: right; }
+  .margin-info { display: flex; justify-content: space-between; margin-top: 8px; }
+  .margin-info-item { font-size: 11px; color: var(--gray-500); }
+  .margin-info-val { font-weight: 600; color: var(--gray-800); }
+
+  .totals-card { background: var(--teal); border-radius: var(--radius-lg); margin: 0 12px 12px; padding: 16px; }
+  .totals-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .totals-label { font-size: 13px; color: rgba(255,255,255,.7); }
+  .totals-val { font-size: 13px; font-weight: 600; color: #fff; }
+  .totals-total { font-size: 22px; font-weight: 700; color: #fff; border-top: 1px solid rgba(255,255,255,.2); padding-top: 10px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; }
+
+  /* Buttons */
+  .btn-primary {
+    background: var(--teal); color: #fff; border: none;
+    border-radius: 12px; padding: 14px 20px;
+    font-size: 15px; font-weight: 700; font-family: var(--font);
+    cursor: pointer; width: 100%;
+    box-shadow: 0 4px 16px rgba(26,122,120,.35);
+    transition: transform .12s, background .12s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary:active { transform: scale(.97); background: var(--teal-dark); }
+  .btn-secondary {
+    background: var(--gray-100); color: var(--gray-700); border: none;
+    border-radius: 12px; padding: 13px 20px;
+    font-size: 14px; font-weight: 600; font-family: var(--font);
+    cursor: pointer; width: 100%; transition: background .15s;
+  }
+  .btn-secondary:active { background: var(--gray-200); }
+  .btn-row { display: flex; gap: 8px; padding: 12px; flex-shrink: 0; }
+
+  /* Cross-reference */
+  .xref-card { background: #fff; margin: 4px 12px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1.5px solid var(--gray-200); padding: 14px; cursor: pointer; transition: transform .12s; }
+  .xref-card:active { transform: scale(.98); }
+  .xref-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .xref-competidor { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; background: var(--amber-light); color: var(--amber); text-transform: uppercase; letter-spacing: .8px; }
+  .xref-ref { font-size: 12px; font-family: var(--mono); color: var(--gray-600); }
+  .xref-desc { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 6px; }
+  .xref-arrow { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gray-500); }
+  .xref-equiv { font-size: 12px; font-weight: 600; color: var(--teal); font-family: var(--mono); }
+
+  /* Backorders */
+  .bo-card { background: #fff; margin: 4px 12px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1.5px solid var(--gray-200); padding: 14px; }
+  .bo-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .bo-id { font-size: 11px; font-family: var(--mono); color: var(--gray-400); }
+  .bo-status { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+  .bo-pendiente { background: var(--amber-light); color: var(--amber); }
+  .bo-en_camino { background: var(--teal-light); color: var(--teal); }
+  .bo-llegado { background: var(--green-light); color: var(--green); }
+  .bo-desc { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 4px; }
+  .bo-meta { font-size: 12px; color: var(--gray-500); }
+
+  /* Quote success */
+  .success-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; gap: 16px; }
+  .success-icon { font-size: 60px; }
+  .success-title { font-size: 22px; font-weight: 700; color: var(--teal-dark); text-align: center; }
+  .success-sub { font-size: 14px; color: var(--gray-500); text-align: center; line-height: 1.5; }
+  .success-ref { font-family: var(--mono); font-size: 12px; color: var(--teal); background: var(--teal-light); padding: 6px 16px; border-radius: 8px; }
+
+  /* Notification dot */
+  .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); position: absolute; top: 6px; right: 6px; }
+
+  /* Scrollbars */
+  .product-list::-webkit-scrollbar, .detail-body::-webkit-scrollbar { width: 3px; }
+  .product-list::-webkit-scrollbar-track, .detail-body::-webkit-scrollbar-track { background: transparent; }
+  .product-list::-webkit-scrollbar-thumb, .detail-body::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 2px; }
+
+  /* PDF preview */
+  .pdf-preview { flex: 1; overflow-y: auto; background: #e8e8e8; padding: 16px 12px; }
+  .pdf-doc {
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.18), 0 1px 4px rgba(0,0,0,.1);
+    /* carta: 216×279mm — escalado a ~340px ancho en móvil */
+    width: 100%;
+    aspect-ratio: 216 / 279;
+    padding: 28px 24px 22px;
+    display: flex; flex-direction: column;
+    font-size: 9px;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Franja superior decorativa */
+  .pdf-top-bar { height: 6px; background: var(--teal); border-radius: 2px 2px 0 0; position: absolute; top: 0; left: 0; right: 0; }
+  .pdf-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1.5px solid var(--teal); }
+  .pdf-logo-area { display: flex; flex-direction: column; gap: 3px; }
+  .pdf-company { font-size: 8px; font-weight: 700; color: var(--teal-dark); text-transform: uppercase; letter-spacing: 1.2px; margin-top: 3px; }
+  .pdf-company-sub { font-size: 7px; color: var(--gray-400); letter-spacing: .5px; }
+  .pdf-meta { text-align: right; font-size: 8px; color: var(--gray-500); line-height: 1.8; }
+  .pdf-folio { font-size: 10px; font-weight: 800; color: var(--teal-dark); letter-spacing: .5px; }
+  .pdf-section-title { font-size: 7.5px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+  .pdf-client-box {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px;
+    background: var(--gray-50); border-radius: 5px;
+    padding: 8px 10px; margin-bottom: 10px;
+    font-size: 8px; color: var(--gray-600); line-height: 1.7;
+    border-left: 3px solid var(--teal);
+  }
+  .pdf-client-label { font-size: 7px; text-transform: uppercase; letter-spacing: .8px; color: var(--gray-400); font-weight: 700; }
+  .pdf-client-val { font-size: 9px; font-weight: 600; color: var(--gray-900); }
+  .pdf-table { width: 100%; font-size: 8px; border-collapse: collapse; margin-bottom: 8px; flex: 1; }
+  .pdf-table th { background: var(--teal); color: #fff; padding: 5px 6px; text-align: left; font-size: 7px; text-transform: uppercase; letter-spacing: .6px; font-weight: 700; }
+  .pdf-table th:last-child, .pdf-table th:nth-last-child(2) { text-align: right; }
+  .pdf-table td { padding: 5px 6px; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); vertical-align: middle; line-height: 1.3; }
+  .pdf-table td:last-child, .pdf-table td:nth-last-child(2) { text-align: right; white-space: nowrap; }
+  .pdf-table tr:nth-child(even) td { background: #fafafa; }
+  .pdf-table tr:last-child td { border-bottom: none; }
+  .pdf-bottom { display: flex; gap: 10px; align-items: flex-start; margin-top: 6px; }
+  .pdf-entrega-box { flex: 1; background: var(--teal-light); border-radius: 5px; padding: 7px 9px; border-left: 3px solid var(--teal); }
+  .pdf-entrega-label { font-size: 7px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 2px; }
+  .pdf-entrega-val { font-size: 9px; font-weight: 600; color: var(--teal-dark); }
+  .pdf-totals { min-width: 130px; background: var(--gray-50); border-radius: 5px; padding: 7px 9px; }
+  .pdf-total-row { display: flex; justify-content: space-between; font-size: 8px; color: var(--gray-500); margin-bottom: 3px; gap: 12px; }
+  .pdf-total-row span:last-child { font-weight: 500; color: var(--gray-700); }
+  .pdf-grand { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: var(--teal-dark); border-top: 1.5px solid var(--teal); padding-top: 5px; margin-top: 4px; gap: 12px; }
+  .pdf-footer { text-align: center; font-size: 7px; color: var(--gray-400); margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--gray-100); line-height: 1.6; }
+  .pdf-footer-bar { height: 4px; background: linear-gradient(90deg, var(--teal), var(--teal-mid)); border-radius: 0 0 2px 2px; position: absolute; bottom: 0; left: 0; right: 0; }
 </style>
 </head>
 <body>
-<div class="login-wrap">
-  <div class="brand">
-    <div class="brand-logo">JASON DE MEXICO</div>
-    <div class="brand-sub">Sistema de Cotizaciones</div>
-  </div>
-  <div class="card">
-    <div class="card-title">Iniciar Sesion</div>
-    <div class="field">
-      <label>Usuario</label>
-      <input class="inp" id="login-user" type="text" placeholder="usuario" autocomplete="username">
-    </div>
-    <div class="field">
-      <label>Contrasena</label>
-      <input class="inp" id="login-pass" type="password" placeholder="......" autocomplete="current-password">
-    </div>
-    <button class="btn-login" onclick="doLogin()">Entrar</button>
-    <div class="err-msg" id="login-err"></div>
-    <div class="contact-note">Contacta al administrador para obtener acceso</div>
-  </div>
-</div>
+<div id="root"></div>
 
-<script>
-async function hashPass(str){
-  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-function getUsers(){try{return JSON.parse(localStorage.getItem('jdm_users')||'[]');}catch{return[];}}
-function saveUsers(u){localStorage.setItem('jdm_users',JSON.stringify(u));}
-function setSession(user,role){localStorage.setItem('jdm_session',JSON.stringify({user,role,loginAt:new Date().toISOString()}));}
-function redirectByRole(role){
-  if(role==='admin')         location.href='admin.html';
-  else if(role==='director') location.href='dashboard.html';
-  else                       location.href='cotizador_tpl.html';
+<script type="text/babel">
+const { useState, useCallback, useMemo, useRef, useEffect } = React;
+
+// ─── Logo SVG (teal AM/MEGA wordmark)
+function AmmegaLogo({ height = 24 }) {
+  return (
+    <svg height={height} viewBox="0 0 120 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="28" fontFamily="DM Sans, sans-serif" fontWeight="800" fontSize="28" fill="#1a7a78">AM</text>
+      <text x="40" y="28" fontFamily="DM Sans, sans-serif" fontWeight="400" fontSize="28" fill="#1a7a78">MEGA</text>
+    </svg>
+  );
 }
 
-async function doLogin(){
-  const user=document.getElementById('login-user').value.trim().toLowerCase();
-  const pass=document.getElementById('login-pass').value;
-  const err=document.getElementById('login-err');
-  err.textContent='';
-  if(!user||!pass){err.textContent='Ingresa usuario y contrasena';return;}
-  const h=await hashPass(pass);
-  const found=getUsers().find(u=>u.user===user&&u.passHash===h);
-  if(!found){err.textContent='Usuario o contrasena incorrectos';return;}
-  // Reseller: guardar info en localStorage y redirigir al cotizador
-  if(found.role==='reseller'){
-    try{
-      const resellers=JSON.parse(localStorage.getItem('jdm_resellers')||'[]');
-      const ri=resellers.find(r=>r.user===user);
-      if(ri){
-        localStorage.setItem('jdm_reseller_user',user);
-        localStorage.setItem('jdm_reseller_nombre',ri.nombre);
-        localStorage.setItem('jdm_reseller_discount',String(ri.descuento));
-        localStorage.setItem('jdm_reseller_logo',ri.logo||'');
-      }
-    }catch{}
-    location.href='cotizador_tpl.html';
-    return;
+// ─── Stock badge
+function StockBadge({ stock, unidad }) {
+  if (stock === 0) return <span className="stock-badge stock-zero">Sin stock</span>;
+  if (stock < 10) return <span className="stock-badge stock-low">{stock} {unidad}</span>;
+  return <span className="stock-badge stock-ok">{stock} {unidad}</span>;
+}
+
+// ─── Format currency
+const fmt = (n) => `$${Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// ─── Precio efectivo de un item del carrito (soporta bandas métricas)
+const calcItemPrecio = (item) => {
+  if (item.product.esBandaMetrica && item.ancho) {
+    return item.product.precioBinasa * (item.ancho / 25.4) * item.qty;
   }
-  setSession(found.user,found.role);
-  redirectByRole(found.role);
+  return item.product.precioBinasa * item.qty;
+};
+
+// ─── HOME SCREEN
+function HomeScreen({ onNav, cart, onSearch }) {
+  const totalItems = cart.reduce((s, i) => s + i.qty, 0);
+  return (
+    <div className="screen">
+      <div className="topbar">
+        <AmmegaLogo height={28} />
+        <div className="topbar-spacer" />
+        <div style={{ position: 'relative' }}>
+          <button className="topbar-btn" onClick={() => onNav('backorders')}>🔔</button>
+          {window.BACKORDERS.filter(b => b.status === 'en_camino').length > 0 && <div className="notif-dot" />}
+        </div>
+        <button className="topbar-btn" onClick={() => onNav('cart')}>
+          🛒{totalItems > 0 && <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', background: '#dc2626', borderRadius: '50%', minWidth: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginLeft: -4, marginTop: -10, position: 'absolute', right: 4, top: 4, padding: '0 3px' }}>{totalItems}</span>}
+        </button>
+      </div>
+
+      {/* Quick actions */}
+      <div style={{ background: '#fff', padding: '16px', borderBottom: '1px solid var(--gray-200)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <QuickAction icon="🔍" label="Buscar catálogo" sub="Bandas y mangueras" onClick={() => onNav('catalog')} color="var(--teal)" />
+          <QuickAction icon="🔄" label="Equivalentes" sub="Gates, Optibelt…" onClick={() => onNav('xref')} color="var(--amber)" />
+          <QuickAction icon="📋" label="Cotizaciones" sub={`${totalItems} productos`} onClick={() => onNav('cart')} color="#7c3aed" />
+          <QuickAction icon="📦" label="Back-orders" sub={`${window.BACKORDERS.length} activos`} onClick={() => onNav('backorders')} color="#0891b2" />
+        </div>
+      </div>
+
+      {/* Recent */}
+      <div className="section-header">Productos recientes</div>
+      <div className="product-list">
+        {[...window.CATALOG.bandas.slice(0,3), ...window.CATALOG.mangueras.slice(0,3)].map(p => (
+          <ProductCard key={p.id} product={p} onPress={() => onNav('detail', p)} onAdd={() => {}} compact />
+        ))}
+      </div>
+
+      <div className="bottom-nav">
+        <NavItem icon="🏠" label="Inicio" active onClick={() => {}} />
+        <NavItem icon="📦" label="Catálogo" onClick={() => onNav('catalog')} />
+        <NavItem icon="🔄" label="Equivalencias" onClick={() => onNav('xref')} />
+        <NavItem icon="🛒" label={`Cotizar${totalItems > 0 ? ` (${totalItems})` : ''}`} onClick={() => onNav('cart')} />
+      </div>
+    </div>
+  );
 }
 
-// Cargar usuarios y resellers desde access_config.json (auto-publicado por el admin)
-async function loadSeedUsers(){
-  try{
-    const r=await fetch('./access_config.json?v='+Date.now());
-    if(!r.ok)return;
-    const cfg=await r.json();
-    // Soporte para formato nuevo {users,resellers} y formato antiguo []
-    const users=Array.isArray(cfg)?cfg:(cfg.users||[]);
-    const resellers=Array.isArray(cfg)?[]:(cfg.resellers||[]);
-    // Sync usuarios
-    if(users.length){
-      const existing=getUsers();
-      users.forEach(su=>{
-        if(su.user&&su.passHash&&su.role){
-          const idx=existing.findIndex(u=>u.user===su.user);
-          if(idx>=0)existing[idx]=su;else existing.push(su);
-        }
-      });
-      saveUsers(existing);
-    }
-    // Sync resellers
-    if(resellers.length){
-      localStorage.setItem('jdm_resellers',JSON.stringify(resellers));
-    }
-    // Sync clientes (descuentos)
-    if(cfg.clientes&&cfg.clientes.length){
-      localStorage.setItem('jdm_clientes',JSON.stringify(cfg.clientes));
-    }
-    // Sync token de cotizaciones (para auto-push a GitHub)
-    if(cfg.syncToken){
-      localStorage.setItem('jdm_sync_token',cfg.syncToken);
-      if(cfg.syncOwner)localStorage.setItem('jdm_sync_owner',cfg.syncOwner);
-      if(cfg.syncRepo)localStorage.setItem('jdm_sync_repo',cfg.syncRepo);
-    }
-    // Sync bin config para cotizaciones compartidas (JSONBin)
-    if(cfg.quotesBinId) localStorage.setItem('jdm_bin_id',cfg.quotesBinId);
-    if(cfg.quotesBinKey) localStorage.setItem('jdm_bin_key',cfg.quotesBinKey);
-  }catch{}
+function QuickAction({ icon, label, sub, onClick, color }) {
+  return (
+    <button onClick={onClick} style={{ background: 'var(--gray-50)', border: '1.5px solid var(--gray-200)', borderRadius: 12, padding: '14px 12px', cursor: 'pointer', textAlign: 'left', transition: 'transform .12s, background .12s' }}
+      onMouseDown={e => e.currentTarget.style.transform = 'scale(.97)'}
+      onMouseUp={e => e.currentTarget.style.transform = ''}
+      onTouchStart={e => e.currentTarget.style.transform = 'scale(.97)'}
+      onTouchEnd={e => e.currentTarget.style.transform = ''}
+    >
+      <div style={{ fontSize: 24, marginBottom: 6 }}>{icon}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gray-900)', marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>{sub}</div>
+    </button>
+  );
 }
 
-// Al cargar: si ya hay sesion valida, redirigir. Si no, cargar seed.
-(async function(){
-  try{
-    const s=JSON.parse(localStorage.getItem('jdm_session')||'null');
-    if(s&&s.user&&s.role&&getUsers().find(u=>u.user===s.user)){
-      redirectByRole(s.role);return;
-    }
-  }catch{}
-  await loadSeedUsers();
-})();
+function NavItem({ icon, label, active, onClick }) {
+  return (
+    <button className={`nav-item ${active ? 'active' : ''}`} onClick={onClick}>
+      <span className="nav-icon">{icon}</span>
+      <span className="nav-label">{label}</span>
+    </button>
+  );
+}
 
-document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
-document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+// ─── PRODUCT CARD
+function ProductCard({ product: p, onPress, onAdd, compact }) {
+  const accentColor = p.marca === 'Megadyne' ? 'var(--teal)' : 'var(--amber)';
+  return (
+    <div className="product-card" onClick={onPress}>
+      <div className="product-card-accent" style={{ background: accentColor }} />
+      <div className="product-card-body">
+        <div className="product-id">{p.id}</div>
+        <div className="product-desc">{p.desc}</div>
+        <div className="product-meta">
+          <span className="product-grupo">{p.grupo}</span>
+          <StockBadge stock={p.stock} unidad={p.unidad} />
+        </div>
+      </div>
+      <div className="product-card-right">
+        <div>
+          <div className="product-price">{fmt(p.precioBinasa)}</div>
+          <div className="product-lista">{fmt(p.precioLista)}</div>
+        </div>
+        <button className="btn-add-cart" onClick={e => { e.stopPropagation(); onAdd(p); }}>+</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── CATALOG SCREEN
+function CatalogScreen({ onBack, onProduct, onAddToCart, cart }) {
+  const [tab, setTab] = useState('bandas');
+  const [search, setSearch] = useState('');
+  const [cat, setCat] = useState('Todos');
+  const allProducts = tab === 'bandas' ? window.CATALOG.bandas : window.CATALOG.mangueras;
+  const cats = ['Todos', ...new Set(allProducts.map(p => p.categoria))];
+  const totalItems = cart.reduce((s, i) => s + i.qty, 0);
+
+  const filtered = allProducts.filter(p => {
+    const q = search.toLowerCase();
+    const matchSearch = !q || p.id.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.grupo.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q);
+    const matchCat = cat === 'Todos' || p.categoria === cat;
+    return matchSearch && matchCat;
+  });
+
+  return (
+    <div className="screen">
+      <div className="topbar">
+        <button className="topbar-back" onClick={onBack}>‹</button>
+        <div>
+          <div className="topbar-title">Catálogo</div>
+          <div className="topbar-sub">{filtered.length} productos</div>
+        </div>
+        <div className="topbar-spacer" />
+        {totalItems > 0 && <button className="topbar-btn" style={{ background: 'var(--teal)', color: '#fff', fontSize: 12, fontWeight: 700 }} onClick={() => onProduct(null, 'cart')}>🛒 {totalItems}</button>}
+      </div>
+
+      <div className="tabs" style={{ gap: 0, padding: 0 }}>
+        <button
+          className={`tab tab-logo ${tab === 'bandas' ? 'active' : ''}`}
+          onClick={() => { setTab('bandas'); setCat('Todos'); }}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '10px 8px' }}
+        >
+          <img
+            src="megadyne-logo.png"
+            alt="Megadyne"
+            style={{
+              height: 24,
+              opacity: tab === 'bandas' ? 1 : 0.3,
+              filter: tab === 'bandas' ? 'none' : 'grayscale(100%)',
+              transition: 'opacity .2s, filter .2s',
+              objectFit: 'contain',
+            }}
+          />
+          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.4px', color: tab === 'bandas' ? '#e53e3e' : 'var(--gray-400)', transition: 'color .2s' }}>
+            BANDAS
+          </span>
+        </button>
+        <button
+          className={`tab tab-logo ${tab === 'mangueras' ? 'active' : ''}`}
+          onClick={() => { setTab('mangueras'); setCat('Todos'); }}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '10px 8px' }}
+        >
+          <img
+            src="jasson-logo.png"
+            alt="Jason"
+            style={{
+              height: 24,
+              opacity: tab === 'mangueras' ? 1 : 0.3,
+              filter: tab === 'mangueras' ? 'none' : 'grayscale(100%)',
+              transition: 'opacity .2s, filter .2s',
+              objectFit: 'contain',
+            }}
+          />
+          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.4px', color: tab === 'mangueras' ? '#7b2c2c' : 'var(--gray-400)', transition: 'color .2s' }}>
+            MANGUERAS
+          </span>
+        </button>
+      </div>
+
+      <div className="search-wrap">
+        <div className="search-bar">
+          <span className="search-icon">🔍</span>
+          <input className="search-input" placeholder="Buscar por código, descripción…" value={search} onChange={e => setSearch(e.target.value)} />
+          {search && <span className="search-clear" onClick={() => setSearch('')}>✕</span>}
+        </div>
+      </div>
+
+      <div className="chips-row">
+        {cats.map(c => <button key={c} className={`chip ${cat === c ? 'active' : ''}`} onClick={() => setCat(c)}>{c}</button>)}
+      </div>
+
+      <div className="product-list">
+        {filtered.length === 0 && (
+          <div className="cart-empty">
+            <div className="cart-empty-icon">🔍</div>
+            <div className="cart-empty-text">No se encontraron productos<br/>para "{search}"</div>
+          </div>
+        )}
+        {filtered.map(p => (
+          <ProductCard key={p.id} product={p} onPress={() => onProduct(p)} onAdd={() => onAddToCart(p)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── PRODUCT DETAIL
+function DetailScreen({ product: p, onBack, onAddToCart }) {
+  const [qty, setQty] = useState(1);
+  const [ancho, setAncho] = useState(p.esBandaMetrica && p.anchoOpciones ? p.anchoOpciones[0] : null);
+  const [anchoUnidad, setAnchoUnidad] = useState('mm');
+  const [anchoCustom, setAnchoCustom] = useState('');
+  const accentColor = p.marca === 'Megadyne' ? 'var(--teal)' : 'var(--amber)';
+  const descuento = Math.round((1 - p.precioBinasa / p.precioLista) * 100);
+
+  const anchofinal = anchoCustom ? Number(anchoCustom) : ancho;
+  const precioConAncho = p.esBandaMetrica && anchofinal
+    ? p.precioBinasa * (anchoUnidad === 'in' ? anchofinal * 25.4 / 25.4 : anchofinal / 25.4)
+    : p.precioBinasa;
+
+  return (
+    <div className="screen">
+      <div className="topbar" style={{ background: accentColor }}>
+        <button className="topbar-back" onClick={onBack} style={{ background: 'rgba(255,255,255,.2)', color: '#fff' }}>‹</button>
+        <div>
+          <div className="topbar-title" style={{ color: '#fff' }}>Detalle</div>
+          <div className="topbar-sub" style={{ color: 'rgba(255,255,255,.7)' }}>{p.marca}</div>
+        </div>
+      </div>
+
+      <div className="detail-hero" style={{ background: accentColor }}>
+        <div className="detail-marca">{p.marca} · {p.categoria}</div>
+        <div className="detail-desc">{p.desc}</div>
+        <div className="detail-id">SKU: {p.id}</div>
+      </div>
+
+      <div className="detail-body">
+        {/* Price card */}
+        <div className="detail-price-card" style={{ background: p.marca === 'Megadyne' ? 'var(--teal-light)' : '#fef3c7' }}>
+          <div className="detail-price-label">Precio Binasa</div>
+          <div className="detail-price-main" style={{ color: p.marca === 'Megadyne' ? 'var(--teal-dark)' : 'var(--amber)' }}>
+            {p.esBandaMetrica && anchofinal
+              ? <>{fmt(precioConAncho)} <span style={{ fontSize: 14, fontWeight: 400 }}>/ pz ({anchofinal}{anchoUnidad} ancho)</span></>
+              : <>{fmt(p.precioBinasa)} <span style={{ fontSize: 14, fontWeight: 400 }}>/ {p.unidad}</span></>
+            }
+          </div>
+          <div className="detail-price-lista">P. Lista: {fmt(p.precioLista)} · Descuento {descuento}%</div>
+          <div className="detail-price-desc">Precio base. Agrega margen al cotizar.</div>
+        </div>
+
+        {/* Selector de ancho para bandas métricas */}
+        {p.esBandaMetrica && (
+          <div style={{ background: '#fff', border: '1.5px solid var(--teal)', borderRadius: 12, padding: '14px', marginBottom: 4 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--teal-dark)', marginBottom: 4 }}>
+              Paso {p.paso} · {p.longitud}mm longitud
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--gray-500)', marginBottom: 10 }}>Selecciona el ancho del corte</div>
+
+            {/* Botones anchos estándar */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+              {p.anchoOpciones && p.anchoOpciones.map(a => (
+                <button key={a}
+                  onClick={() => { setAncho(a); setAnchoCustom(''); setAnchoUnidad('mm'); }}
+                  style={{
+                    padding: '7px 14px', borderRadius: 8, border: '1.5px solid',
+                    borderColor: ancho === a && !anchoCustom ? 'var(--teal)' : 'var(--gray-200)',
+                    background: ancho === a && !anchoCustom ? 'var(--teal)' : 'var(--gray-50)',
+                    color: ancho === a && !anchoCustom ? '#fff' : 'var(--gray-700)',
+                    fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all .12s',
+                    minWidth: 56, textAlign: 'center'
+                  }}
+                >{a}<span style={{ fontSize: 10, fontWeight: 400, marginLeft: 2 }}>mm</span></button>
+              ))}
+            </div>
+
+            {/* Input libre + unidad */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'var(--gray-100)', borderRadius: 8, padding: '0 10px', border: anchoCustom ? '1.5px solid var(--teal)' : '1.5px solid transparent' }}>
+                <input
+                  type="number" min="1" placeholder="Ancho personalizado…"
+                  value={anchoCustom}
+                  onChange={e => { setAnchoCustom(e.target.value); setAncho(null); }}
+                  style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: 13, padding: '9px 0', fontFamily: 'var(--font)' }}
+                />
+                <select
+                  value={anchoUnidad}
+                  onChange={e => setAnchoUnidad(e.target.value)}
+                  style={{ border: 'none', background: 'none', fontSize: 12, fontWeight: 600, color: 'var(--teal)', cursor: 'pointer', outline: 'none', padding: '0 2px' }}
+                >
+                  <option value="mm">mm</option>
+                  <option value="in">pulg</option>
+                </select>
+              </div>
+            </div>
+
+            {anchofinal > 0 && (
+              <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--teal-light)', borderRadius: 8, padding: '8px 12px' }}>
+                <span style={{ fontSize: 12, color: 'var(--teal-dark)', fontWeight: 600 }}>✓ {anchofinal}{anchoUnidad} — precio por pieza:</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--teal-dark)' }}>{fmt(precioConAncho)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="detail-row">
+          <span className="detail-label">Disponibilidad</span>
+          <StockBadge stock={p.stock} unidad={p.esBandaMetrica ? 'pz' : p.unidad} />
+        </div>
+        <div className="detail-row">
+          <span className="detail-label">Grupo</span>
+          <span className="detail-value">{p.grupo}</span>
+        </div>
+        <div className="detail-row">
+          <span className="detail-label">Cantidad</span>
+          <div className="qty-row">
+            <button className="qty-btn" onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
+            <span className="qty-val">{qty}</span>
+            <button className="qty-btn" onClick={() => setQty(q => q + 1)}>+</button>
+          </div>
+        </div>
+
+        {p.stock === 0 && (
+          <div style={{ background: 'var(--red-light)', borderRadius: 10, padding: '12px 14px', marginTop: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 4 }}>Sin stock disponible</div>
+            <div style={{ fontSize: 12, color: '#991b1b' }}>Puedes solicitar un back-order y te notificamos cuando llegue.</div>
+          </div>
+        )}
+      </div>
+
+      <div className="btn-row" style={{ flexDirection: 'column', gap: 8 }}>
+        <button
+          className="btn-primary"
+          style={{ background: p.esBandaMetrica && !anchofinal ? 'var(--gray-300)' : accentColor }}
+          disabled={p.esBandaMetrica && !anchofinal}
+          onClick={() => onAddToCart(p, qty, anchofinal, anchoUnidad)}
+        >
+          {p.esBandaMetrica && !anchofinal
+            ? 'Selecciona el ancho primero'
+            : p.stock > 0
+              ? `+ Agregar ${qty} pz a cotización`
+              : '📦 Solicitar back-order'
+          }
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── CART / COTIZADOR
+function CartScreen({ cart, onBack, onRemove, onChangeQty, onGenerate }) {
+  const [margin, setMargin] = useState(25);
+  const [clientName, setClientName] = useState('');
+  const [clientEmpresa, setClientEmpresa] = useState('');
+  const [entrega, setEntrega] = useState('3-5 días hábiles');
+
+  const subtotal = cart.reduce((s, i) => s + calcItemPrecio(i), 0);
+  const withMargin = subtotal * (1 + margin / 100);
+  const iva = withMargin * 0.16;
+  const total = withMargin + iva;
+
+  if (cart.length === 0) {
+    return (
+      <div className="screen">
+        <div className="topbar">
+          <button className="topbar-back" onClick={onBack}>‹</button>
+          <div className="topbar-title">Cotización</div>
+        </div>
+        <div className="cart-empty">
+          <div className="cart-empty-icon">🛒</div>
+          <div className="cart-empty-text">Tu cotización está vacía.<br/>Agrega productos del catálogo.</div>
+          <button className="btn-primary" style={{ width: 'auto', padding: '12px 24px' }} onClick={onBack}>Ver catálogo</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="screen">
+      <div className="topbar">
+        <button className="topbar-back" onClick={onBack}>‹</button>
+        <div>
+          <div className="topbar-title">Cotización</div>
+          <div className="topbar-sub">{cart.length} producto{cart.length > 1 ? 's' : ''}</div>
+        </div>
+      </div>
+
+      {/* Datos del cliente + entrega */}
+      <div style={{ background: '#fff', borderBottom: '1px solid var(--gray-200)', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <div style={{ display: 'flex', gap: 7 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--gray-100)', borderRadius: 8, padding: '7px 10px' }}>
+            <span style={{ fontSize: 13 }}>👤</span>
+            <input
+              style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: 13, fontFamily: 'var(--font)', color: 'var(--gray-900)' }}
+              placeholder="Nombre del cliente…"
+              value={clientName}
+              onChange={e => setClientName(e.target.value)}
+            />
+          </div>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--gray-100)', borderRadius: 8, padding: '7px 10px' }}>
+            <span style={{ fontSize: 13 }}>🏢</span>
+            <input
+              style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: 13, fontFamily: 'var(--font)', color: 'var(--gray-900)' }}
+              placeholder="Empresa…"
+              value={clientEmpresa}
+              onChange={e => setClientEmpresa(e.target.value)}
+            />
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--gray-100)', borderRadius: 8, padding: '7px 10px' }}>
+          <span style={{ fontSize: 13 }}>🚚</span>
+          <span style={{ fontSize: 12, color: 'var(--gray-500)', whiteSpace: 'nowrap' }}>Entrega:</span>
+          <select
+            value={entrega}
+            onChange={e => setEntrega(e.target.value)}
+            style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: 13, fontFamily: 'var(--font)', color: 'var(--gray-900)', cursor: 'pointer' }}
+          >
+            <option>Inmediata (en stock)</option>
+            <option>1-2 días hábiles</option>
+            <option>3-5 días hábiles</option>
+            <option>1 semana</option>
+            <option>2 semanas</option>
+            <option>Bajo pedido (3-4 sem)</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="product-list" style={{ paddingTop: 8 }}>
+        <div className="section-header">Productos</div>
+        {cart.map(item => {
+          const esMet = item.product.esBandaMetrica;
+          const precio = calcItemPrecio(item);
+          return (
+          <div key={item.product.id} className="cart-item">
+            <div className="cart-item-top">
+              <div style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
+                <div style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--gray-400)', marginBottom: 3 }}>{item.product.id}</div>
+                <div className="cart-item-desc">{item.product.desc}</div>
+                {esMet && item.ancho && (
+                  <div style={{ fontSize: 11, color: 'var(--teal)', fontWeight: 600, marginTop: 2 }}>
+                    {item.product.paso} · {item.product.longitud}mm · <span style={{ background: 'var(--teal-light)', padding: '1px 6px', borderRadius: 4 }}>{item.ancho}{item.anchoUnidad || 'mm'} ancho</span>
+                  </div>
+                )}
+              </div>
+              <button className="cart-item-del" onClick={() => onRemove(item.product.id)}>✕</button>
+            </div>
+            <div className="cart-item-bottom">
+              <div className="qty-row" style={{ width: 100 }}>
+                <button className="qty-btn" style={{ fontSize: 16, width: 32, height: 32 }} onClick={() => onChangeQty(item.product.id, Math.max(1, item.qty - 1))}>−</button>
+                <span className="qty-val" style={{ fontSize: 14 }}>{item.qty}</span>
+                <button className="qty-btn" style={{ fontSize: 16, width: 32, height: 32 }} onClick={() => onChangeQty(item.product.id, item.qty + 1)}>+</button>
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--gray-400)' }}>
+                {esMet ? `${fmt(item.product.precioBinasa * (item.ancho / 25.4))} c/pz` : `${fmt(item.product.precioBinasa)} c/u`}
+              </span>
+              <span className="cart-item-price">{fmt(precio)}</span>
+            </div>
+          </div>
+          );
+        })}
+
+        <div style={{ height: 12 }} />
+        <div className="margin-section">
+          <div className="margin-title">Margen de utilidad</div>
+          <div className="margin-slider-row">
+            <span style={{ fontSize: 12, color: 'var(--gray-400)' }}>0%</span>
+            <input type="range" className="margin-slider" min={0} max={60} value={margin} onChange={e => setMargin(Number(e.target.value))} />
+            <span style={{ fontSize: 12, color: 'var(--gray-400)' }}>60%</span>
+            <span className="margin-val">{margin}%</span>
+          </div>
+          <div className="margin-info">
+            <span className="margin-info-item">Costo: <span className="margin-info-val">{fmt(subtotal)}</span></span>
+            <span className="margin-info-item">Utilidad: <span className="margin-info-val">{fmt(withMargin - subtotal)}</span></span>
+          </div>
+        </div>
+
+        <div className="totals-card">
+          <div className="totals-row">
+            <span className="totals-label">Subtotal</span>
+            <span className="totals-val">{fmt(withMargin)}</span>
+          </div>
+          <div className="totals-row">
+            <span className="totals-label">IVA 16%</span>
+            <span className="totals-val">{fmt(iva)}</span>
+          </div>
+          <div className="totals-total">
+            <span>Total</span>
+            <span>{fmt(total)}</span>
+          </div>
+        </div>
+
+        <div style={{ height: 8 }} />
+      </div>
+
+      <div className="btn-row">
+        <button className="btn-primary" onClick={() => onGenerate({ margin, clientName, clientEmpresa, entrega, subtotal, withMargin, iva, total })}>
+          📄 Generar PDF
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── PDF PREVIEW SCREEN
+function PdfScreen({ cart, quoteData, onBack, onDone }) {
+  const [folio] = useState(`COT-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`);
+  const today = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  return (
+    <div className="screen">
+      <div className="topbar">
+        <button className="topbar-back" onClick={onBack}>‹</button>
+        <div>
+          <div className="topbar-title">Vista previa</div>
+          <div className="topbar-sub">{folio}</div>
+        </div>
+        <div className="topbar-spacer" />
+        <button onClick={onDone} style={{ background: 'var(--teal)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
+          📤 Enviar
+        </button>
+      </div>
+
+      <div className="pdf-preview">
+        <div className="pdf-doc">
+          {/* Franja superior */}
+          <div className="pdf-top-bar" />
+
+          {/* Encabezado */}
+          <div className="pdf-header" style={{ marginTop: 8 }}>
+            <div className="pdf-logo-area">
+              <img src="megadyne-logo.png" alt="Megadyne" style={{ height: 18, objectFit: 'contain' }} />
+              <div className="pdf-company">Distribuidora Binasa</div>
+              <div className="pdf-company-sub">Transmisiones · Mangueras · Conexiones</div>
+            </div>
+            <div className="pdf-meta">
+              <div className="pdf-folio">{folio}</div>
+              <div>Fecha: {today}</div>
+              <div>Vigencia: 15 días naturales</div>
+              <div style={{ marginTop: 3, color: 'var(--teal)', fontWeight: 600 }}>COTIZACIÓN COMERCIAL</div>
+            </div>
+          </div>
+
+          {/* Datos cliente */}
+          <div style={{ marginBottom: 5 }}>
+            <div className="pdf-section-title">Datos del cliente</div>
+            <div className="pdf-client-box">
+              <div>
+                <div className="pdf-client-label">Cliente</div>
+                <div className="pdf-client-val">{quoteData.clientName || '—'}</div>
+              </div>
+              <div>
+                <div className="pdf-client-label">Empresa</div>
+                <div className="pdf-client-val">{quoteData.clientEmpresa || '—'}</div>
+              </div>
+              <div>
+                <div className="pdf-client-label">Atendido por</div>
+                <div className="pdf-client-val">Vendedor Binasa</div>
+              </div>
+              <div>
+                <div className="pdf-client-label">Tiempo de entrega</div>
+                <div className="pdf-client-val" style={{ color: 'var(--teal)' }}>{quoteData.entrega}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabla productos */}
+          <div className="pdf-section-title">Productos cotizados</div>
+          <table className="pdf-table">
+            <thead>
+              <tr>
+                <th style={{ width: '16%' }}>SKU</th>
+                <th>Descripción</th>
+                <th style={{ width: '10%', textAlign: 'center' }}>Qty</th>
+                <th style={{ width: '14%' }}>P. Unit.</th>
+                <th style={{ width: '14%' }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cart.map(item => {
+                const esMet = item.product.esBandaMetrica;
+                const pUnit = esMet && item.ancho
+                  ? item.product.precioBinasa * (item.ancho / 25.4) * (1 + quoteData.margin / 100)
+                  : item.product.precioBinasa * (1 + quoteData.margin / 100);
+                const descExtra = esMet && item.ancho ? ` (${item.ancho}${item.anchoUnidad || 'mm'})` : '';
+                return (
+                  <tr key={item.product.id}>
+                    <td style={{ fontFamily: 'var(--mono)', color: 'var(--gray-400)', fontSize: 7 }}>{item.product.id}</td>
+                    <td style={{ fontWeight: 500 }}>{item.product.desc}{descExtra}</td>
+                    <td style={{ textAlign: 'center' }}>{item.qty} {esMet ? 'pz' : item.product.unidad}</td>
+                    <td>{fmt(pUnit)}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--gray-900)' }}>{fmt(pUnit * item.qty)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {/* Parte inferior: entrega + totales */}
+          <div className="pdf-bottom">
+            <div className="pdf-entrega-box">
+              <div className="pdf-entrega-label">🚚 Tiempo de entrega</div>
+              <div className="pdf-entrega-val">{quoteData.entrega}</div>
+              <div style={{ fontSize: 7, color: 'var(--gray-500)', marginTop: 3 }}>Sujeto a disponibilidad de inventario</div>
+              <div style={{ fontSize: 7, color: 'var(--gray-400)', marginTop: 6, lineHeight: 1.5 }}>
+                Precios con vigencia de 15 días naturales.<br />
+                Precios en MXN + IVA.
+              </div>
+            </div>
+            <div className="pdf-totals">
+              <div className="pdf-total-row"><span>Subtotal</span><span>{fmt(quoteData.withMargin)}</span></div>
+              <div className="pdf-total-row"><span>IVA (16%)</span><span>{fmt(quoteData.iva)}</span></div>
+              <div className="pdf-grand"><span>TOTAL</span><span>{fmt(quoteData.total)}</span></div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="pdf-footer">
+            Distribuidora Binasa · Tel. (81) 0000-0000 · ventas@binasa.com.mx<br/>
+            Esta cotización no constituye un pedido confirmado. Precios sujetos a cambio sin previo aviso.
+          </div>
+          <div className="pdf-footer-bar" />
+        </div>
+      </div>
+
+      <div className="btn-row" style={{ gap: 8 }}>
+        <button className="btn-secondary" onClick={onBack} style={{ flex: 1 }}>‹ Editar</button>
+        <button className="btn-primary" onClick={onDone} style={{ flex: 2 }}>📤 Enviar cotización</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── SUCCESS
+function SuccessScreen({ onDone }) {
+  return (
+    <div className="screen">
+      <div className="success-screen">
+        <div className="success-icon">✅</div>
+        <div className="success-title">¡Cotización enviada!</div>
+        <div className="success-sub">Tu cotización fue compartida exitosamente. El cliente recibirá el PDF en su correo.</div>
+        <div className="success-ref">COT-2026-{Math.floor(Math.random() * 9000) + 1000}</div>
+        <div style={{ height: 8 }} />
+        <button className="btn-primary" onClick={onDone}>Nueva cotización</button>
+        <button className="btn-secondary" onClick={onDone} style={{ width: 'auto', padding: '10px 24px' }}>Ver historial</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── CROSS REFERENCE
+function XRefScreen({ onBack, onProduct }) {
+  const [search, setSearch] = useState('');
+  const items = window.EQUIVALENCIAS.filter(e => {
+    const q = search.toLowerCase();
+    return !q || e.ref.toLowerCase().includes(q) || e.competidor.toLowerCase().includes(q) || e.descripcion.toLowerCase().includes(q);
+  });
+
+  return (
+    <div className="screen">
+      <div className="topbar">
+        <button className="topbar-back" onClick={onBack}>‹</button>
+        <div>
+          <div className="topbar-title">Equivalencias</div>
+          <div className="topbar-sub">Gates · Optibelt · Parker</div>
+        </div>
+      </div>
+
+      <div className="search-wrap">
+        <div className="search-bar">
+          <span className="search-icon">🔍</span>
+          <input className="search-input" placeholder="Buscar referencia competidor…" value={search} onChange={e => setSearch(e.target.value)} />
+          {search && <span className="search-clear" onClick={() => setSearch('')}>✕</span>}
+        </div>
+      </div>
+
+      <div className="section-header">Referencias cruzadas ({items.length})</div>
+      <div className="product-list">
+        {items.map((e, i) => {
+          const prod = [...window.CATALOG.bandas, ...window.CATALOG.mangueras].find(p => p.id === e.equivalente);
+          return (
+            <div key={i} className="xref-card" onClick={() => prod && onProduct(prod)}>
+              <div className="xref-top">
+                <span className="xref-competidor">{e.competidor}</span>
+                <span className="xref-ref">{e.ref}</span>
+              </div>
+              <div className="xref-desc">{e.descripcion}</div>
+              <div className="xref-arrow">
+                <span>Equivale a</span>
+                <span>→</span>
+                <span className="xref-equiv">{e.equivalente}</span>
+                <span style={{ fontSize: 11, color: 'var(--gray-500)' }}>({e.marca})</span>
+                {prod && <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: 'var(--teal-dark)' }}>{fmt(prod.precioBinasa)}</span>}
+              </div>
+            </div>
+          );
+        })}
+
+        <div style={{ padding: '16px 12px', textAlign: 'center' }}>
+          <button style={{ background: 'var(--teal-light)', color: 'var(--teal)', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            + Agregar equivalencia
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── BACKORDERS
+function BackordersScreen({ onBack }) {
+  const [bos, setBos] = useState(window.BACKORDERS);
+  const [showNew, setShowNew] = useState(false);
+
+  const statusLabel = { pendiente: 'Pendiente', en_camino: 'En camino', llegado: 'Llegó' };
+
+  return (
+    <div className="screen">
+      <div className="topbar">
+        <button className="topbar-back" onClick={onBack}>‹</button>
+        <div>
+          <div className="topbar-title">Back-orders</div>
+          <div className="topbar-sub">{bos.length} solicitudes</div>
+        </div>
+        <div className="topbar-spacer" />
+        <button className="topbar-btn" onClick={() => setShowNew(true)}>+</button>
+      </div>
+
+      <div className="product-list" style={{ paddingTop: 8 }}>
+        <div className="section-header">Activos</div>
+        {bos.map(bo => (
+          <div key={bo.id} className="bo-card">
+            <div className="bo-top">
+              <span className="bo-id">{bo.id} · {bo.producto}</span>
+              <span className={`bo-status bo-${bo.status}`}>{statusLabel[bo.status]}</span>
+            </div>
+            <div className="bo-desc">{bo.desc}</div>
+            <div className="bo-meta">
+              {bo.cliente} · {bo.cantidad} unidades · {bo.fecha}
+            </div>
+            {bo.status === 'en_camino' && (
+              <div style={{ marginTop: 8, background: 'var(--teal-light)', borderRadius: 8, padding: '8px 10px', fontSize: 12, color: 'var(--teal-dark)', fontWeight: 500 }}>
+                🚚 Mercancía en camino · Notificación activa
+              </div>
+            )}
+          </div>
+        ))}
+
+        {showNew && (
+          <div className="bo-card" style={{ border: '1.5px dashed var(--teal)' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal)', marginBottom: 10 }}>Nueva solicitud back-order</div>
+            <input style={{ width: '100%', border: '1px solid var(--gray-200)', borderRadius: 8, padding: '8px 10px', fontSize: 13, marginBottom: 8, fontFamily: 'var(--font)' }} placeholder="SKU del producto…" />
+            <input style={{ width: '100%', border: '1px solid var(--gray-200)', borderRadius: 8, padding: '8px 10px', fontSize: 13, marginBottom: 8, fontFamily: 'var(--font)' }} placeholder="Cliente…" />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn-primary" style={{ flex: 1, padding: '10px' }} onClick={() => setShowNew(false)}>Solicitar</button>
+              <button className="btn-secondary" style={{ flex: 1, padding: '10px' }} onClick={() => setShowNew(false)}>Cancelar</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN APP
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "darkMode": false,
+  "accentColor": "#1a7a78",
+  "showMarco": false,
+  "fontSize": 13
+}/*EDITMODE-END*/;
+
+function App() {
+  const [screen, setScreen] = useState('home');
+  const [prevScreen, setPrevScreen] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [quoteData, setQuoteData] = useState(null);
+  const [tweaks, setTweak] = window.useTweaks(TWEAK_DEFAULTS);
+
+  const navigate = useCallback((to, data = null) => {
+    setPrevScreen(screen);
+    if (to === 'detail') setSelectedProduct(data);
+    setScreen(to);
+  }, [screen]);
+
+  const goBack = useCallback(() => {
+    setScreen(prevScreen || 'home');
+    setPrevScreen(null);
+  }, [prevScreen]);
+
+  const addToCart = useCallback((product, qty = 1, ancho = null, anchoUnidad = 'mm') => {
+    setCart(prev => {
+      const existing = prev.find(i => i.product.id === product.id);
+      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty + qty, ancho: ancho || i.ancho, anchoUnidad: anchoUnidad || i.anchoUnidad } : i);
+      return [...prev, { product, qty, ancho, anchoUnidad }];
+    });
+    if (screen !== 'cart') setScreen('catalog');
+  }, [screen]);
+
+  const removeFromCart = useCallback((id) => {
+    setCart(prev => prev.filter(i => i.product.id !== id));
+  }, []);
+
+  const changeQty = useCallback((id, qty) => {
+    setCart(prev => prev.map(i => i.product.id === id ? { ...i, qty } : i));
+  }, []);
+
+  const changeAncho = useCallback((id, ancho, anchoUnidad) => {
+    setCart(prev => prev.map(i => i.product.id === id ? { ...i, ancho, anchoUnidad } : i));
+  }, []);
+
+  const generatePdf = useCallback((data) => {
+    setQuoteData(data);
+    setScreen('pdf');
+  }, []);
+
+  const renderScreen = () => {
+    switch (screen) {
+      case 'home': return <HomeScreen onNav={navigate} cart={cart} />;
+      case 'catalog': return <CatalogScreen onBack={() => setScreen('home')} onProduct={(p, dest) => dest ? setScreen(dest) : navigate('detail', p)} onAddToCart={addToCart} cart={cart} />;
+      case 'detail': return selectedProduct ? <DetailScreen product={selectedProduct} onBack={goBack} onAddToCart={(p, qty, ancho, anchoUnidad) => { addToCart(p, qty, ancho, anchoUnidad); goBack(); }} /> : null;
+      case 'cart': return <CartScreen cart={cart} onBack={() => setScreen('home')} onRemove={removeFromCart} onChangeQty={changeQty} onGenerate={generatePdf} />;
+      case 'pdf': return <PdfScreen cart={cart} quoteData={quoteData} onBack={() => setScreen('cart')} onDone={() => setScreen('success')} />;
+      case 'success': return <SuccessScreen onDone={() => { setCart([]); setScreen('home'); }} />;
+      case 'xref': return <XRefScreen onBack={() => setScreen('home')} onProduct={(p) => navigate('detail', p)} />;
+      case 'backorders': return <BackordersScreen onBack={() => setScreen('home')} />;
+      default: return null;
+    }
+  };
+
+  // Apply accent color tweak to CSS variable
+  useEffect(() => {
+    document.documentElement.style.setProperty('--teal', tweaks.accentColor);
+    // Derive dark from accent
+    document.documentElement.style.setProperty('--teal-dark', tweaks.accentColor);
+  }, [tweaks.accentColor]);
+
+  const AppContent = (
+    <div style={{ fontSize: tweaks.fontSize }}>
+      {renderScreen()}
+    </div>
+  );
+
+  return (
+    <div className="app-bg">
+      {tweaks.showMarco ? (
+        <IOSDevice>
+          {AppContent}
+        </IOSDevice>
+      ) : (
+        <div style={{ width: 390, height: 844, overflow: 'hidden', borderRadius: 40, boxShadow: '0 40px 80px rgba(0,0,0,.5)' }}>
+          {AppContent}
+        </div>
+      )}
+      <div className="brand-watermark">Ammega Binasa · Cotizador B2B</div>
+      <TweaksPanel>
+        <TweakSection label="Marco" />
+        <TweakToggle label="iPhone frame" value={tweaks.showMarco} onChange={v => setTweak('showMarco', v)} />
+        <TweakSection label="Texto" />
+        <TweakSlider label="Tamaño fuente" value={tweaks.fontSize} min={12} max={17} step={1} unit="px" onChange={v => setTweak('fontSize', v)} />
+        <TweakSection label="Color acento" />
+        <TweakColor label="Color principal" value={tweaks.accentColor} onChange={v => setTweak('accentColor', v)} />
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
 </html>
