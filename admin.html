@@ -2,1111 +2,971 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin — Jason de México</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Cotizador Ammega</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <style>
-/* ─── Design Tokens (Light KPI Theme) ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --teal-600:#005762;--teal-700:#004550;--teal-800:#003A42;--teal-900:#002D33;
-  --cyan-50:#E6FCFF;--lime-200:#E6EDAA;--lime-300:#D4DD7A;--lime-100:#F2F6D0;
-  --bg-page:#EAECEE;--bg-card:#FFFFFF;--bg-card-lime:#E6EDAA;--bg-card-lime-light:#F0F4CC;
-  --bg-card-teal:#005762;--bg-card-dark:#1A1A1A;
-  --text-dark:#111111;--text-secondary:#595959;--text-muted:#757575;--text-on-dark:#FFFFFF;--text-on-teal:#E6FCFF;
-  --accent:#005762;--accent-light:#E6FCFF;
-  --success:#22c55e;--warning:#f97316;--danger:#ef4444;
-  --font-sans:'Inter',system-ui,-apple-system,sans-serif;
-  --font-mono:'Cascadia Code','Fira Code',monospace;
-  --text-xs:clamp(0.625rem,0.6rem + 0.15vw,0.75rem);
-  --text-sm:clamp(0.75rem,0.7rem + 0.2vw,0.8125rem);
-  --text-base:clamp(0.8125rem,0.78rem + 0.2vw,0.9375rem);
-  --text-lg:clamp(1rem,0.95rem + 0.3vw,1.125rem);
-  --text-xl:clamp(1.125rem,1rem + 0.5vw,1.375rem);
-  --text-2xl:clamp(1.375rem,1.2rem + 0.8vw,1.75rem);
-  --text-3xl:clamp(1.75rem,1.5rem + 1.2vw,2.5rem);
-  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;--sp-8:32px;--sp-10:40px;
-  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;--radius-2xl:24px;
-  --shadow-sm:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md:0 4px 16px rgba(0,0,0,0.08);
-  --shadow-lg:0 8px 32px rgba(0,0,0,0.1);
-  --shadow-card:0 2px 12px rgba(0,0,0,0.06);
-  --ease-out:cubic-bezier(0.16,1,0.3,1);--ease-spring:cubic-bezier(0.34,1.56,0.64,1);
-  --dur-fast:150ms;--dur-normal:250ms;
+  --teal:#1a7a78;--teal-dark:#0f5a58;--teal-light:#e8f5f5;--teal-mid:#2a9896;
+  --amber:#d97706;--amber-light:#fef3c7;
+  --red:#dc2626;--red-light:#fee2e2;
+  --green:#16a34a;--green-light:#dcfce7;
+  --purple:#7c3aed;--purple-light:#ede9fe;
+  --blue:#0891b2;--blue-light:#e0f2fe;
+  --sidebar-w:224px;--topbar-h:56px;
+  --gray-50:#f8f9fa;--gray-100:#f1f3f4;--gray-200:#e8eaed;
+  --gray-300:#dadce0;--gray-400:#bdc1c6;--gray-500:#9aa0a6;
+  --gray-600:#80868b;--gray-700:#5f6368;--gray-800:#3c4043;--gray-900:#202124;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --radius:10px;--radius-sm:7px;--radius-lg:14px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);
+  --shadow:0 4px 12px rgba(0,0,0,.09),0 2px 4px rgba(0,0,0,.05);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
 }
-
-/* ─── Animations ─── */
-@keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes scaleIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
-@keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.reveal{animation:fadeInUp 0.5s var(--ease-out) forwards;opacity:0}
-.reveal-d1{animation-delay:.05s}.reveal-d2{animation-delay:.1s}.reveal-d3{animation-delay:.15s}
-.reveal-d4{animation-delay:.2s}.reveal-d5{animation-delay:.25s}.reveal-d6{animation-delay:.3s}
-
-/* ─── Base ─── */
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg-page);font-family:var(--font-sans);color:var(--text-dark);min-height:100vh;-webkit-font-smoothing:antialiased}
-::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#C4C4C4;border-radius:99px}::-webkit-scrollbar-thumb:hover{background:#999}
-
-/* ─── Layout ─── */
-.wrap{max-width:960px;margin:0 auto;padding:var(--sp-6) var(--sp-4);display:none}
-.header{text-align:center;padding:var(--sp-4) 0 var(--sp-5)}
-.header h1{font-size:var(--text-xl);font-weight:900;letter-spacing:2px;color:var(--teal-600)}
-.header sub{color:var(--text-muted);font-size:var(--text-xs);letter-spacing:1.5px;display:block;margin-top:var(--sp-1)}
-.session-info{margin-top:var(--sp-2);font-size:var(--text-xs);color:var(--text-muted)}
-.session-info span{color:var(--teal-600);font-weight:700}
-.session-info a{color:var(--danger);text-decoration:none;transition:opacity var(--dur-fast)}
-.session-info a:hover{opacity:.7}
-
-/* ─── Tabs ─── */
-.tabs{display:flex;gap:var(--sp-1);margin-bottom:var(--sp-5);border-bottom:2px solid #DDDEDF;flex-wrap:wrap}
-.tab{padding:var(--sp-3) var(--sp-5);background:transparent;color:var(--text-muted);border:none;font-weight:600;font-size:var(--text-sm);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color var(--dur-fast),border-color var(--dur-fast);font-family:var(--font-sans);letter-spacing:.3px}
-.tab:hover{color:var(--text-secondary)}
-.tab.on{color:var(--teal-600);border-bottom-color:var(--teal-600)}
-
-/* ─── White Card ─── */
-.card{background:var(--bg-card);border-radius:var(--radius-xl);padding:var(--sp-5);margin-bottom:var(--sp-4);box-shadow:var(--shadow-card);transition:transform var(--dur-fast) var(--ease-spring),box-shadow var(--dur-normal)}
-.card:hover{box-shadow:var(--shadow-md)}
-.card h3{font-size:var(--text-sm);font-weight:700;color:var(--text-dark);letter-spacing:.5px;margin-bottom:var(--sp-3)}
-
-/* ─── Inputs ─── */
-.inp{background:#F7F9FC;border:1.5px solid #DDDEDF;border-radius:var(--radius-sm);padding:var(--sp-3) var(--sp-4);color:var(--text-dark);width:100%;outline:none;font-size:var(--text-base);font-family:var(--font-sans);transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
-.inp:focus{border-color:var(--teal-600);box-shadow:0 0 0 3px rgba(0,87,98,0.12)}
-.inp::placeholder{color:#BBBBBB}
-.inp-sm{width:90px;text-align:right;padding:var(--sp-2) var(--sp-3);font-weight:700}
-
-/* ─── Buttons ─── */
-.btn-p{padding:var(--sp-3) var(--sp-5);background:var(--teal-600);color:#FFF;border:none;border-radius:var(--radius-sm);font-weight:800;font-size:var(--text-base);cursor:pointer;transition:transform var(--dur-fast) var(--ease-spring),box-shadow var(--dur-normal),background var(--dur-fast);font-family:var(--font-sans);letter-spacing:.3px}
-.btn-p:hover{background:var(--teal-700);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,87,98,0.25)}
-.btn-p:active{transform:translateY(0)}
-.btn-p:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
-.btn-s{padding:var(--sp-3) var(--sp-4);background:transparent;color:var(--text-secondary);border:1.5px solid #DDDEDF;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;transition:all var(--dur-fast);font-family:var(--font-sans)}
-.btn-s:hover{border-color:var(--teal-600);color:var(--teal-600);box-shadow:0 0 12px rgba(0,87,98,0.08)}
-.btn-danger{padding:var(--sp-2) var(--sp-3);background:rgba(239,68,68,0.06);color:var(--danger);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-sm);font-weight:600;cursor:pointer;font-size:var(--text-xs);transition:all var(--dur-fast);font-family:var(--font-sans)}
-.btn-danger:hover{background:rgba(239,68,68,0.12);box-shadow:0 0 12px rgba(239,68,68,0.1)}
-
-/* ─── Dropzone ─── */
-.dropzone{border:2px dashed #C4C4C4;border-radius:var(--radius-xl);padding:var(--sp-10) var(--sp-5);text-align:center;cursor:pointer;transition:all var(--dur-normal) var(--ease-out);background:#FAFBFC}
-.dropzone:hover,.dropzone.over{border-color:var(--teal-600);background:rgba(0,87,98,0.03);box-shadow:0 0 30px rgba(0,87,98,0.06)}
-.dropzone .icon{font-size:36px;margin-bottom:var(--sp-2);opacity:.7}
-.dropzone p{color:var(--text-muted);font-size:var(--text-sm)}
-.dropzone .fname{color:var(--success);font-weight:700;font-size:var(--text-base);margin-top:var(--sp-2)}
-
-/* ─── Tables ─── */
-table{width:100%;border-collapse:collapse}
-th{padding:var(--sp-2) var(--sp-3);font-size:var(--text-xs);color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;border-bottom:2px solid #EAECEE;text-align:left}
-td{padding:var(--sp-2) var(--sp-3);font-size:var(--text-sm);border-bottom:1px solid #F2F2F2;color:var(--text-dark)}
-tbody tr{transition:background var(--dur-fast)}
-tbody tr:hover{background:rgba(0,87,98,0.04)}
-tbody tr:nth-child(even){background:#FAFBFC}
-tbody tr:nth-child(even):hover{background:rgba(0,87,98,0.06)}
-
-/* ─── Stat Cards (KPI style) ─── */
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-4)}
-.stat{border-radius:var(--radius-xl);padding:var(--sp-4);text-align:center;position:relative;overflow:hidden;transition:transform var(--dur-fast) var(--ease-spring),box-shadow var(--dur-normal);background:var(--bg-card-lime);box-shadow:var(--shadow-card)}
-.stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
-.stat .val{font-size:var(--text-2xl);font-weight:900;color:var(--text-dark);animation:countUp 0.6s var(--ease-out) forwards}
-.stat .lbl{font-size:var(--text-xs);color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-top:var(--sp-1)}
-
-/* ─── Badges ─── */
-.badge{display:inline-block;border-radius:99px;padding:2px 10px;font-size:var(--text-xs);font-weight:700;letter-spacing:.3px}
-.badge-ok{background:rgba(34,197,94,0.1);color:var(--success);border:1px solid rgba(34,197,94,0.2)}
-.badge-warn{background:rgba(249,115,22,0.08);color:var(--warning);border:1px solid rgba(249,115,22,0.2)}
-.badge-info{background:rgba(0,87,98,0.1);color:var(--teal-600);border:1px solid rgba(0,87,98,0.2)}
-
-/* ─── Panels ─── */
-.panel{display:none}.panel.active{display:block;animation:fadeIn .3s var(--ease-out)}
-
-/* ─── Section Labels ─── */
-.sec{font-size:var(--text-xs);font-weight:700;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:var(--sp-2)}
-
-/* ─── Log ─── */
-.log{background:#F7F9FC;border:1px solid #EAECEE;border-left:3px solid var(--teal-600);border-radius:var(--radius-sm);padding:var(--sp-3);font-family:var(--font-mono);font-size:var(--text-xs);color:var(--text-secondary);max-height:200px;overflow-y:auto;margin-top:var(--sp-3);white-space:pre-wrap}
-.log .ok{color:var(--success)}.log .err{color:var(--danger)}.log .hi{color:var(--teal-600);font-weight:700}
-
-/* (cotizador selector removed — unified template) */
-
-/* ─── Login Overlay ─── */
-#login-overlay{position:fixed;inset:0;background:var(--bg-page);z-index:9999;display:flex;align-items:center;justify-content:center}
-.login-box{background:var(--bg-card);border-radius:var(--radius-2xl);padding:var(--sp-10) var(--sp-8);max-width:420px;width:92%;text-align:center;animation:scaleIn 0.5s var(--ease-out) forwards;position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
-.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--teal-600),var(--lime-200))}
-.login-icon{width:60px;height:60px;margin:0 auto var(--sp-4);border-radius:var(--radius-lg);background:var(--teal-600);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,87,98,0.25)}
-.login-icon svg{width:28px;height:28px}
-.login-box h2{color:var(--text-dark);margin-bottom:var(--sp-1);font-size:var(--text-lg);font-weight:800;letter-spacing:.5px}
-.login-box .sub{color:var(--text-muted);font-size:var(--text-xs);margin-bottom:var(--sp-6);letter-spacing:1.5px}
-.login-box .field{margin-bottom:var(--sp-4);text-align:left}
-.login-box label{font-size:var(--text-xs);color:var(--text-muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px}
-.login-box .err-msg{color:var(--danger);font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px}
-
-/* ─── User Management ─── */
-.user-row{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) var(--sp-4);border-bottom:1px solid #F2F2F2;transition:background var(--dur-fast);border-radius:var(--radius-sm)}
-.user-row:hover{background:rgba(0,87,98,0.03)}
-.user-row .ur-name{font-weight:700;font-size:var(--text-base)}
-.user-row .ur-role{font-size:var(--text-xs);padding:2px 10px;border-radius:99px;margin-left:var(--sp-2)}
-.role-admin{background:rgba(0,87,98,0.1);color:var(--teal-600);border:1px solid rgba(0,87,98,0.2)}
-.role-director{background:rgba(59,130,246,0.08);color:#1d4ed8;border:1px solid rgba(59,130,246,0.2)}
-.role-vendedor{background:rgba(34,197,94,0.08);color:#166534;border:1px solid rgba(34,197,94,0.2)}
-.role-dashboard{background:rgba(249,115,22,0.08);color:var(--warning);border:1px solid rgba(249,115,22,0.2)}
-/* ─── Sync Status ─── */
-.sync-pill{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:4px 12px;font-size:var(--text-xs);font-weight:700;transition:all .2s}
-.sync-idle{background:#F7F9FC;color:var(--text-muted);border:1px solid #DDDEDF}
-.sync-syncing{background:rgba(249,115,22,0.1);color:var(--warning);border:1px solid rgba(249,115,22,0.3)}
-.sync-ok{background:rgba(34,197,94,0.1);color:var(--success);border:1px solid rgba(34,197,94,0.3)}
-.sync-err{background:rgba(239,68,68,0.1);color:var(--danger);border:1px solid rgba(239,68,68,0.2)}
-/* ─── Reseller Rows ─── */
-.rs-row{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border-bottom:1px solid #F2F2F2;transition:background var(--dur-fast)}
-.rs-row:hover{background:rgba(0,87,98,0.03)}
-.rs-logo{width:40px;height:40px;border-radius:var(--radius-sm);object-fit:cover;border:1px solid #EAECEE;flex-shrink:0}
-.rs-logo-ph{width:40px;height:40px;border-radius:var(--radius-sm);background:var(--bg-card-lime);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:1px solid #EAECEE}
+html,body{height:100%;font-family:var(--font);background:var(--gray-50);color:var(--gray-900);overflow:hidden}
+#root{height:100%;display:flex}
+.sidebar{width:var(--sidebar-w);height:100%;background:#0f1923;display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid rgba(255,255,255,.06)}
+.sidebar-brand{height:var(--topbar-h);display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sidebar-logo{width:28px;height:28px;border-radius:7px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0}
+.sidebar-name{font-size:13px;font-weight:700;color:#fff}
+.sidebar-sub{font-size:10px;color:rgba(255,255,255,.35)}
+.sidebar-section{font-size:9px;font-weight:700;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:1.2px;padding:18px 18px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;transition:background .12s;margin:1px 8px;border-radius:8px;border:none;background:none;width:calc(100% - 16px);text-align:left}
+.nav-item:hover{background:rgba(255,255,255,.06)}
+.nav-item.active{background:rgba(26,122,120,.25)}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.nav-label{font-size:13px;font-weight:500;color:rgba(255,255,255,.7)}
+.nav-item.active .nav-label{color:#fff;font-weight:600}
+.nav-badge{margin-left:auto;font-size:10px;font-weight:700;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px}
+.sidebar-bottom{margin-top:auto;padding:12px 8px;border-top:1px solid rgba(255,255,255,.07)}
+.sidebar-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer}
+.sidebar-user:hover{background:rgba(255,255,255,.06)}
+.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sidebar-user-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.8)}
+.sidebar-user-role{font-size:10px;color:rgba(255,255,255,.35)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar-web{height:var(--topbar-h);background:#fff;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;padding:0 28px;gap:16px;flex-shrink:0}
+.topbar-title-web{font-size:16px;font-weight:700;color:var(--gray-900)}
+.topbar-sub-web{font-size:13px;color:var(--gray-400);margin-left:4px}
+.topbar-spacer{flex:1}
+.btn-primary-web{background:var(--teal);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .12s;white-space:nowrap}
+.btn-primary-web:hover{background:var(--teal-dark)}
+.btn-secondary-web{background:#fff;color:var(--gray-700);border:1.5px solid var(--gray-200);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .12s;white-space:nowrap}
+.btn-secondary-web:hover{background:var(--gray-50)}
+.btn-danger-web{background:#fff;color:var(--red);border:1.5px solid var(--red-light);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .12s;white-space:nowrap}
+.btn-danger-web:hover{background:var(--red-light)}
+.content{flex:1;overflow-y:auto;padding:24px 28px}
+.content::-webkit-scrollbar{width:6px}
+.content::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+.card{background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);border:1px solid var(--gray-200)}
+.card-header{padding:16px 22px 12px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;gap:12px}
+.card-title{font-size:14px;font-weight:700;color:var(--gray-900)}
+.card-sub{font-size:12px;color:var(--gray-400)}
+.card-body{padding:18px 22px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.stat-card{background:#fff;border-radius:var(--radius-lg);padding:16px 18px;border:1px solid var(--gray-200);box-shadow:var(--shadow-sm)}
+.stat-icon{font-size:20px;margin-bottom:6px}
+.stat-val{font-size:24px;font-weight:800;color:var(--gray-900);line-height:1}
+.stat-label{font-size:12px;color:var(--gray-400);margin-top:4px}
+.stat-delta{font-size:11px;font-weight:600;margin-top:5px}
+.delta-up{color:var(--green)}
+.delta-down{color:var(--red)}
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:11px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.8px;padding:10px 16px;border-bottom:1.5px solid var(--gray-100);text-align:left;background:var(--gray-50)}
+.data-table td{padding:11px 16px;border-bottom:1px solid var(--gray-100);font-size:13px;color:var(--gray-800);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--gray-50)}
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.badge-green{background:var(--green-light);color:var(--green)}
+.badge-amber{background:var(--amber-light);color:var(--amber)}
+.badge-red{background:var(--red-light);color:var(--red)}
+.badge-blue{background:var(--blue-light);color:var(--blue)}
+.badge-purple{background:var(--purple-light);color:var(--purple)}
+.badge-gray{background:var(--gray-100);color:var(--gray-500)}
+.badge-teal{background:var(--teal-light);color:var(--teal)}
+.form-grid{display:grid;gap:14px}
+.form-grid-2{grid-template-columns:1fr 1fr}
+.form-grid-3{grid-template-columns:1fr 1fr 1fr}
+.field-label{font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:5px;display:block}
+.field-input{width:100%;border:1.5px solid var(--gray-200);border-radius:8px;padding:8px 12px;font-size:13px;font-family:var(--font);color:var(--gray-900);outline:none;transition:border-color .15s;background:#fff}
+.field-input:focus{border-color:var(--teal)}
+.field-select{width:100%;border:1.5px solid var(--gray-200);border-radius:8px;padding:8px 12px;font-size:13px;font-family:var(--font);color:var(--gray-900);outline:none;background:#fff;cursor:pointer}
+.logo-upload{border:2px dashed var(--gray-300);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.logo-upload:hover{border-color:var(--teal);background:var(--teal-light)}
+.color-swatch{width:26px;height:26px;border-radius:6px;border:2px solid rgba(0,0,0,.1);cursor:pointer;flex-shrink:0}
+.empresa-card{display:flex;align-items:center;gap:14px;padding:14px;border:1.5px solid var(--gray-200);border-radius:var(--radius-lg);background:#fff;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.empresa-card:hover{border-color:var(--teal);box-shadow:0 0 0 3px rgba(26,122,120,.08)}
+.empresa-card.selected{border-color:var(--teal);box-shadow:0 0 0 3px rgba(26,122,120,.12);background:var(--teal-light)}
+.pdf-mini{background:#fff;border-radius:8px;box-shadow:var(--shadow);padding:14px;font-size:8px;position:relative;overflow:hidden;aspect-ratio:216/279;width:200px;flex-shrink:0}
+.upload-zone{border:2px dashed var(--gray-300);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--teal);background:var(--teal-light)}
+.tabs-web{display:flex;gap:0;border-bottom:1.5px solid var(--gray-200);margin-bottom:20px}
+.tab-web{padding:9px 18px;border:none;background:none;font-size:13px;font-weight:500;color:var(--gray-500);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1.5px;transition:all .15s;font-family:var(--font)}
+.tab-web.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:600}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--gray-300);border-radius:20px;cursor:pointer;transition:background .2s}
+.toggle-slider::before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked+.toggle-slider{background:var(--teal)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(16px)}
+.search-web{display:flex;align-items:center;gap:8px;background:var(--gray-100);border-radius:8px;padding:7px 12px;width:240px}
+.search-web input{border:none;background:none;outline:none;font-size:13px;font-family:var(--font);color:var(--gray-900);flex:1}
+*{scrollbar-width:thin;scrollbar-color:var(--gray-300) transparent}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal{background:#fff;border-radius:16px;box-shadow:var(--shadow-lg);width:560px;max-height:88vh;overflow-y:auto}
+.modal-lg{width:720px}
+.modal-header{padding:20px 24px 14px;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1}
+.modal-title{font-size:16px;font-weight:700}
+.modal-close{font-size:20px;color:var(--gray-400);cursor:pointer;background:none;border:none;padding:2px 6px;border-radius:6px}
+.modal-close:hover{background:var(--gray-100);color:var(--gray-700)}
+.modal-body{padding:20px 24px}
+.modal-footer{padding:14px 24px;border-top:1px solid var(--gray-100);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff}
+.notif-toast{position:fixed;top:20px;right:20px;z-index:200;background:#fff;border-radius:10px;box-shadow:var(--shadow-lg);padding:14px 18px;display:flex;align-items:center;gap:10px;font-size:13px;border-left:4px solid var(--green);animation:slideIn .25s ease;min-width:280px}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+.role-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.role-vendedor{background:var(--blue-light);color:var(--blue)}
+.role-supervisor{background:var(--purple-light);color:var(--purple)}
+.role-admin{background:var(--red-light);color:var(--red)}
+.bo-progress{height:6px;background:var(--gray-200);border-radius:3px;overflow:hidden;margin-top:4px}
+.bo-progress-bar{height:100%;border-radius:3px;transition:width .4s}
 </style>
 </head>
 <body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
 
-<!-- LOGIN OVERLAY -->
-<!-- AUTH GUARD -->
-<script>
-(function(){
-  function getSession(){try{return JSON.parse(localStorage.getItem('jdm_session')||'null');}catch{return null;}}
-  const s=getSession();
-  if(!s||s.role!=='admin'){localStorage.removeItem('jdm_session');location.href='index.html';}
-  else window._session=s;
-})();
-function logout(){localStorage.removeItem('jdm_session');location.href='index.html';}
-</script>
+/* ── helpers ─────────────────────────────────────────── */
+const fmt = n => `$${Number(n).toLocaleString('es-MX',{minimumFractionDigits:0})}`;
+const today = () => new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'});
 
-<!-- MAIN CONTENT -->
-<div class="wrap" id="main-wrap" style="display:block">
-  <div class="header">
-    <h1>ADMIN — JASON DE MEXICO</h1>
-    <sub>GESTION DE INVENTARIO · PRECIOS · COTIZADORES</sub>
-    <div id="app-nav-admin" style="margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap"></div>
-    <div class="session-info" style="margin-top:8px">Sesion: <span id="session-user"></span> · <a href="#" onclick="logout()">Cerrar sesion</a></div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab on" onclick="showTab('inv')">Inventario</button>
-    <button class="tab" onclick="showTab('precios')">Precios</button>
-    <button class="tab" onclick="showTab('generar')">Generar</button>
-    <button class="tab" onclick="showTab('acceso')">Acceso y Usuarios</button>
-  </div>
-
-  <!-- TAB: INVENTARIO -->
-  <div id="tab-inv" class="panel active">
-    <div class="card">
-      <h3>Cargar Archivo de Inventario</h3>
-      <div class="dropzone" id="dz-inv" onclick="document.getElementById('file-inv').click()"
-           ondragover="event.preventDefault();this.classList.add('over')"
-           ondragleave="this.classList.remove('over')"
-           ondrop="event.preventDefault();this.classList.remove('over');handleInvFile(event.dataTransfer.files[0])">
-        <div class="icon">📁</div>
-        <p>Arrastra el archivo Excel de inventario aqui<br>o haz clic para seleccionar</p>
-        <p style="color:var(--text-muted);font-size:var(--text-xs);margin-top:var(--sp-2)">Formato esperado: ARTICULO · DESCRIPCION · ALMACEN · DISPONIBLE · UNIDADVENTA</p>
-        <div class="fname" id="inv-fname"></div>
-      </div>
-      <input type="file" id="file-inv" accept=".xlsx,.xls" style="display:none" onchange="handleInvFile(this.files[0])">
-    </div>
-    <div id="inv-stats" style="display:none">
-      <div class="stat-grid" id="inv-stat-grid"></div>
-      <div class="card">
-        <h3>Vista Previa — Primeros 30 articulos con stock</h3>
-        <div style="overflow-x:auto"><table id="inv-preview"></table></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: PRECIOS -->
-  <div id="tab-precios" class="panel">
-    <div class="card">
-      <h3>Incremento Precio de Lista</h3>
-      <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--sp-3)">Incrementa el precio de lista de TODOS los productos por un porcentaje.</p>
-      <div style="display:flex;align-items:center;gap:var(--sp-3)">
-        <span style="font-size:var(--text-sm);color:var(--text-secondary)">Incremento:</span>
-        <input type="number" class="inp inp-sm" id="inp-inc" value="0" min="-50" max="200" step="0.5">
-        <span style="font-size:var(--text-lg);font-weight:900;color:var(--teal-600)">%</span>
-        <span id="inc-preview" style="font-size:var(--text-xs);color:var(--text-muted);margin-left:var(--sp-2)"></span>
-      </div>
-    </div>
-    <div class="card">
-      <h3>Clientes y Descuentos</h3>
-      <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--sp-4)">Gestiona los clientes y su porcentaje de descuento sobre el precio de lista.</p>
-      <div id="cli-discount-table"></div>
-      <div style="margin-top:var(--sp-4);padding-top:var(--sp-4);border-top:1.5px solid #DDDEDF">
-        <h3 style="margin-bottom:var(--sp-3)">+ Agregar Cliente</h3>
-        <div style="display:grid;grid-template-columns:1fr 80px 1fr 80px;gap:var(--sp-2);margin-bottom:var(--sp-3);align-items:end">
-          <div><label class="sec">Nombre</label><input class="inp" id="add-cli-name" placeholder="Ej: Brr"></div>
-          <div><label class="sec">Clave</label><input class="inp" id="add-cli-key" placeholder="b" maxlength="3" style="text-align:center;text-transform:lowercase"></div>
-          <div><label class="sec">Descripcion (cotizacion)</label><input class="inp" id="add-cli-desc" placeholder="Ej: Applied Ind."></div>
-          <div><label class="sec">Dcto %</label><input class="inp" id="add-cli-disc" type="number" value="30" min="0" max="90" step="0.5" style="text-align:center"></div>
-        </div>
-        <button class="btn-p" style="width:auto;padding:8px 20px" onclick="addCliente()">+ Agregar</button>
-        <span id="add-cli-msg" style="font-size:var(--text-sm);margin-left:var(--sp-2)"></span>
-      </div>
-    </div>
-    <div class="card" id="price-preview-card" style="display:none">
-      <h3>Vista Previa de Precios — Primeros 10 productos</h3>
-      <div style="overflow-x:auto"><table id="price-preview"></table></div>
-    </div>
-  </div>
-
-  <!-- TAB: GENERAR -->
-  <div id="tab-generar" class="panel">
-    <div class="card">
-      <h3>Cargar Catalogo desde Cotizador Existente</h3>
-      <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--sp-3)">Opcional: sube un cotizador HTML anterior para extraer su catalogo de productos.</p>
-      <div class="dropzone" id="dz-html" onclick="document.getElementById('file-html').click()"
-           ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')"
-           ondrop="event.preventDefault();this.classList.remove('over');handleHtmlFile(event.dataTransfer.files[0])">
-        <div class="icon">📄</div>
-        <p>Arrastra un archivo .html de cotizador aqui<br>o haz clic para seleccionar</p>
-        <div class="fname" id="html-fname"></div>
-      </div>
-      <input type="file" id="file-html" accept=".html" style="display:none" onchange="handleHtmlFile(this.files[0])">
-    </div>
-    <div id="gen-summary" style="display:none"><div class="card"><h3>Resumen de Cambios</h3><div id="gen-summary-content"></div></div></div>
-    <div class="card">
-      <button class="btn-p" id="btn-gen" style="width:100%;font-size:var(--text-lg);padding:var(--sp-4)" onclick="generarHTML()">Actualizar Cotizador</button>
-      <p style="font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--sp-2);text-align:center">Los datos se guardan en localStorage. El cotizador (cotizador_tpl.html) los lee automaticamente.</p>
-      <div class="log" id="gen-log" style="display:none"></div>
-    </div>
-  </div>
-
-  <!-- TAB: ACCESO Y USUARIOS (usuarios + resellers + sync) -->
-  <div id="tab-acceso" class="panel">
-
-    <!-- GITHUB AUTO-SYNC -->
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)">
-        <h3 style="margin:0">🔄 Sincronización Automática</h3>
-        <span class="sync-pill sync-idle" id="sync-status-pill">● Sin configurar</span>
-      </div>
-      <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--sp-3);line-height:1.6">
-        Configura tu token de GitHub una vez. Cada vez que crees o elimines un usuario o reseller, los cambios se publican automáticamente y todos los navegadores los reciben al abrir el sitio.
-      </p>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-        <div>
-          <label class="sec">GitHub Token</label>
-          <input class="inp" id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxx">
-          <div id="gh-token-status" style="font-size:10px;margin-top:4px;color:var(--success)"></div>
-        </div>
-        <div>
-          <label class="sec">Usuario/Org GitHub</label>
-          <input class="inp" id="gh-owner" placeholder="tu-usuario">
-        </div>
-        <div>
-          <label class="sec">Nombre del Repositorio</label>
-          <input class="inp" id="gh-repo" placeholder="ammega-cotizador">
-        </div>
-      </div>
-      <div style="display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap">
-        <button class="btn-p" onclick="saveGHConfig()">💾 Guardar config</button>
-        <button class="btn-s" onclick="autoDetectGH()">Auto-detectar repo</button>
-        <button class="btn-s" onclick="manualSync()">↑ Sincronizar ahora</button>
-        <span style="font-size:var(--text-xs);color:var(--text-muted)" id="sync-last"></span>
-      </div>
-    </div>
-
-    <!-- JSONBIN SYNC COTIZACIONES -->
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)">
-        <h3 style="margin:0">📊 Sincronización de Cotizaciones (JSONBin)</h3>
-        <span class="sync-pill sync-idle" id="bin-status-pill">● Sin configurar</span>
-      </div>
-      <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--sp-3);line-height:1.6">
-        Configura una vez para que las cotizaciones de <strong>todos los vendedores</strong> aparezcan en el dashboard, sin importar el dispositivo.<br>
-        1. Crea cuenta gratis en <strong>jsonbin.io</strong> → crea un nuevo Bin con contenido <code style="background:#f0f0f0;padding:1px 5px;border-radius:3px">{}</code> → copia el Bin ID.<br>
-        2. En tu cuenta JSONBin ve a <em>API Keys</em> → crea un Access Key → pégalo abajo.<br>
-        3. Guarda y sincroniza — todos los usuarios lo recibirán al iniciar sesión.
-      </p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-        <div>
-          <label class="sec">JSONBin Bin ID</label>
-          <input class="inp" id="bin-id" placeholder="ej: 6650abc1acd3cb34a8...">
-          <div id="bin-id-status" style="font-size:10px;margin-top:4px;color:var(--success)"></div>
-        </div>
-        <div>
-          <label class="sec">JSONBin Access Key</label>
-          <input class="inp" id="bin-key" type="password" placeholder="$2b$10$...">
-          <div id="bin-key-status" style="font-size:10px;margin-top:4px;color:var(--success)"></div>
-        </div>
-      </div>
-      <div style="display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap">
-        <button class="btn-p" onclick="saveBinConfig()">💾 Guardar y publicar</button>
-        <button class="btn-s" onclick="testBinConfig()">🔍 Probar conexión</button>
-        <span style="font-size:var(--text-xs);color:var(--text-muted)" id="bin-last"></span>
-      </div>
-    </div>
-
-    <!-- USUARIOS -->
-    <div class="card">
-      <h3>Usuarios del Sistema</h3>
-      <div id="user-list"></div>
-    </div>
-    <div class="card">
-      <h3>Agregar Usuario</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-        <div><label class="sec">Usuario (login)</label><input class="inp" id="new-user" placeholder="usuario123"></div>
-        <div><label class="sec">Contrasena</label><input class="inp" id="new-pass" type="password" placeholder="......"></div>
-      </div>
-      <div style="margin-bottom:var(--sp-3)">
-        <label class="sec">Nombre completo (aparece en cotizaciones)</label>
-        <input class="inp" id="new-nombre" placeholder="Ej: ISMAEL ULISES HERNANDEZ FRAYLE">
-      </div>
-      <div style="margin-bottom:var(--sp-3)">
-        <label class="sec" style="margin-bottom:6px;display:block">Rol y permisos:</label>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='#22c55e'">
-            <input type="radio" name="new-role" value="vendedor" checked style="margin-top:2px">
-            <div><div style="font-weight:700;font-size:var(--text-sm);color:#166534">🟢 Vendedor</div><div style="font-size:var(--text-xs);color:var(--text-muted)">Solo cotizadores (Mangueras y Bandas)</div></div>
-          </label>
-          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='#3b82f6'">
-            <input type="radio" name="new-role" value="director" style="margin-top:2px">
-            <div><div style="font-weight:700;font-size:var(--text-sm);color:#1e40af">🔵 Director</div><div style="font-size:var(--text-xs);color:var(--text-muted)">Cotizadores + Dashboard y estadisticas</div></div>
-          </label>
-          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1.5px solid #DDDEDF;transition:border-color .15s" onclick="this.style.borderColor='var(--teal-600)'">
-            <input type="radio" name="new-role" value="admin" style="margin-top:2px">
-            <div><div style="font-weight:700;font-size:var(--text-sm);color:var(--teal-600)">⚙️ Admin</div><div style="font-size:var(--text-xs);color:var(--text-muted)">Acceso completo</div></div>
-          </label>
-        </div>
-      </div>
-      <button class="btn-p" onclick="addUser()">+ Agregar Usuario</button>
-      <div id="add-user-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
-    </div>
-    <div class="card">
-      <h3>Cambiar Mi Contrasena</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-        <div><label class="sec">Nueva Contrasena</label><input class="inp" id="chg-pass" type="password" placeholder="••••••"></div>
-        <div><label class="sec">Confirmar</label><input class="inp" id="chg-pass2" type="password" placeholder="••••••"></div>
-      </div>
-      <button class="btn-s" onclick="changeMyPass()">Cambiar Contrasena</button>
-      <div id="chg-pass-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
-    </div>
-
-    <!-- RESELLERS -->
-    <div class="card">
-      <h3>Resellers</h3>
-      <div id="resellers-list-acceso"></div>
-    </div>
-    <div class="card">
-      <h3>Agregar Reseller</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-        <div><label class="sec">Nombre Reseller</label><input class="inp" id="new-rs-nombre" placeholder="Ej: Binasa · Brr · Applied"></div>
-        <div><label class="sec">Usuario (login)</label><input class="inp" id="new-rs-user" placeholder="ej: felipe"></div>
-        <div><label class="sec">Contraseña</label><input class="inp" id="new-rs-pass" type="password" placeholder="ej: binasa1"></div>
-        <div><label class="sec">Descuento % (0-90)</label><input class="inp" id="new-rs-desc" type="number" min="0" max="90" step="0.5" value="45"></div>
-      </div>
-      <div style="background:#F7F9FC;border:1px dashed #DDDEDF;border-radius:var(--radius-lg);padding:var(--sp-4);margin-bottom:var(--sp-3)">
-        <p class="sec" style="margin-bottom:var(--sp-2)">Logo Reseller (PNG/JPG · recomendado 100×100px)</p>
-        <div class="dropzone" id="logo-dropzone" style="padding:var(--sp-6) var(--sp-4)"
-             onclick="document.getElementById('file-rs-logo').click()"
-             ondragover="event.preventDefault();this.classList.add('over')"
-             ondragleave="this.classList.remove('over')"
-             ondrop="event.preventDefault();this.classList.remove('over');handleRSLogoFile(event.dataTransfer.files[0])">
-          <div class="icon">🖼️</div>
-          <p>Arrastra logo o haz clic<br><span style="font-size:var(--text-xs);color:#757575">PNG/JPG · Máx 500KB</span></p>
-          <div class="fname" id="logo-fname"></div>
-        </div>
-        <input type="file" id="file-rs-logo" accept="image/*" style="display:none" onchange="handleRSLogoFile(this.files[0])">
-        <div id="logo-preview" style="display:none;margin-top:var(--sp-3);text-align:center">
-          <img id="logo-preview-img" style="max-width:100px;max-height:100px;border-radius:8px;border:1px solid #DDDEDF" alt="Logo preview">
-          <div style="font-size:var(--text-xs);color:#757575;margin-top:4px" id="logo-size"></div>
-        </div>
-      </div>
-      <button class="btn-p" onclick="createNewReseller()" style="width:100%">+ Crear Reseller</button>
-      <div id="new-rs-msg" style="font-size:var(--text-sm);margin-top:var(--sp-2);min-height:18px"></div>
-    </div>
-    <div class="card" id="edit-rs-card" style="display:none">
-      <h3>Editar Reseller</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-        <div><label class="sec">Nombre</label><input class="inp" id="edit-rs-nombre" disabled></div>
-        <div><label class="sec">Descuento %</label><input class="inp" id="edit-rs-desc" type="number" min="0" max="90" step="0.5"></div>
-      </div>
-      <div style="display:flex;gap:var(--sp-3)">
-        <button class="btn-p" onclick="saveEditReseller()" style="flex:1">Guardar</button>
-        <button class="btn-s" onclick="closeEditReseller()" style="flex:1">Cancelar</button>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<script>
-/* REVEAL ANIMATION HELPER */
-function revealChildren(container){
-  const els=container.querySelectorAll('.card,.stat,.stat-grid,.dropzone');
-  els.forEach((el,i)=>{
-    el.classList.remove('reveal','reveal-d1','reveal-d2','reveal-d3','reveal-d4','reveal-d5','reveal-d6');
-    void el.offsetWidth;
-    el.classList.add('reveal','reveal-d'+Math.min(i+1,6));
-  });
-}
-
-/* AUTH SYSTEM */
-async function hashPass(str){
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-function getUsers(){ return JSON.parse(localStorage.getItem('jdm_users')||'[]'); }
-function saveUsers(users){ localStorage.setItem('jdm_users', JSON.stringify(users)); }
-
-/* ── GITHUB AUTO-SYNC ── */
-function saveGHConfig(){
-  const tField=document.getElementById('gh-token');
-  const t=tField.value.trim();
-  const o=document.getElementById('gh-owner').value.trim();
-  const r=document.getElementById('gh-repo').value.trim();
-  // Solo guarda el token si el usuario escribió algo nuevo (no sobreescribir con vacío)
-  if(t) localStorage.setItem('jdm_gh_token',t);
-  if(o) localStorage.setItem('jdm_gh_owner',o);
-  if(r) localStorage.setItem('jdm_gh_repo',r);
-  tField.value=''; // Limpia campo tras guardar
-  updateSyncUI();
-  setSyncStatus('idle','Config guardada — listo para sincronizar');
-}
-
-function autoDetectGH(){
-  const host=location.hostname;
-  const path=location.pathname;
-  if(host.endsWith('.github.io')){
-    const owner=host.replace('.github.io','');
-    const repo=path.split('/').filter(Boolean)[0]||'';
-    document.getElementById('gh-owner').value=owner;
-    document.getElementById('gh-repo').value=repo;
-    localStorage.setItem('jdm_gh_owner',owner);
-    localStorage.setItem('jdm_gh_repo',repo);
-    updateSyncUI();
-    setSyncStatus('idle','Repo detectado: '+owner+'/'+repo+' — ahora pega tu token y guarda');
-  } else if(host.endsWith('.vercel.app')){
-    // En Vercel: el repo no se puede auto-detectar, hay que ingresarlo
-    setSyncStatus('idle','Vercel detectado — ingresa tu usuario GitHub y nombre del repo manualmente, luego guarda');
-  } else {
-    setSyncStatus('idle','Ingresa tu usuario GitHub y nombre del repo, luego guarda');
-  }
-}
-
-function setSyncStatus(state,msg){
-  const pill=document.getElementById('sync-status-pill');
-  const last=document.getElementById('sync-last');
-  if(!pill)return;
-  pill.className='sync-pill sync-'+state;
-  const icons={idle:'●',syncing:'↑',ok:'✓',err:'✗'};
-  const labels={idle:'Sin configurar',syncing:'Sincronizando…',ok:'Sincronizado',err:'Error'};
-  pill.textContent=(icons[state]||'●')+' '+(msg||labels[state]||state);
-  if(state==='ok'&&last)last.textContent='Última sync: '+new Date().toLocaleTimeString('es-MX');
-}
-
-function updateSyncUI(){
-  const t=localStorage.getItem('jdm_gh_token');
-  const o=localStorage.getItem('jdm_gh_owner');
-  const r=localStorage.getItem('jdm_gh_repo');
-  const tokenStatus=document.getElementById('gh-token-status');
-  // Muestra estado del token sin revelar ni modificar el campo
-  if(tokenStatus) tokenStatus.textContent=t?'✓ Token guardado':'';
-  // Rellena owner/repo si están vacíos
-  const ownerEl=document.getElementById('gh-owner');
-  const repoEl=document.getElementById('gh-repo');
-  if(ownerEl&&!ownerEl.value&&o) ownerEl.value=o;
-  if(repoEl&&!repoEl.value&&r) repoEl.value=r;
-  if(t&&o&&r) setSyncStatus('idle','Listo para sincronizar');
-}
-
-async function manualSync(){ await autoSync(true); }
-
-async function autoSync(manual=false){
-  const token=localStorage.getItem('jdm_gh_token');
-  const owner=localStorage.getItem('jdm_gh_owner');
-  const repo=localStorage.getItem('jdm_gh_repo');
-  if(!token||!owner||!repo){
-    if(manual) setSyncStatus('err','Configura el token y repo primero');
-    return;
-  }
-  setSyncStatus('syncing');
-  try{
-    const binId=localStorage.getItem('jdm_bin_id')||'';
-    const binKey=localStorage.getItem('jdm_bin_key')||'';
-    const config={users:getUsers(),resellers:getResellers(),clientes:getClientes(),syncToken:token,syncOwner:owner,syncRepo:repo,...(binId?{quotesBinId:binId}:{}),...(binKey?{quotesBinKey:binKey}:{})};
-    const jsonStr=JSON.stringify(config,null,2);
-    const content=btoa(unescape(encodeURIComponent(jsonStr)));
-    const apiUrl=`https://api.github.com/repos/${owner}/${repo}/contents/access_config.json`;
-    const headers={Authorization:`token ${token}`,'Content-Type':'application/json',Accept:'application/vnd.github.v3+json'};
-    // Get current SHA
-    let sha;
-    const getRes=await fetch(apiUrl,{headers});
-    if(getRes.ok){const d=await getRes.json();sha=d.sha;}
-    const body={message:'chore: sync acceso y usuarios',content};
-    if(sha)body.sha=sha;
-    const putRes=await fetch(apiUrl,{method:'PUT',headers,body:JSON.stringify(body)});
-    if(putRes.ok){setSyncStatus('ok');}
-    else{const err=await putRes.json();setSyncStatus('err',err.message||'Error al publicar');}
-  }catch(e){setSyncStatus('err',e.message||'Error de red');}
-}
-
-/* ── JSONBIN CONFIG ── */
-function saveBinConfig(){
-  const idField=document.getElementById('bin-id');
-  const keyField=document.getElementById('bin-key');
-  const id=idField.value.trim();
-  const key=keyField.value.trim();
-  if(id) localStorage.setItem('jdm_bin_id',id);
-  if(key) localStorage.setItem('jdm_bin_key',key);
-  idField.value=''; keyField.value='';
-  updateBinUI();
-  // Incluir en access_config.json via autoSync
-  setBinStatus('syncing','Guardando y publicando…');
-  autoSync(false).then(()=>{
-    const ok=document.getElementById('sync-status-pill').classList.contains('sync-ok');
-    setBinStatus(ok?'ok':'idle',ok?'Publicado — todos los usuarios lo recibirán al login':'Guardado local — configura GitHub sync para publicar');
-  });
-}
-async function testBinConfig(){
-  const id=document.getElementById('bin-id').value.trim()||localStorage.getItem('jdm_bin_id')||'';
-  const key=document.getElementById('bin-key').value.trim()||localStorage.getItem('jdm_bin_key')||'';
-  if(!id){setBinStatus('err','Ingresa un Bin ID primero');return;}
-  setBinStatus('syncing','Probando conexión…');
-  try{
-    const headers={};
-    if(key) headers['X-Access-Key']=key;
-    const r=await fetch(`https://api.jsonbin.io/v3/b/${id}/latest`,{headers});
-    if(r.ok){setBinStatus('ok','Conexión OK — bin accesible');}
-    else{const d=await r.json().catch(()=>({}));setBinStatus('err',d.message||'Error: '+r.status);}
-  }catch(e){setBinStatus('err',e.message||'Error de red');}
-}
-function setBinStatus(state,msg){
-  const pill=document.getElementById('bin-status-pill');
-  const last=document.getElementById('bin-last');
-  if(!pill)return;
-  pill.className='sync-pill sync-'+state;
-  const icons={idle:'●',syncing:'↑',ok:'✓',err:'✗'};
-  pill.textContent=(icons[state]||'●')+' '+(msg||state);
-  if(state==='ok'&&last)last.textContent='Última prueba: '+new Date().toLocaleTimeString('es-MX');
-}
-function updateBinUI(){
-  const id=localStorage.getItem('jdm_bin_id');
-  const key=localStorage.getItem('jdm_bin_key');
-  const idSt=document.getElementById('bin-id-status');
-  const keySt=document.getElementById('bin-key-status');
-  if(idSt) idSt.textContent=id?'✓ Bin ID guardado':'';
-  if(keySt) keySt.textContent=key?'✓ Access Key guardado':'';
-  if(id&&key) setBinStatus('idle','Listo — probar conexión para verificar');
-}
-
-/* SESSION-BASED INIT */
-let _currentUser=window._session||null;
-(function(){
-  const s=window._session;
-  if(!s)return;
-  const ROLE_LABEL={vendedor:'Vendedor',director:'Director',admin:'Admin'};
-  document.getElementById('session-user').textContent=`${s.user} (${ROLE_LABEL[s.role]||s.role})`;
-  // Nav bar
-  const links=[
-    {href:'cotizador_mangueras.html',label:'🔴 Mangueras',roles:['vendedor','director','admin']},
-    {href:'cotizador_bandas.html',label:'💛 Bandas',roles:['vendedor','director','admin']},
-    {href:'dashboard.html',label:'📊 Dashboard',roles:['director','admin']},
-    {href:'admin.html',label:'⚙️ Admin',roles:['admin']},
-  ];
-  document.getElementById('app-nav-admin').innerHTML=links
-    .filter(l=>l.roles.includes(s.role))
-    .map(l=>`<a href="${l.href}" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;${l.href==='admin.html'?'background:var(--teal-600);color:#E6FCFF':'background:#EAECEE;color:var(--text-muted)'}">${l.label}</a>`)
-    .join('');
-  renderUserList();
-  renderResellersAcceso();
-  updateSyncUI();
-  updateBinUI();
-  revealChildren(document.getElementById('tab-inv'));
-})();
-
-/* User management */
-function renderUserList(){
-  const users=getUsers();
-  const el=document.getElementById('user-list');
-  if(!users.length){el.innerHTML='<p style="color:var(--text-muted);font-size:var(--text-sm)">No hay usuarios registrados.</p>';return;}
-  const ROLE_CSS={vendedor:'role-vendedor',director:'role-director',admin:'role-admin',reseller:'role-dashboard'};
-  const ROLE_LABEL={vendedor:'🟢 Vendedor',director:'🔵 Director',admin:'⚙️ Admin',reseller:'🏪 Reseller'};
-  el.innerHTML=users.map((u,i)=>`
-    <div class="user-row">
-      <div>
-        <span class="ur-name">${u.user}</span>
-        ${u.nombre&&u.nombre!==u.user.toUpperCase()?`<span style="font-size:var(--text-xs);color:var(--text-muted);margin-left:6px">${u.nombre}</span>`:''}
-        <span class="ur-role ${ROLE_CSS[u.role]||'role-dashboard'}">${ROLE_LABEL[u.role]||u.role}</span>
-      </div>
-      ${u.user!==(_currentUser&&_currentUser.user)?`<button class="btn-danger" onclick="removeUser(${i})">Eliminar</button>`:'<span style="font-size:var(--text-xs);color:var(--text-muted)">(tu)</span>'}
-    </div>
-  `).join('');
-}
-
-async function addUser(){
-  const user=document.getElementById('new-user').value.trim().toLowerCase();
-  const pass=document.getElementById('new-pass').value;
-  const nombre=document.getElementById('new-nombre').value.trim().toUpperCase();
-  const role=document.querySelector('input[name="new-role"]:checked').value;
-  const msg=document.getElementById('add-user-msg');
-
-  if(!user||!pass){msg.innerHTML='<span style="color:var(--danger)">Ingresa usuario y contraseña</span>';return;}
-  if(pass.length<4){msg.innerHTML='<span style="color:var(--danger)">La contraseña debe tener al menos 4 caracteres</span>';return;}
-
-  const users=getUsers();
-  if(users.find(u=>u.user===user)){msg.innerHTML='<span style="color:var(--danger)">El usuario ya existe</span>';return;}
-
-  const h=await hashPass(pass);
-  users.push({user, passHash:h, role, nombre:nombre||user.toUpperCase()});
-  saveUsers(users);
-  document.getElementById('new-user').value='';
-  document.getElementById('new-pass').value='';
-  document.getElementById('new-nombre').value='';
-  msg.innerHTML=`<span style="color:var(--success)">✓ Usuario "${user}" (${role}) creado — sincronizando…</span>`;
-  renderUserList();
-  autoSync().then(()=>{
-    const ok=document.getElementById('sync-status-pill').classList.contains('sync-ok');
-    msg.innerHTML=`<span style="color:var(--success)">✓ Usuario "${user}" ${ok?'creado y publicado':'creado (configura sync para publicar)'}</span>`;
-  });
-}
-
-async function removeUser(idx){
-  const users=getUsers();
-  if(users[idx].user===_currentUser.user){alert('No puedes eliminarte a ti mismo');return;}
-  if(!confirm(`¿Eliminar usuario "${users[idx].user}"?`))return;
-  users.splice(idx,1);
-  saveUsers(users);
-  renderUserList();
-  await autoSync();
-}
-
-async function changeMyPass(){
-  const p1=document.getElementById('chg-pass').value;
-  const p2=document.getElementById('chg-pass2').value;
-  const msg=document.getElementById('chg-pass-msg');
-  if(!p1){msg.innerHTML='<span style="color:var(--danger)">Ingresa la nueva contraseña</span>';return;}
-  if(p1!==p2){msg.innerHTML='<span style="color:var(--danger)">Las contraseñas no coinciden</span>';return;}
-  if(p1.length<4){msg.innerHTML='<span style="color:var(--danger)">Mínimo 4 caracteres</span>';return;}
-  const users=getUsers();
-  const u=users.find(u=>u.user===_currentUser.user);
-  if(u){u.passHash=await hashPass(p1);saveUsers(users);}
-  document.getElementById('chg-pass').value='';
-  document.getElementById('chg-pass2').value='';
-  msg.innerHTML='<span style="color:var(--success)">Contraseña actualizada</span>';
-}
-
-/* STATE */
-let _invData=null,_invMeta=null,_htmlRaw=null,_htmlName='',_origCatB=null,_origCatM=null,_htmlIsLegacy=false;
-
-/* TABS */
-function showTab(id){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  document.getElementById('tab-'+id).classList.add('active');
-  document.querySelector(`.tab[onclick*="'${id}'"]`).classList.add('on');
-  if(id==='precios')updatePricePreview();
-  if(id==='generar')updateGenState();
-  if(id==='acceso'){renderUserList();renderResellersAcceso();updateSyncUI();}
-  revealChildren(document.getElementById('tab-'+id));
-}
-
-/* INVENTARIO */
-function handleInvFile(file){
-  if(!file)return;
-  document.getElementById('inv-fname').textContent='✅ '+file.name;
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const wb=XLSX.read(e.target.result,{type:'array'});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    const rows=XLSX.utils.sheet_to_json(ws,{header:1});
-    parseInventory(rows,file.name);
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function parseInventory(rows,fname){
-  let hdrIdx=-1,colArt=-1,colDisp=-1,colAlm=-1;
-  for(let i=0;i<Math.min(rows.length,10);i++){
-    const r=rows[i].map(c=>String(c||'').toUpperCase().trim());
-    for(let j=0;j<r.length;j++){
-      if(r[j].includes('ARTICULO')||r[j].includes('CODIGO'))colArt=j;
-      if(r[j].includes('DISPONIBLE')||r[j].includes('STOCK')||r[j].includes('EXISTENCIA'))colDisp=j;
-      if(r[j].includes('ALMACEN'))colAlm=j;
-    }
-    if(colArt>=0&&colDisp>=0){hdrIdx=i;break;}
-  }
-  if(hdrIdx<0){alert('No se encontraron columnas ARTICULO/DISPONIBLE en el Excel');return;}
-
-  const inv={};const almacenes=new Set();let totalRows=0;
-  for(let i=hdrIdx+1;i<rows.length;i++){
-    const r=rows[i];if(!r||!r[colArt])continue;
-    totalRows++;
-    const code=String(r[colArt]).trim();
-    const stock=parseFloat(r[colDisp])||0;
-    if(colAlm>=0)almacenes.add(r[colAlm]);
-    inv[code]=(inv[code]||0)+stock;
-  }
-  const invFiltered={};let withStock=0;
-  for(const[k,v]of Object.entries(inv)){if(v>0){invFiltered[k]=Math.round(v*100)/100;withStock++;}}
-  _invData=invFiltered;
-  _invMeta={totalRows,withStock,totalCodes:Object.keys(inv).length,almacenes:[...almacenes].sort(),date:new Date().toLocaleDateString('es-MX')};
-  renderInvStats();updateGenState();
-}
-
-function renderInvStats(){
-  const m=_invMeta;
-  document.getElementById('inv-stats').style.display='block';
-  document.getElementById('inv-stat-grid').innerHTML=`
-    <div class="stat reveal reveal-d1"><div class="val">${m.totalRows.toLocaleString()}</div><div class="lbl">Filas en Excel</div></div>
-    <div class="stat reveal reveal-d2"><div class="val">${m.totalCodes.toLocaleString()}</div><div class="lbl">Articulos Unicos</div></div>
-    <div class="stat reveal reveal-d3"><div class="val">${m.withStock.toLocaleString()}</div><div class="lbl">Con Stock > 0</div></div>
-    <div class="stat reveal reveal-d4"><div class="val">${m.almacenes.length}</div><div class="lbl">Almacenes</div></div>`;
-  const entries=Object.entries(_invData).sort((a,b)=>b[1]-a[1]).slice(0,30);
-  let html='<thead><tr><th>#</th><th>Articulo</th><th style="text-align:right">Stock Total</th></tr></thead><tbody>';
-  entries.forEach(([c,s],i)=>{html+=`<tr><td style="color:var(--text-muted)">${i+1}</td><td style="font-weight:700">${c}</td><td style="text-align:right;color:var(--success);font-weight:700">${s.toLocaleString()}</td></tr>`;});
-  html+='</tbody>';
-  document.getElementById('inv-preview').innerHTML=html;
-}
-
-/* PRECIOS & CLIENTES */
-const DEFAULT_CLIENTES=[
-  {name:'Brr',key:'b',desc:'Brr',discount:30},
-  {name:'Applied',key:'a',desc:'Applied Ind.',discount:40},
-  {name:'Motion',key:'m',desc:'Motion Industries',discount:40},
-  {name:'Binasa',key:'n',desc:'BINASA',discount:45}
+/* ── seed data ────────────────────────────────────────── */
+const INIT_EMPRESAS = [
+  { id:'binasa', nombre:'Distribuidora Binasa', rfc:'BIN010101AAA', email:'ventas@binasa.com.mx', tel:'(81) 1234-5678', ciudad:'Monterrey, NL', direccion:'Av. Industrial 400', color:'#1a7a78', colorSec:'#0f5a58', logo:'megadyne-logo.png', activa:true, vendedores:4, cotizaciones:128, totalVentas:1840000, vigencia:15, iva:16, moneda:'MXN', notas:'Distribuidor autorizado Megadyne y Jasson.' },
+  { id:'noreste', nombre:'Transmisiones Noreste', rfc:'TNO020202BBB', email:'ventas@tnoreste.com', tel:'(81) 9876-5432', ciudad:'San Nicolás, NL', direccion:'Blvd. Norte 1200', color:'#1d4ed8', colorSec:'#1e3a8a', logo:null, activa:true, vendedores:2, cotizaciones:45, totalVentas:620000, vigencia:10, iva:16, moneda:'MXN', notas:'' },
+  { id:'hidrovalle', nombre:'Hidráulica del Valle', rfc:'HDV030303CCC', email:'compras@hidrovalle.mx', tel:'(33) 4567-8901', ciudad:'Guadalajara, JAL', direccion:'Periférico Sur 800', color:'#7c3aed', colorSec:'#5b21b6', logo:null, activa:false, vendedores:1, cotizaciones:22, totalVentas:180000, vigencia:15, iva:16, moneda:'MXN', notas:'' },
 ];
-function getClientes(){try{const c=JSON.parse(localStorage.getItem('jdm_clientes'));return c&&c.length?c:DEFAULT_CLIENTES;}catch{return DEFAULT_CLIENTES;}}
-function saveClientes(c){localStorage.setItem('jdm_clientes',JSON.stringify(c));}
-function getInc(){return parseFloat(document.getElementById('inp-inc').value)||0;}
-function getDiscounts(){const d={};getClientes().forEach(c=>d[c.key]=c.discount);return d;}
 
-function renderClientTable(){
-  const clientes=getClientes();
-  const el=document.getElementById('cli-discount-table');
-  let html=`<table><thead><tr><th>Cliente</th><th>Clave</th><th style="text-align:right">Descuento %</th><th style="text-align:right">Factor</th><th></th></tr></thead><tbody>`;
-  clientes.forEach((c,i)=>{
-    const factor=(1-c.discount/100).toFixed(4);
-    html+=`<tr>
-      <td><b>${c.desc||c.name}</b></td>
-      <td style="color:var(--text-muted);font-family:var(--font-mono)">${c.key}</td>
-      <td style="text-align:right"><input type="number" class="inp inp-sm" value="${c.discount}" min="0" max="90" step="0.5" onchange="updateCliDiscount(${i},this.value)"></td>
-      <td style="text-align:right;font-weight:700;color:var(--teal-600)">${factor}</td>
-      <td style="text-align:right"><button class="btn-danger" style="font-size:10px;padding:2px 8px" onclick="removeCliente(${i})">✕</button></td>
-    </tr>`;
-  });
-  html+='</tbody></table>';
-  el.innerHTML=html;
+const INIT_USUARIOS = [
+  { id:1, nombre:'Carlos Ramírez', email:'cramírez@binasa.com.mx', rol:'Vendedor', empresa:'binasa', status:'activo', ultimoAcceso:'Hace 2 horas', cotizaciones:34, permisos:{catalogo:true,cotizar:true,backorders:true,equivalencias:false,adminPrecios:false} },
+  { id:2, nombre:'Laura Mendoza', email:'lmendoza@binasa.com.mx', rol:'Vendedor', empresa:'binasa', status:'activo', ultimoAcceso:'Hace 1 día', cotizaciones:28, permisos:{catalogo:true,cotizar:true,backorders:true,equivalencias:false,adminPrecios:false} },
+  { id:3, nombre:'Roberto García', email:'rgarcia@binasa.com.mx', rol:'Supervisor', empresa:'binasa', status:'activo', ultimoAcceso:'Hoy', cotizaciones:66, permisos:{catalogo:true,cotizar:true,backorders:true,equivalencias:true,adminPrecios:true} },
+  { id:4, nombre:'Ana Torres', email:'atorres@tnoreste.com', rol:'Vendedor', empresa:'noreste', status:'activo', ultimoAcceso:'Hace 3 días', cotizaciones:19, permisos:{catalogo:true,cotizar:true,backorders:false,equivalencias:false,adminPrecios:false} },
+  { id:5, nombre:'Miguel Soto', email:'msoto@tnoreste.com', rol:'Vendedor', empresa:'noreste', status:'inactivo', ultimoAcceso:'Hace 2 semanas', cotizaciones:8, permisos:{catalogo:true,cotizar:true,backorders:false,equivalencias:false,adminPrecios:false} },
+  { id:6, nombre:'Fernanda López', email:'flopez@hidrovalle.mx', rol:'Vendedor', empresa:'hidrovalle', status:'pendiente', ultimoAcceso:'—', cotizaciones:0, permisos:{catalogo:true,cotizar:true,backorders:false,equivalencias:false,adminPrecios:false} },
+];
+
+const INIT_BO = [
+  { id:'BO-001', producto:'076R0630', desc:'BANDA MULTIPLE 5VX0630', empresa:'binasa', vendedor:'Carlos Ramírez', cliente:'Metalúrgica Noreste', fecha:'2026-04-10', estimado:'2026-05-08', cantidad:5, unidad:'pz', status:'pendiente', nota:'Necesario para línea de producción urgente' },
+  { id:'BO-002', producto:'0011JS6-5', desc:'MANG.BAJA PRESION JS6-5 5/16"', empresa:'noreste', vendedor:'Ana Torres', cliente:'Hidráulica del Valle', fecha:'2026-04-15', estimado:'2026-05-03', cantidad:200, unidad:'mt', status:'en_camino', nota:'' },
+  { id:'BO-003', producto:'JSH4-12', desc:'MANGUERA SAE 100R1 3/4"', empresa:'binasa', vendedor:'Laura Mendoza', cliente:'Construcciones MX', fecha:'2026-04-22', estimado:'2026-05-15', cantidad:50, unidad:'mt', status:'pendiente', nota:'Cliente dispuesto a esperar hasta 3 semanas' },
+  { id:'BO-004', producto:'CX51', desc:'BANDA CX51 DENTADA', empresa:'hidrovalle', vendedor:'Fernanda López', cliente:'Agro Sur SA', fecha:'2026-04-28', estimado:'', cantidad:12, unidad:'pz', status:'llegado', nota:'' },
+];
+
+const INIT_EQ = [
+  { competidor:'Gates', ref:'AX34', descripcion:'BANDA DENTADA A-34', equivalente:'AX34', marca:'Megadyne', tipo:'Bandas' },
+  { competidor:'Gates', ref:'BX42', descripcion:'BANDA DENTADA B-42', equivalente:'BX42', marca:'Megadyne', tipo:'Bandas' },
+  { competidor:'Gates', ref:'5VX500', descripcion:'BANDA WEDGE 5VX500', equivalente:'5VX0500', marca:'Megadyne', tipo:'Bandas' },
+  { competidor:'Optibelt', ref:'SPZ-1000', descripcion:'BANDA SPZ 1000', equivalente:'300003M0560', marca:'Megadyne', tipo:'Bandas' },
+  { competidor:'Optibelt', ref:'SPA-1500', descripcion:'BANDA SPA 1500', equivalente:'076R0600-5', marca:'Megadyne', tipo:'Bandas' },
+  { competidor:'Gates', ref:'GHF-4-1/4', descripcion:'MANG. HIDRAULICA 1/4"', equivalente:'JSH4-06', marca:'Jasson', tipo:'Mangueras' },
+  { competidor:'Parker', ref:'H2-1/2', descripcion:'MANG. ALTA PRESION 1/2"', equivalente:'JSH6-08', marca:'Jasson', tipo:'Mangueras' },
+  { competidor:'Gates', ref:'GHF-R2-3/8', descripcion:'MANG. SAE 100R2 3/8"', equivalente:'JSH6-06', marca:'Jasson', tipo:'Mangueras' },
+];
+
+const INIT_UPLOADS = [
+  { id:1, nombre:'Lista de precios binasa abril2026.xlsx', tipo:'precios', fecha:'2026-04-01', registros:8775, empresa:'binasa', status:'activo' },
+  { id:2, nombre:'INVENTARIO 25-02-2026.xlsx', tipo:'inventario', fecha:'2026-02-25', registros:4820, empresa:'binasa', status:'activo' },
+  { id:3, nombre:'precios_noreste_mar2026.xlsx', tipo:'precios', fecha:'2026-03-15', registros:3200, empresa:'noreste', status:'activo' },
+];
+
+/* ── Toast ───────────────────────────────────────────── */
+function Toast({ msg, onDone }) {
+  useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t); }, []);
+  return <div className="notif-toast">✅ {msg}</div>;
 }
 
-function updateCliDiscount(idx,val){
-  const c=getClientes();
-  c[idx].discount=parseFloat(val)||0;
-  saveClientes(c);
-  renderClientTable();
-  updateIncPreview();
-  updatePricePreview();
-  updateGenState();
-}
-
-function addCliente(){
-  const name=document.getElementById('add-cli-name').value.trim();
-  const key=document.getElementById('add-cli-key').value.trim().toLowerCase();
-  const desc=document.getElementById('add-cli-desc').value.trim()||name;
-  const discount=parseFloat(document.getElementById('add-cli-disc').value)||0;
-  const msg=document.getElementById('add-cli-msg');
-  if(!name||!key){msg.innerHTML='<span style="color:var(--danger)">Nombre y clave son obligatorios</span>';return;}
-  if(key.length>3){msg.innerHTML='<span style="color:var(--danger)">La clave debe tener maximo 3 caracteres</span>';return;}
-  const clientes=getClientes();
-  if(clientes.find(c=>c.key===key)){msg.innerHTML='<span style="color:var(--danger)">Ya existe un cliente con clave "'+key+'"</span>';return;}
-  clientes.push({name,key,desc,discount});
-  saveClientes(clientes);
-  document.getElementById('add-cli-name').value='';
-  document.getElementById('add-cli-key').value='';
-  document.getElementById('add-cli-desc').value='';
-  document.getElementById('add-cli-disc').value='30';
-  msg.innerHTML='<span style="color:var(--success)">Cliente "'+name+'" agregado</span>';
-  renderClientTable();
-  updatePricePreview();
-  updateGenState();
-}
-
-function removeCliente(idx){
-  const c=getClientes();
-  if(c.length<=1){alert('Debe haber al menos un cliente');return;}
-  if(!confirm('Eliminar cliente "'+c[idx].name+'"?'))return;
-  c.splice(idx,1);
-  saveClientes(c);
-  renderClientTable();
-  updatePricePreview();
-  updateGenState();
-}
-
-function updateIncPreview(){
-  const inc=getInc();const prev=document.getElementById('inc-preview');
-  prev.textContent=inc!==0?`Ej: $100 → $${(100*(1+inc/100)).toFixed(2)}`:'Sin cambio';
-}
-
-function updatePricePreview(){
-  updateIncPreview();
-  let catB=_origCatB,catM=_origCatM;
-  if(!catB||!catB.length){try{catB=JSON.parse(localStorage.getItem('jdm_cat_bandas')||'[]');}catch(e){catB=[];}}
-  if(!catM||!catM.length){try{catM=JSON.parse(localStorage.getItem('jdm_cat_mangueras')||'[]');}catch(e){catM=[];}}
-  const combined=[...(catB||[]),...(catM||[])];
-  if(!combined.length){document.getElementById('price-preview-card').style.display='none';return;}
-  document.getElementById('price-preview-card').style.display='block';
-  const inc=getInc()/100,clientes=getClientes(),sample=combined.slice(0,10);
-  let html=`<thead><tr><th>Codigo</th><th style="text-align:right">Lista Orig</th><th style="text-align:right">Lista Nuevo</th>`;
-  clientes.forEach(c=>html+=`<th style="text-align:right">${c.name}</th>`);
-  html+=`</tr></thead><tbody>`;
-  sample.forEach(p=>{
-    const nl=p.l*(1+inc);
-    html+=`<tr><td style="font-weight:700;font-size:var(--text-xs)">${p.c}</td>`;
-    html+=`<td style="text-align:right;color:var(--text-muted)">$${p.l.toFixed(2)}</td>`;
-    html+=`<td style="text-align:right;color:${inc!==0?'var(--teal-600)':'var(--text-dark)'};font-weight:700">$${nl.toFixed(2)}</td>`;
-    clientes.forEach(c=>{
-      const cp=nl*(1-c.discount/100);
-      html+=`<td style="text-align:right">$${cp.toFixed(2)}</td>`;
-    });
-    html+=`</tr>`;
-  });
-  html+='</tbody>';
-  document.getElementById('price-preview').innerHTML=html;
-}
-
-document.getElementById('inp-inc').addEventListener('input',()=>{updateIncPreview();updatePricePreview();updateGenState();});
-renderClientTable();
-updateIncPreview();updateGenState();updatePricePreview();
-
-/* GENERAR */
-function handleHtmlFile(file){
-  if(!file)return;
-  document.getElementById('html-fname').textContent='✅ '+file.name;
-  _htmlName=file.name;
-  const reader=new FileReader();
-  reader.onload=function(e){
-    _htmlRaw=e.target.result;
-    _origCatB=null;_origCatM=null;_htmlIsLegacy=false;
-    // Try unified template format first
-    const mB=_htmlRaw.match(/const RAW_CAT_BANDAS=\/\*CAT_BANDAS_PLACEHOLDER\*\/(\[[\s\S]*?\]);/);
-    if(mB){try{_origCatB=JSON.parse(mB[1]);}catch(e){_origCatB=null;}}
-    const mM=_htmlRaw.match(/const RAW_CAT_MANGUERAS=\/\*CAT_MANGUERAS_PLACEHOLDER\*\/(\[[\s\S]*?\]);/);
-    if(mM){try{_origCatM=JSON.parse(mM[1]);}catch(e){_origCatM=null;}}
-    // Fallback: legacy format (cotizador_v4 with const RAW_CAT=[...])
-    if(!mB&&!mM){
-      const mLeg=_htmlRaw.match(/const RAW_CAT=(\[[\s\S]*?\]);/);
-      if(mLeg){try{_origCatB=JSON.parse(mLeg[1]);_htmlIsLegacy=true;}catch(e){_origCatB=null;}}
-      // Legacy mangueras format
-      const mLegM=_htmlRaw.match(/const RAW_CAT=\/\*CAT_PLACEHOLDER\*\/(\[[\s\S]*?\]);/);
-      if(mLegM&&!mLeg){try{_origCatM=JSON.parse(mLegM[1]);_htmlIsLegacy=true;}catch(e){_origCatM=null;}}
-    }
-    updateGenState();updatePricePreview();
-  };
-  reader.readAsText(file);
-}
-
-function updateGenState(){
-  const sumEl=document.getElementById('gen-summary');
-  const hasInv=!!_invData,hasHtml=!!_htmlRaw;
-  const catBCount=_origCatB?_origCatB.length:0;
-  const catMCount=_origCatM?_origCatM.length:0;
-  // Also check localStorage for existing catalogs
-  let lsBCount=0,lsMCount=0,lsInvCount=0;
-  try{lsBCount=JSON.parse(localStorage.getItem('jdm_cat_bandas')||'[]').length;}catch(e){}
-  try{lsMCount=JSON.parse(localStorage.getItem('jdm_cat_mangueras')||'[]').length;}catch(e){}
-  try{lsInvCount=Object.keys(JSON.parse(localStorage.getItem('jdm_inv')||'{}')).length;}catch(e){}
-
-  sumEl.style.display='block';
-  let html='<div style="font-size:var(--text-sm)">';
-  html+=`<div style="margin-bottom:var(--sp-2)">Inventario: ${hasInv?`<span class="badge badge-ok">${_invMeta.withStock.toLocaleString()} items (nuevo)</span>`:(lsInvCount>0?`<span class="badge badge-info">${lsInvCount} items en localStorage</span>`:'<span class="badge badge-warn">No cargado</span>')}</div>`;
-  html+=`<div style="margin-bottom:var(--sp-2)">Catalogo Bandas: ${catBCount>0?`<span class="badge badge-ok">${catBCount} productos (desde archivo)</span>`:(lsBCount>0?`<span class="badge badge-info">${lsBCount} productos en localStorage</span>`:'<span class="badge badge-warn">Sin datos</span>')}</div>`;
-  html+=`<div style="margin-bottom:var(--sp-2)">Catalogo Mangueras: ${catMCount>0?`<span class="badge badge-ok">${catMCount} productos (desde archivo)</span>`:(lsMCount>0?`<span class="badge badge-info">${lsMCount} productos en localStorage</span>`:'<span class="badge badge-warn">Sin datos</span>')}</div>`;
-  const inc=getInc(),disc=getDiscounts();
-  html+=`<div style="margin-bottom:var(--sp-2)">Incremento: <span class="badge badge-info">${inc>0?'+':''}${inc}%</span></div>`;
-  const cliSummary=getClientes().map(c=>`${c.name} ${c.discount}%`).join(' · ');
-  html+=`<div>Descuentos: ${cliSummary}</div></div>`;
-  document.getElementById('gen-summary-content').innerHTML=html;
-}
-
-function log(msg,cls){const el=document.getElementById('gen-log');el.style.display='block';el.innerHTML+=`<span class="${cls||''}">${msg}</span>\n`;el.scrollTop=el.scrollHeight;}
-
-function generarHTML(){
-  const logEl=document.getElementById('gen-log');logEl.style.display='block';logEl.innerHTML='';
-  let changes=0;
-
-  const inc=getInc()/100,disc=getDiscounts();
-  const clientes=getClientes();
-  function applyPrices(cat){
-    return cat.map(p=>{const nl=Math.round(p.l*(1+inc)*100)/100;const np={...p,l:nl};clientes.forEach(c=>{np[c.key]=Math.round(nl*(1-c.discount/100)*100)/100;});return np;});
-  }
-
-  // ── Catalogo Bandas ──
-  let catB=_origCatB;
-  if(!catB||!catB.length){try{catB=JSON.parse(localStorage.getItem('jdm_cat_bandas')||'[]');}catch(e){catB=[];}}
-  if(catB&&catB.length>0){
-    log('Recalculando precios BANDAS...','hi');
-    const newCat=applyPrices(catB);
-    log(`   Productos bandas: ${newCat.length}`);
-    localStorage.setItem('jdm_cat_bandas',JSON.stringify(newCat));
-    log('   jdm_cat_bandas guardado en localStorage','ok');changes++;
-  }
-
-  // ── Catalogo Mangueras ──
-  let catM=_origCatM;
-  if(!catM||!catM.length){try{catM=JSON.parse(localStorage.getItem('jdm_cat_mangueras')||'[]');}catch(e){catM=[];}}
-  if(catM&&catM.length>0){
-    log('Recalculando precios MANGUERAS...','hi');
-    const newCat=applyPrices(catM);
-    log(`   Productos mangueras: ${newCat.length}`);
-    localStorage.setItem('jdm_cat_mangueras',JSON.stringify(newCat));
-    log('   jdm_cat_mangueras guardado en localStorage','ok');changes++;
-  }
-
-  // ── Inventario ──
-  if(_invData){
-    log('Actualizando inventario...','hi');
-    const allCatCodes=new Set();
-    [catB,catM].forEach(cat=>{if(cat)cat.forEach(p=>allCatCodes.add(p.c));});
-    // Also check localStorage for existing catalogs if empty
-    if(allCatCodes.size===0){
-      try{const lb=JSON.parse(localStorage.getItem('jdm_cat_bandas')||'[]');lb.forEach(p=>allCatCodes.add(p.c));}catch(e){}
-      try{const lm=JSON.parse(localStorage.getItem('jdm_cat_mangueras')||'[]');lm.forEach(p=>allCatCodes.add(p.c));}catch(e){}
-    }
-    log(`   Codigos en catalogo: ${allCatCodes.size}`);
-    const invFiltered={};let matches=0;
-    for(const[k,v]of Object.entries(_invData)){if(allCatCodes.has(k)){invFiltered[k]=v;matches++;}}
-    log(`   Coincidencias inventario<>catalogo: ${matches}`,'ok');
-    localStorage.setItem('jdm_inv',JSON.stringify(invFiltered));
-    log('   jdm_inv guardado en localStorage','ok');changes++;
-  }else{log('Inventario: sin cambios (no se cargo archivo)');}
-
-  if(inc!==0)log(`Incremento lista: ${inc>0?'+':''}${(inc*100).toFixed(1)}%`,'ok');
-  log(`Descuentos: ${clientes.map(c=>`${c.name} ${c.discount}%`).join(' | ')}`);
-
-  if(changes>0){
-    log(`\n═══ LISTO — ${changes} seccion(es) actualizada(s) ═══`,'ok');
-    log('El cotizador (cotizador_tpl.html) ya refleja los cambios.','ok');
-    log('Abre o recarga cotizador_tpl.html para verificar.','ok');
-  }else{log('\nNo se realizaron cambios. Carga inventario y/o catalogo.','err');}
-}
-
-/* ══════════════════════════════════
-   RESELLERS
-   ══════════════════════════════════ */
-let _rsLogoB64='';
-
-function getResellers(){try{return JSON.parse(localStorage.getItem('jdm_resellers')||'[]');}catch{return[];}}
-function saveResellers(r){localStorage.setItem('jdm_resellers',JSON.stringify(r));}
-
-function handleRSLogoFile(file){
-  if(!file)return;
-  if(!file.type.startsWith('image/')){alert('Solo se permiten imágenes');return;}
-  if(file.size>500000){alert('Logo muy grande (máx 500KB)');return;}
-  const reader=new FileReader();
-  reader.onload=function(e){
-    _rsLogoB64=e.target.result.split(',')[1];
-    document.getElementById('logo-fname').textContent='✅ '+file.name;
-    const prev=document.getElementById('logo-preview');
-    document.getElementById('logo-preview-img').src='data:image/png;base64,'+_rsLogoB64;
-    prev.style.display='block';
-    document.getElementById('logo-size').textContent='Tamaño: '+(file.size/1024).toFixed(1)+' KB';
-  };
-  reader.readAsDataURL(file);
-}
-
-function renderResellersTable(){
-  // kept for backward compat — delegates to renderResellersAcceso
-  renderResellersAcceso();
-}
-
-function renderResellersAcceso(){
-  const list=getResellers();
-  const el=document.getElementById('resellers-list-acceso');
-  if(!el)return;
-  if(!list.length){
-    el.innerHTML='<p style="color:var(--text-muted);font-size:var(--text-sm)">No hay resellers registrados.</p>';
-    return;
-  }
-  el.innerHTML=list.map((r,i)=>{
-    const logoHtml=r.logo
-      ?`<img class="rs-logo" src="data:image/png;base64,${r.logo}" alt="${r.nombre}">`
-      :`<div class="rs-logo-ph">🏪</div>`;
-    return `<div class="rs-row">
-      ${logoHtml}
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:var(--text-base)">${r.nombre}</div>
-        <div style="font-size:var(--text-xs);color:var(--text-muted)">@${r.user} · Descuento: <strong>${r.descuento}%</strong> · Factor: ${(1-r.descuento/100).toFixed(4)}</div>
+/* ── Sidebar ─────────────────────────────────────────── */
+function Sidebar({ section, onSection, boPending }) {
+  const navItems = [
+    { id:'dashboard', icon:'📊', label:'Dashboard' },
+    { id:'empresas',  icon:'🏢', label:'Empresas' },
+    { id:'usuarios',  icon:'👥', label:'Usuarios' },
+    { id:'catalogo',  icon:'📦', label:'Catálogo CSV' },
+    { id:'backorders',icon:'🔔', label:'Back-orders', badge: boPending || null },
+    { id:'equivalencias', icon:'🔄', label:'Equivalencias' },
+  ];
+  return (
+    <div className="sidebar">
+      <div className="sidebar-brand">
+        <div className="sidebar-logo">A</div>
+        <div><div className="sidebar-name">Ammega Admin</div><div className="sidebar-sub">Panel de control</div></div>
       </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="btn-s" onclick="openEditReseller(${i})" style="font-size:var(--text-xs);padding:4px 10px">✏️ Editar</button>
-        <button class="btn-danger" onclick="removeReseller(${i})">Eliminar</button>
+      <div className="sidebar-section">Principal</div>
+      {navItems.map(item => (
+        <button key={item.id} className={`nav-item ${section===item.id?'active':''}`} onClick={() => onSection(item.id)}>
+          <span className="nav-icon">{item.icon}</span>
+          <span className="nav-label">{item.label}</span>
+          {item.badge && <span className="nav-badge">{item.badge}</span>}
+        </button>
+      ))}
+      <div className="sidebar-bottom">
+        <div className="sidebar-user">
+          <div className="avatar" style={{background:'var(--teal)'}}>A</div>
+          <div><div className="sidebar-user-name">Super Admin</div><div className="sidebar-user-role">admin@ammega.mx</div></div>
+        </div>
       </div>
-    </div>`;
-  }).join('');
+    </div>
+  );
 }
 
-function createNewReseller(){
-  const nombre=document.getElementById('new-rs-nombre').value.trim();
-  const user=document.getElementById('new-rs-user').value.trim().toLowerCase();
-  const pass=document.getElementById('new-rs-pass').value;
-  const desc=parseFloat(document.getElementById('new-rs-desc').value)||0;
-  const msg=document.getElementById('new-rs-msg');
-  if(!nombre){msg.innerHTML='<span style="color:var(--danger)">Ingresa nombre del reseller</span>';return;}
-  if(!user){msg.innerHTML='<span style="color:var(--danger)">Ingresa usuario (login)</span>';return;}
-  if(!pass){msg.innerHTML='<span style="color:var(--danger)">Ingresa contraseña</span>';return;}
-  if(!_rsLogoB64){msg.innerHTML='<span style="color:var(--danger)">Carga un logo</span>';return;}
-  if(desc<0||desc>90){msg.innerHTML='<span style="color:var(--danger)">Descuento debe ser 0-90%</span>';return;}
-  const users=getUsers();
-  if(users.find(u=>u.user===user)){msg.innerHTML='<span style="color:var(--danger)">El usuario ya existe</span>';return;}
-  hashPass(pass).then(async h=>{
-    users.push({user,passHash:h,role:'reseller',nombre:nombre.toUpperCase()});
-    saveUsers(users);
-    const resellers=getResellers();
-    resellers.push({nombre,user,descuento:desc,logo:_rsLogoB64,fechaCreacion:new Date().toISOString()});
-    saveResellers(resellers);
-    document.getElementById('new-rs-nombre').value='';
-    document.getElementById('new-rs-user').value='';
-    document.getElementById('new-rs-pass').value='';
-    document.getElementById('new-rs-desc').value='45';
-    document.getElementById('logo-fname').textContent='';
-    document.getElementById('logo-preview').style.display='none';
-    _rsLogoB64='';
-    msg.innerHTML=`<span style="color:var(--success)">✓ Reseller "${nombre}" creado — sincronizando…</span>`;
-    renderResellersAcceso();
-    renderUserList();
-    await autoSync();
-    const ok=document.getElementById('sync-status-pill').classList.contains('sync-ok');
-    msg.innerHTML=`<span style="color:var(--success)">✓ Reseller "${nombre}" ${ok?'creado y publicado':'creado (configura sync para publicar)'}</span>`;
+/* ── TopbarWeb ───────────────────────────────────────── */
+function TopbarWeb({ section }) {
+  const map = { dashboard:{title:'Dashboard',sub:'Resumen general'}, empresas:{title:'Empresas',sub:'Gestión de distribuidores'}, usuarios:{title:'Usuarios',sub:'Vendedores y accesos'}, catalogo:{title:'Catálogo CSV',sub:'Precios e inventario'}, backorders:{title:'Back-orders',sub:'Solicitudes pendientes'}, equivalencias:{title:'Equivalencias',sub:'Cross-reference competidores'} };
+  const t = map[section] || map.dashboard;
+  return (
+    <div className="topbar-web">
+      <span className="topbar-title-web">{t.title}</span>
+      <span className="topbar-sub-web">· {t.sub}</span>
+      <div className="topbar-spacer" />
+      <a href="Cotizador Ammega.html" style={{textDecoration:'none'}}>
+        <button className="btn-secondary-web">📱 Ver app móvil</button>
+      </a>
+    </div>
+  );
+}
+
+/* ── Dashboard ───────────────────────────────────────── */
+function Dashboard({ empresas, usuarios, uploads, bos, onNav }) {
+  const totalCots = empresas.reduce((s,e)=>s+e.cotizaciones,0);
+  const activos   = usuarios.filter(u=>u.status==='activo').length;
+  const boPend    = bos.filter(b=>b.status==='pendiente').length;
+  const boCamino  = bos.filter(b=>b.status==='en_camino').length;
+  const boLleg    = bos.filter(b=>b.status==='llegado').length;
+
+  return (
+    <div className="content">
+      {/* Stats */}
+      <div className="stats-grid">
+        {[
+          { icon:'🏢', val:empresas.length, label:'Empresas', delta:'↑ 1 este mes', col:'delta-up' },
+          { icon:'👥', val:activos, label:'Vendedores activos', delta:'↑ 2 esta semana', col:'delta-up' },
+          { icon:'📄', val:totalCots, label:'Cotizaciones generadas', delta:'↑ 14% vs mes ant.', col:'delta-up' },
+          { icon:'📦', val:uploads.reduce((s,u)=>s+u.registros,0).toLocaleString(), label:'Registros catálogo', delta:'Actualizado 1 abr', col:'' },
+        ].map((s,i) => (
+          <div className="stat-card" key={i}>
+            <div className="stat-icon">{s.icon}</div>
+            <div className="stat-val">{s.val}</div>
+            <div className="stat-label">{s.label}</div>
+            <div className={`stat-delta ${s.col}`}>{s.delta}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:20}}>
+        {/* Actividad reciente */}
+        <div className="card">
+          <div className="card-header"><div><div className="card-title">Actividad reciente</div><div className="card-sub">Últimas acciones</div></div></div>
+          {[
+            { icon:'📄', msg:'Carlos Ramírez generó COT-2026-4821', time:'Hace 15 min', col:'var(--teal)' },
+            { icon:'📤', msg:'Lista precios actualizada · 8,775 registros', time:'Hace 2 horas', col:'var(--green)' },
+            { icon:'🔔', msg:'Back-order BO-002 marcado En camino', time:'Hace 3 horas', col:'var(--amber)' },
+            { icon:'👤', msg:'Nuevo usuario invitado: flopez@hidrovalle.mx', time:'Ayer', col:'var(--purple)' },
+            { icon:'🔄', msg:'Equivalencia Gates AX34 verificada', time:'Ayer', col:'var(--blue)' },
+          ].map((a,i,arr) => (
+            <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 22px',borderBottom:i<arr.length-1?'1px solid var(--gray-100)':'none'}}>
+              <div style={{width:30,height:30,borderRadius:'50%',background:a.col+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{a.icon}</div>
+              <div style={{flex:1}}><div style={{fontSize:13,color:'var(--gray-800)',fontWeight:500}}>{a.msg}</div><div style={{fontSize:11,color:'var(--gray-400)',marginTop:2}}>{a.time}</div></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Back-orders resumen */}
+        <div className="card">
+          <div className="card-header">
+            <div style={{flex:1}}><div className="card-title">Back-orders</div><div className="card-sub">{bos.length} solicitudes totales</div></div>
+            <button className="btn-secondary-web" style={{fontSize:12,padding:'5px 12px'}} onClick={() => onNav('backorders')}>Ver todos →</button>
+          </div>
+          <div className="card-body">
+            {/* Métricas BO */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
+              {[
+                { label:'Pendientes', val:boPend, color:'var(--amber)', bg:'var(--amber-light)', icon:'⏳' },
+                { label:'En camino', val:boCamino, color:'var(--blue)', bg:'var(--blue-light)', icon:'🚚' },
+                { label:'Llegados', val:boLleg, color:'var(--green)', bg:'var(--green-light)', icon:'✅' },
+              ].map(m => (
+                <div key={m.label} style={{background:m.bg,borderRadius:10,padding:'12px 14px',textAlign:'center'}}>
+                  <div style={{fontSize:20,marginBottom:4}}>{m.icon}</div>
+                  <div style={{fontSize:22,fontWeight:800,color:m.color,lineHeight:1}}>{m.val}</div>
+                  <div style={{fontSize:11,color:m.color,marginTop:3,fontWeight:600}}>{m.label}</div>
+                </div>
+              ))}
+            </div>
+            {/* Lista compacta */}
+            {bos.filter(b=>b.status!=='llegado').slice(0,3).map(bo => (
+              <div key={bo.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid var(--gray-100)'}}>
+                <span style={{fontSize:11,fontFamily:'var(--mono)',color:'var(--gray-400)',minWidth:60}}>{bo.id}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:600,color:'var(--gray-900)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{bo.desc}</div>
+                  <div style={{fontSize:11,color:'var(--gray-400)'}}>{bo.cliente} · {bo.cantidad} {bo.unidad}</div>
+                </div>
+                <span className={`badge ${bo.status==='pendiente'?'badge-amber':'badge-blue'}`} style={{fontSize:10}}>{bo.status==='pendiente'?'Pendiente':'En camino'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Logo Ammega distribuidor en cotizaciones */}
+      <div className="card">
+        <div className="card-header">
+          <div style={{flex:1}}><div className="card-title">Logo Ammega — Distribuidor Oficial</div><div className="card-sub">Aparece en todas las cotizaciones generadas por la app</div></div>
+          <span className="badge badge-green">Activo en todas las cotizaciones</span>
+        </div>
+        <div className="card-body">
+          <div style={{display:'flex',alignItems:'center',gap:24}}>
+            <div style={{background:'var(--gray-50)',border:'1.5px solid var(--gray-200)',borderRadius:12,padding:'16px 28px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <img src="megadyne-logo.png" alt="Megadyne" style={{height:36,objectFit:'contain'}} />
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:600,color:'var(--gray-900)',marginBottom:4}}>Megadyne · Distribuidor Autorizado</div>
+              <div style={{fontSize:12,color:'var(--gray-500)',lineHeight:1.6}}>El logo de Ammega/Megadyne se imprime automáticamente en el encabezado de cada PDF de cotización, junto con los datos de la empresa del vendedor. Cada empresa puede tener además su propio logo secundario.</div>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:6,alignItems:'center'}}>
+              {/* Mini PDF preview */}
+              <div style={{background:'#fff',border:'1px solid var(--gray-200)',borderRadius:6,padding:'8px 10px',width:120,fontSize:7,position:'relative',overflow:'hidden',boxShadow:'var(--shadow-sm)'}}>
+                <div style={{height:3,background:'var(--teal)',borderRadius:'2px 2px 0 0',position:'absolute',top:0,left:0,right:0}} />
+                <div style={{marginTop:4,display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:'1px solid var(--teal)',paddingBottom:4,marginBottom:4}}>
+                  <div>
+                    <img src="megadyne-logo.png" alt="" style={{height:10,objectFit:'contain'}} />
+                    <div style={{fontSize:5,color:'var(--gray-400)',marginTop:1}}>Distribuidora Binasa</div>
+                  </div>
+                  <div style={{textAlign:'right',fontSize:5,color:'var(--gray-400)'}}>
+                    <div style={{color:'var(--teal)',fontWeight:700}}>COT-2026-XXXX</div>
+                    <div>1 mayo 2026</div>
+                  </div>
+                </div>
+                {[1,2,3].map(r=><div key={r} style={{height:4,background:'var(--gray-100)',borderRadius:1,marginBottom:2}} />)}
+                <div style={{height:3,background:'var(--teal)',borderRadius:'0 0 2px 2px',position:'absolute',bottom:0,left:0,right:0}} />
+              </div>
+              <span style={{fontSize:10,color:'var(--gray-400)'}}>Vista previa</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Empresas ────────────────────────────────────────── */
+function EmpresasSection({ empresas, setEmpresas, usuarios, bos }) {
+  const [selected, setSelected] = useState(empresas[0]);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm]       = useState(null);
+  const fileRef = useRef();
+
+  const openEdit = e => { setForm({...e}); setEditing(true); };
+  const saveEdit = () => { setEmpresas(prev => prev.map(e => e.id===form.id ? form : e)); setSelected(form); setEditing(false); };
+  const F = ({ label, field, type='text' }) => (
+    <div><label className="field-label">{label}</label>
+      <input className="field-input" type={type} value={form[field]||''} onChange={e => setForm(f=>({...f,[field]:e.target.value}))} /></div>
+  );
+
+  const empUsers = selected ? usuarios.filter(u=>u.empresa===selected.id) : [];
+  const empBos   = selected ? bos.filter(b=>b.empresa===selected.id) : [];
+
+  return (
+    <div className="content">
+      <div style={{display:'grid',gridTemplateColumns:'280px 1fr',gap:22}}>
+        {/* Lista */}
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          {empresas.map(e => (
+            <div key={e.id} className={`empresa-card ${selected?.id===e.id?'selected':''}`} onClick={() => { setSelected(e); setEditing(false); }}>
+              <div style={{width:46,height:46,borderRadius:10,background:e.color+'18',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,overflow:'hidden'}}>
+                {e.logo ? <img src={e.logo} alt="" style={{width:'90%',objectFit:'contain',padding:2}} /> : <span style={{fontSize:20,fontWeight:800,color:e.color}}>{e.nombre[0]}</span>}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:700,color:'var(--gray-900)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.nombre}</div>
+                <div style={{fontSize:11,color:'var(--gray-400)',marginTop:1}}>{e.vendedores} vendedores · {e.cotizaciones} cots.</div>
+                <div style={{marginTop:4}}><span className={`badge ${e.activa?'badge-green':'badge-gray'}`} style={{fontSize:10}}>{e.activa?'Activa':'Inactiva'}</span></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {selected && (
+          <div style={{display:'flex',gap:18}}>
+            <div className="card" style={{flex:1}}>
+              <div className="card-header">
+                <div style={{flex:1}}><div className="card-title">{selected.nombre}</div><div className="card-sub">{selected.rfc}</div></div>
+                {!editing && <button className="btn-secondary-web" onClick={()=>openEdit(selected)}>✏️ Editar</button>}
+              </div>
+              <div className="card-body">
+                {!editing ? (
+                  <div style={{display:'flex',flexDirection:'column',gap:20}}>
+                    {/* Stats empresa */}
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>
+                      {[
+                        { label:'Cotizaciones', val:selected.cotizaciones, icon:'📄', col:'var(--teal)' },
+                        { label:'Vendedores activos', val:empUsers.filter(u=>u.status==='activo').length, icon:'👥', col:'var(--blue)' },
+                        { label:'Back-orders activos', val:empBos.filter(b=>b.status!=='llegado').length, icon:'🔔', col:'var(--amber)' },
+                        { label:'Ventas est.', val:fmt(selected.totalVentas), icon:'💰', col:'var(--green)' },
+                      ].map(s => (
+                        <div key={s.label} style={{background:'var(--gray-50)',borderRadius:10,padding:'12px 14px'}}>
+                          <div style={{fontSize:18,marginBottom:4}}>{s.icon}</div>
+                          <div style={{fontSize:18,fontWeight:800,color:s.col,lineHeight:1}}>{s.val}</div>
+                          <div style={{fontSize:10,color:'var(--gray-400)',marginTop:3}}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Identidad */}
+                    <div>
+                      <div style={{fontSize:11,fontWeight:700,color:'var(--gray-400)',textTransform:'uppercase',letterSpacing:'.8px',marginBottom:10}}>Identidad visual · PDF</div>
+                      <div style={{display:'flex',gap:14,alignItems:'center'}}>
+                        <div style={{width:72,height:72,borderRadius:12,background:selected.color+'18',display:'flex',alignItems:'center',justifyContent:'center',border:`2px solid ${selected.color}30`,flexShrink:0}}>
+                          {selected.logo ? <img src={selected.logo} alt="" style={{width:'90%',objectFit:'contain'}} /> : <span style={{fontSize:28,fontWeight:800,color:selected.color}}>{selected.nombre[0]}</span>}
+                        </div>
+                        <div style={{display:'flex',gap:14}}>
+                          {[['Color principal',selected.color],['Color secundario',selected.colorSec]].map(([l,c])=>(
+                            <div key={l}><div style={{fontSize:11,color:'var(--gray-400)',marginBottom:5}}>{l}</div>
+                              <div style={{display:'flex',alignItems:'center',gap:8}}><div className="color-swatch" style={{background:c}} /><span style={{fontSize:12,fontFamily:'var(--mono)',color:'var(--gray-600)'}}>{c}</span></div></div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Datos */}
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 20px'}}>
+                      {[['Email',selected.email],['Teléfono',selected.tel],['Ciudad',selected.ciudad],['RFC',selected.rfc],['Vigencia cot.',`${selected.vigencia} días`],['IVA',`${selected.iva}%`]].map(([l,v])=>(
+                        <div key={l} style={{padding:'8px 0',borderBottom:'1px solid var(--gray-100)'}}>
+                          <div style={{fontSize:11,color:'var(--gray-400)',marginBottom:1}}>{l}</div>
+                          <div style={{fontSize:13,fontWeight:500}}>{v}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{display:'flex',flexDirection:'column',gap:18}}>
+                    <div><label className="field-label">Logo empresa</label>
+                      <div className="logo-upload" onClick={()=>fileRef.current?.click()}>
+                        {form.logo ? <img src={form.logo} alt="" style={{height:44,objectFit:'contain'}} /> :
+                          <div><div style={{fontSize:26,marginBottom:4}}>🖼️</div><div style={{fontSize:13,color:'var(--gray-500)',fontWeight:500}}>Subir logo PNG/SVG</div><div style={{fontSize:11,color:'var(--gray-400)'}}>Fondo transparente · máx 2MB</div></div>}
+                        <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files[0]; if(f){const u=URL.createObjectURL(f); setForm(ff=>({...ff,logo:u}));} }} />
+                      </div>
+                    </div>
+                    <div className="form-grid form-grid-2"><F label="Nombre empresa" field="nombre" /><F label="RFC" field="rfc" /><F label="Email" field="email" type="email" /><F label="Teléfono" field="tel" /><F label="Ciudad" field="ciudad" /><F label="Dirección" field="direccion" /></div>
+                    <div className="form-grid form-grid-2">
+                      {[['Color principal','color'],['Color secundario','colorSec']].map(([l,f])=>(
+                        <div key={f}><label className="field-label">{l}</label>
+                          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                            <input type="color" value={form[f]} onChange={e=>setForm(ff=>({...ff,[f]:e.target.value}))} style={{width:40,height:36,border:'1.5px solid var(--gray-200)',borderRadius:8,cursor:'pointer',padding:2}} />
+                            <input className="field-input" value={form[f]} onChange={e=>setForm(ff=>({...ff,[f]:e.target.value}))} style={{fontFamily:'var(--mono)',fontSize:12}} /></div></div>
+                      ))}
+                    </div>
+                    <div className="form-grid form-grid-3">
+                      <div><label className="field-label">Vigencia (días)</label><input className="field-input" type="number" value={form.vigencia} onChange={e=>setForm(f=>({...f,vigencia:Number(e.target.value)}))} /></div>
+                      <div><label className="field-label">IVA (%)</label><input className="field-input" type="number" value={form.iva} onChange={e=>setForm(f=>({...f,iva:Number(e.target.value)}))} /></div>
+                      <div><label className="field-label">Moneda</label><select className="field-select" value={form.moneda} onChange={e=>setForm(f=>({...f,moneda:e.target.value}))}><option>MXN</option><option>USD</option></select></div>
+                    </div>
+                    <div><label className="field-label">Notas internas</label><textarea className="field-input" rows={2} value={form.notas} onChange={e=>setForm(f=>({...f,notas:e.target.value}))} style={{resize:'vertical'}} /></div>
+                    <div style={{display:'flex',justifyContent:'flex-end',gap:10}}>
+                      <button className="btn-secondary-web" onClick={()=>setEditing(false)}>Cancelar</button>
+                      <button className="btn-primary-web" onClick={saveEdit}>💾 Guardar</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* PDF mini preview */}
+            <div style={{display:'flex',flexDirection:'column',gap:10,width:200,flexShrink:0}}>
+              <div style={{fontSize:11,fontWeight:700,color:'var(--gray-500)',textTransform:'uppercase',letterSpacing:'.8px'}}>Vista previa PDF</div>
+              <div className="pdf-mini">
+                <div style={{height:4,background:editing?form?.color:selected.color,position:'absolute',top:0,left:0,right:0,borderRadius:'2px 2px 0 0'}} />
+                <div style={{marginTop:8,borderBottom:`1.5px solid ${editing?form?.color:selected.color}`,paddingBottom:5,marginBottom:6,display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                  <div>
+                    <img src="megadyne-logo.png" alt="" style={{height:12,objectFit:'contain',display:'block',marginBottom:2}} />
+                    {(editing?form?.logo:selected.logo) && <img src={editing?form?.logo:selected.logo} alt="" style={{height:10,objectFit:'contain'}} />}
+                    <div style={{fontSize:5.5,color:'var(--gray-400)',marginTop:1}}>{editing?form?.nombre:selected.nombre}</div>
+                  </div>
+                  <div style={{textAlign:'right',fontSize:5,color:'var(--gray-400)',lineHeight:1.7}}>
+                    <div style={{fontSize:7,fontWeight:800,color:editing?form?.color:selected.color}}>COT-2026-XXXX</div>
+                    <div>1 mayo 2026</div>
+                  </div>
+                </div>
+                <div style={{background:editing?form?.color:selected.color,height:7,borderRadius:2,marginBottom:4,display:'flex',alignItems:'center',padding:'0 4px',gap:4}}>
+                  {['SKU','Descripción','Qty','Total'].map(h=><div key={h} style={{fontSize:4,color:'#fff',fontWeight:700,flex:h==='Descripción'?2:1}}>{h}</div>)}
+                </div>
+                {[1,2,3,4].map(r=><div key={r} style={{display:'flex',gap:3,padding:'2px 4px',borderBottom:'0.5px solid var(--gray-100)'}}>
+                  {[1,2,3,4].map(c=><div key={c} style={{flex:c===2?2:1,height:3.5,background:'var(--gray-200)',borderRadius:1}} />)}
+                </div>)}
+                <div style={{marginTop:5,display:'flex',justifyContent:'flex-end'}}>
+                  <div style={{background:(editing?form?.color:selected.color)+'18',borderRadius:3,padding:'4px 6px',minWidth:60}}>
+                    <div style={{fontSize:5,color:'var(--gray-400)',marginBottom:2,display:'flex',justifyContent:'space-between'}}><span>Subtotal</span><span>—</span></div>
+                    <div style={{fontSize:5,color:'var(--gray-400)',marginBottom:3,display:'flex',justifyContent:'space-between'}}><span>IVA</span><span>—</span></div>
+                    <div style={{fontSize:6.5,fontWeight:800,color:editing?form?.color:selected.color,display:'flex',justifyContent:'space-between',borderTop:`0.5px solid ${editing?form?.color:selected.color}`,paddingTop:2}}><span>TOTAL</span><span>—</span></div>
+                  </div>
+                </div>
+                <div style={{position:'absolute',bottom:0,left:0,right:0,height:3,background:editing?form?.color:selected.color,borderRadius:'0 0 2px 2px'}} />
+              </div>
+              <div style={{fontSize:10,color:'var(--gray-400)',lineHeight:1.6}}>Logo Ammega + logo empresa se imprimen en cada cotización.</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Usuarios ────────────────────────────────────────── */
+const ROL_CONFIG = {
+  Vendedor:   { badge:'role-vendedor',   icon:'🛒', desc:'Consulta catálogo, cotiza, back-orders',        perms:['catalogo','cotizar','backorders'] },
+  Supervisor: { badge:'role-supervisor', icon:'👁',  desc:'Todo de Vendedor + equivalencias + admin precios', perms:['catalogo','cotizar','backorders','equivalencias','adminPrecios'] },
+  Admin:      { badge:'role-admin',      icon:'⚙️',  desc:'Acceso completo al sistema',                  perms:['catalogo','cotizar','backorders','equivalencias','adminPrecios','adminUsuarios'] },
+};
+
+function UsuariosSection({ usuarios, setUsuarios, empresas }) {
+  const [search, setSearch]       = useState('');
+  const [showModal, setShowModal]  = useState(false);
+  const [editUser, setEditUser]    = useState(null); // null = nuevo
+  const [form, setForm]            = useState({ nombre:'', email:'', empresa:'binasa', rol:'Vendedor', permisos:{ catalogo:true,cotizar:true,backorders:false,equivalencias:false,adminPrecios:false } });
+  const [linkCopied, setLinkCopied] = useState(null);
+  const [toast, setToast]          = useState(null);
+  const [filterRol, setFilterRol]  = useState('Todos');
+
+  const filtered = usuarios.filter(u => {
+    const q = search.toLowerCase();
+    const matchQ = !q || u.nombre.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+    const matchR = filterRol==='Todos' || u.rol===filterRol;
+    return matchQ && matchR;
   });
+
+  const openNew  = () => { setEditUser(null); setForm({ nombre:'', email:'', empresa:'binasa', rol:'Vendedor', permisos:{catalogo:true,cotizar:true,backorders:false,equivalencias:false,adminPrecios:false} }); setShowModal(true); };
+  const openEdit = u  => { setEditUser(u); setForm({...u}); setShowModal(true); };
+  const save = () => {
+    if (!form.nombre || !form.email) return;
+    if (editUser) {
+      setUsuarios(prev => prev.map(u => u.id===editUser.id ? {...u,...form} : u));
+      setToast('Usuario actualizado correctamente');
+    } else {
+      setUsuarios(prev => [...prev, {...form, id:Date.now(), status:'pendiente', ultimoAcceso:'—', cotizaciones:0}]);
+      setToast('Invitación enviada correctamente');
+    }
+    setShowModal(false);
+  };
+  const remove   = id => { setUsuarios(prev=>prev.filter(u=>u.id!==id)); setToast('Usuario eliminado'); };
+  const toggleStatus = id => setUsuarios(prev=>prev.map(u=>u.id===id?{...u,status:u.status==='activo'?'inactivo':'activo'}:u));
+  const revokeAccess = id => { setUsuarios(prev=>prev.map(u=>u.id===id?{...u,status:'cancelado'}:u)); setToast('Acceso cancelado'); };
+  const copyLink = u => { setLinkCopied(u.id); setTimeout(()=>setLinkCopied(null),2000); setToast('Link de acceso copiado'); };
+
+  const statusColor = { activo:'badge-green', inactivo:'badge-gray', pendiente:'badge-amber', cancelado:'badge-red' };
+  const statusLabel = { activo:'● Activo', inactivo:'○ Inactivo', pendiente:'⏳ Pendiente', cancelado:'✕ Cancelado' };
+
+  const PermToggle = ({ field, label }) => (
+    <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'7px 0',borderBottom:'1px solid var(--gray-100)'}}>
+      <label className="toggle"><input type="checkbox" checked={!!form.permisos?.[field]} onChange={e=>setForm(f=>({...f,permisos:{...f.permisos,[field]:e.target.checked}}))} /><span className="toggle-slider"/></label>
+      <span style={{fontSize:13,color:'var(--gray-700)'}}>{label}</span>
+    </label>
+  );
+
+  return (
+    <div className="content">
+      {toast && <div className="notif-toast">✅ {toast}</div>}
+      {/* Roles info */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14,marginBottom:20}}>
+        {Object.entries(ROL_CONFIG).map(([rol,cfg])=>(
+          <div key={rol} style={{background:'#fff',border:'1.5px solid var(--gray-200)',borderRadius:12,padding:'14px 16px',display:'flex',gap:12,alignItems:'flex-start'}}>
+            <span style={{fontSize:22}}>{cfg.icon}</span>
+            <div>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                <span className={`role-chip ${cfg.badge}`}>{rol}</span>
+                <span style={{fontSize:11,color:'var(--gray-400)'}}>{usuarios.filter(u=>u.rol===rol).length} usuarios</span>
+              </div>
+              <div style={{fontSize:11,color:'var(--gray-500)',lineHeight:1.5}}>{cfg.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <div style={{flex:1}}><div className="card-title">Usuarios</div><div className="card-sub">{filtered.length} de {usuarios.length}</div></div>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <div className="search-web"><span>🔍</span><input placeholder="Buscar…" value={search} onChange={e=>setSearch(e.target.value)} /></div>
+            <select className="field-select" style={{width:'auto',padding:'7px 12px'}} value={filterRol} onChange={e=>setFilterRol(e.target.value)}>
+              <option>Todos</option><option>Vendedor</option><option>Supervisor</option><option>Admin</option>
+            </select>
+            <button className="btn-primary-web" onClick={openNew}>+ Invitar usuario</button>
+          </div>
+        </div>
+        <table className="data-table">
+          <thead><tr><th>Usuario</th><th>Empresa</th><th>Rol</th><th>Estado</th><th>Último acceso</th><th>Cotizaciones</th><th>Acciones</th></tr></thead>
+          <tbody>
+            {filtered.map(u => {
+              const emp = empresas.find(e=>e.id===u.empresa);
+              return (
+                <tr key={u.id}>
+                  <td><div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <div className="avatar" style={{background:emp?.color||'var(--gray-300)',fontSize:13}}>{u.nombre[0]}</div>
+                    <div><div style={{fontWeight:600,fontSize:13}}>{u.nombre}</div><div style={{fontSize:11,color:'var(--gray-400)'}}>{u.email}</div></div>
+                  </div></td>
+                  <td><div style={{display:'flex',alignItems:'center',gap:6}}><div style={{width:8,height:8,borderRadius:'50%',background:emp?.color||'var(--gray-300)',flexShrink:0}}/><span style={{fontSize:12}}>{emp?.nombre||'—'}</span></div></td>
+                  <td><span className={`role-chip ${ROL_CONFIG[u.rol]?.badge||'badge-gray'}`}>{ROL_CONFIG[u.rol]?.icon} {u.rol}</span></td>
+                  <td><span className={`badge ${statusColor[u.status]||'badge-gray'}`}>{statusLabel[u.status]||u.status}</span></td>
+                  <td style={{fontSize:12,color:'var(--gray-400)'}}>{u.ultimoAcceso}</td>
+                  <td style={{fontWeight:600,fontFamily:'var(--mono)'}}>{u.cotizaciones}</td>
+                  <td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                    <button onClick={()=>openEdit(u)} style={{fontSize:11,padding:'4px 9px',border:'1px solid var(--gray-200)',borderRadius:6,background:'#fff',cursor:'pointer',fontFamily:'var(--font)',color:'var(--gray-600)'}}>✏️ Editar</button>
+                    <button onClick={()=>copyLink(u)} style={{fontSize:11,padding:'4px 9px',border:'1px solid var(--gray-200)',borderRadius:6,background:linkCopied===u.id?'var(--green-light)':'#fff',color:linkCopied===u.id?'var(--green)':'var(--gray-600)',cursor:'pointer',fontFamily:'var(--font)',transition:'all .15s',whiteSpace:'nowrap'}}>
+                      {linkCopied===u.id?'✓ Copiado':'🔗 Link'}
+                    </button>
+                    <label className="toggle" title={u.status==='activo'?'Desactivar':'Activar'}><input type="checkbox" checked={u.status==='activo'} onChange={()=>toggleStatus(u.id)} /><span className="toggle-slider"/></label>
+                    {u.status!=='cancelado' && <button onClick={()=>revokeAccess(u.id)} style={{fontSize:11,padding:'4px 9px',border:'1px solid var(--red-light)',borderRadius:6,background:'#fff',cursor:'pointer',fontFamily:'var(--font)',color:'var(--red)'}}>Cancelar</button>}
+                    <button onClick={()=>remove(u.id)} style={{fontSize:11,padding:'4px 9px',border:'1px solid var(--gray-200)',borderRadius:6,background:'#fff',cursor:'pointer',fontFamily:'var(--font)',color:'var(--red)'}}>🗑</button>
+                  </div></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {showModal && (
+        <div className="modal-backdrop" onClick={()=>setShowModal(false)}>
+          <div className="modal modal-lg" onClick={e=>e.stopPropagation()}>
+            <div className="modal-header"><div className="modal-title">{editUser?'Editar usuario':'Invitar nuevo usuario'}</div><button className="modal-close" onClick={()=>setShowModal(false)}>✕</button></div>
+            <div className="modal-body">
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}}>
+                <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                  <div><label className="field-label">Nombre completo</label><input className="field-input" value={form.nombre} onChange={e=>setForm(f=>({...f,nombre:e.target.value}))} /></div>
+                  <div><label className="field-label">Correo electrónico</label><input className="field-input" type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} /></div>
+                  <div><label className="field-label">Empresa</label>
+                    <select className="field-select" value={form.empresa} onChange={e=>setForm(f=>({...f,empresa:e.target.value}))}>
+                      {empresas.map(e=><option key={e.id} value={e.id}>{e.nombre}</option>)}
+                    </select>
+                  </div>
+                  <div><label className="field-label">Rol</label>
+                    <select className="field-select" value={form.rol} onChange={e=>{ const r=e.target.value; const def={catalogo:true,cotizar:true,backorders:r!=='Vendedor',equivalencias:r==='Supervisor'||r==='Admin',adminPrecios:r==='Supervisor'||r==='Admin'}; setForm(f=>({...f,rol:r,permisos:def})); }}>
+                      <option>Vendedor</option><option>Supervisor</option><option>Admin</option>
+                    </select>
+                  </div>
+                  <div style={{background:'var(--gray-50)',borderRadius:8,padding:'10px 12px',fontSize:12,color:'var(--gray-500)',lineHeight:1.5}}>
+                    {ROL_CONFIG[form.rol]?.desc}
+                  </div>
+                </div>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:'var(--gray-700)',marginBottom:10}}>Permisos específicos</div>
+                  <PermToggle field="catalogo" label="Ver catálogo de productos" />
+                  <PermToggle field="cotizar" label="Generar cotizaciones" />
+                  <PermToggle field="backorders" label="Solicitar back-orders" />
+                  <PermToggle field="equivalencias" label="Ver equivalencias de competidores" />
+                  <PermToggle field="adminPrecios" label="Ver precio de lista (costo)" />
+                  {!editUser && (
+                    <div style={{background:'var(--teal-light)',borderRadius:8,padding:'10px 12px',fontSize:12,color:'var(--teal-dark)',marginTop:14,display:'flex',gap:8}}>
+                      <span>🔗</span><div>Se generará un link de acceso único válido 7 días. No requiere contraseña.</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer"><button className="btn-secondary-web" onClick={()=>setShowModal(false)}>Cancelar</button><button className="btn-primary-web" onClick={save}>{editUser?'💾 Guardar':'📤 Enviar invitación'}</button></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
-function openEditReseller(idx){
-  const r=getResellers()[idx];
-  document.getElementById('edit-rs-nombre').value=r.nombre;
-  document.getElementById('edit-rs-desc').value=r.descuento;
-  document.getElementById('edit-rs-card').dataset.idx=idx;
-  document.getElementById('edit-rs-card').style.display='block';
-  document.getElementById('edit-rs-card').scrollIntoView({behavior:'smooth'});
+/* ── Catálogo CSV ─────────────────────────────────────── */
+function CatalogoSection({ uploads, setUploads }) {
+  const [dragging,setDragging]=useState(false);
+  const [uploading,setUploading]=useState(false);
+  const [progress,setProgress]=useState(0);
+  const fileRef=useRef();
+  const sim=()=>{ setUploading(true);setProgress(0); const iv=setInterval(()=>setProgress(p=>{if(p>=100){clearInterval(iv);setUploading(false);return 100;}return p+Math.random()*18;}),200); };
+  return (
+    <div className="content">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 360px',gap:22}}>
+        <div style={{display:'flex',flexDirection:'column',gap:20}}>
+          <div className="card">
+            <div className="card-header"><div><div className="card-title">Subir archivo CSV / Excel</div><div className="card-sub">Precios o inventario · xlsx, csv · máx 10MB</div></div></div>
+            <div className="card-body">
+              <div className={`upload-zone ${dragging?'dragover':''}`} onDragOver={e=>{e.preventDefault();setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={e=>{e.preventDefault();setDragging(false);sim();}} onClick={()=>fileRef.current?.click()}>
+                <div style={{fontSize:38,marginBottom:8}}>📂</div>
+                <div style={{fontSize:15,fontWeight:600,color:'var(--gray-700)',marginBottom:4}}>Arrastra tu archivo aquí</div>
+                <div style={{fontSize:13,color:'var(--gray-400)',marginBottom:12}}>o haz clic para seleccionar</div>
+                <button className="btn-secondary-web" style={{margin:'0 auto'}}>Seleccionar archivo</button>
+                <input ref={fileRef} type="file" accept=".xlsx,.csv" style={{display:'none'}} onChange={sim} />
+              </div>
+              {uploading && <div style={{marginTop:14}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}><span style={{fontSize:13,color:'var(--gray-700)',fontWeight:500}}>Procesando…</span><span style={{fontSize:13,fontWeight:700,color:'var(--teal)'}}>{Math.min(100,Math.round(progress))}%</span></div>
+                <div style={{height:8,background:'var(--gray-200)',borderRadius:4,overflow:'hidden'}}><div style={{height:'100%',width:`${Math.min(100,progress)}%`,background:'var(--teal)',borderRadius:4,transition:'width .2s'}} /></div>
+                <div style={{fontSize:12,color:'var(--gray-400)',marginTop:5}}>Validando columnas · Verificando SKUs · Actualizando precios…</div>
+              </div>}
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-header"><div className="card-title">Archivos activos</div></div>
+            <table className="data-table">
+              <thead><tr><th>Archivo</th><th>Tipo</th><th>Empresa</th><th>Registros</th><th>Fecha</th><th></th></tr></thead>
+              <tbody>{uploads.map(u=>(
+                <tr key={u.id}>
+                  <td><div style={{display:'flex',alignItems:'center',gap:8}}><span style={{fontSize:18}}>📊</span><div style={{fontSize:12,fontWeight:600}}>{u.nombre}</div></div></td>
+                  <td><span className={`badge ${u.tipo==='precios'?'badge-purple':'badge-blue'}`}>{u.tipo==='precios'?'💰 Precios':'📦 Inventario'}</span></td>
+                  <td style={{fontSize:12}}>{u.empresa}</td>
+                  <td style={{fontWeight:600,fontFamily:'var(--mono)',fontSize:12}}>{u.registros.toLocaleString()}</td>
+                  <td style={{fontSize:12,color:'var(--gray-400)'}}>{u.fecha}</td>
+                  <td><button style={{fontSize:11,padding:'4px 8px',border:'1px solid var(--gray-200)',borderRadius:6,background:'#fff',cursor:'pointer',color:'var(--red)',fontFamily:'var(--font)'}} onClick={()=>setUploads(p=>p.filter(x=>x.id!==u.id))}>Eliminar</button></td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+        {/* Formato */}
+        <div className="card" style={{height:'fit-content'}}>
+          <div className="card-header"><div className="card-title">Formato requerido</div></div>
+          <div className="card-body" style={{display:'flex',flexDirection:'column',gap:16}}>
+            {[{label:'💰 Lista de precios',color:'var(--purple)',cols:['Item','Description','Clase','Grupo','P.Lista','P.Binasa'],rows:[['AX34','BANDA A-34','BANDA','B.CL','185.20','101.86'],['JSH4-06','MANG. R1 3/8"','Mang','HIDR','185.60','102.08']]},
+              {label:'📦 Inventario',color:'var(--blue)',cols:['Articulo','Descripcion','Almacen','Disponible','Unidad'],rows:[['AX34','BANDA A-34','1','62','pz'],['JSH4-06','MANG R1 3/8"','2','420','mt']]}
+            ].map(t=>(
+              <div key={t.label}>
+                <div style={{fontSize:12,fontWeight:700,color:t.color,marginBottom:7}}>{t.label}</div>
+                <div style={{background:'var(--gray-50)',borderRadius:7,overflow:'hidden',border:'1px solid var(--gray-200)'}}>
+                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:10}}>
+                    <thead><tr style={{background:t.color}}>{t.cols.map(h=><td key={h} style={{padding:'4px 7px',color:'#fff',fontWeight:700,fontSize:9}}>{h}</td>)}</tr></thead>
+                    <tbody>{t.rows.map((r,i)=><tr key={i} style={{borderTop:'1px solid var(--gray-100)'}}>{r.map((c,j)=><td key={j} style={{padding:'4px 7px',fontFamily:j<2?'var(--mono)':'var(--font)',fontSize:9,color:'var(--gray-600)'}}>{c}</td>)}</tr>)}</tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
-function closeEditReseller(){document.getElementById('edit-rs-card').style.display='none';}
-async function saveEditReseller(){
-  const idx=parseInt(document.getElementById('edit-rs-card').dataset.idx);
-  const desc=parseFloat(document.getElementById('edit-rs-desc').value)||0;
-  if(desc<0||desc>90){alert('Descuento debe ser 0-90%');return;}
-  const resellers=getResellers();
-  resellers[idx].descuento=desc;
-  saveResellers(resellers);
-  closeEditReseller();
-  renderResellersAcceso();
-  await autoSync();
+
+/* ── Back-orders Admin ────────────────────────────────── */
+function BackordersAdmin({ bos, setBos, empresas, usuarios }) {
+  const [filter,setFilter]=useState('todos');
+  const [editBO,setEditBO]=useState(null);
+  const [toast,setToast]=useState(null);
+  const showToast = msg => { setToast(msg); setTimeout(()=>setToast(null),3000); };
+
+  const statusMap = { pendiente:{label:'Pendiente',badge:'badge-amber',icon:'⏳'}, en_camino:{label:'En camino',badge:'badge-blue',icon:'🚚'}, llegado:{label:'Llegó',badge:'badge-green',icon:'✅'} };
+  const filtered = bos.filter(b=>filter==='todos'||b.status===filter);
+
+  const cambiarStatus = (id, status) => { setBos(prev=>prev.map(b=>b.id===id?{...b,status}:b)); showToast(`Back-order actualizado a "${statusMap[status].label}"`); };
+  const sendNotif  = bo => showToast(`Notificación enviada a ${bo.vendedor} — "${bo.desc}" disponible`);
+
+  const exportCSV = () => {
+    const rows = [['ID','Producto','Descripcion','Empresa','Vendedor','Cliente','Cantidad','Unidad','Fecha','Estimado','Status']];
+    bos.forEach(b=>rows.push([b.id,b.producto,b.desc,b.empresa,b.vendedor,b.cliente,b.cantidad,b.unidad,b.fecha,b.estimado||'—',b.status]));
+    const csv = rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv],{type:'text/csv'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backorders.csv'; a.click();
+    showToast('Archivo Excel descargado');
+  };
+
+  return (
+    <div className="content">
+      {toast && <div className="notif-toast">{toast}</div>}
+      {/* Stats */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14,marginBottom:20}}>
+        {[{label:'Pendientes',status:'pendiente',color:'var(--amber)',bg:'var(--amber-light)',icon:'⏳'},{label:'En camino',status:'en_camino',color:'var(--blue)',bg:'var(--blue-light)',icon:'🚚'},{label:'Llegados',status:'llegado',color:'var(--green)',bg:'var(--green-light)',icon:'✅'}].map(m=>(
+          <div key={m.label} style={{background:m.bg,borderRadius:12,padding:'14px 18px',cursor:'pointer',border:`1.5px solid ${filter===m.status?m.color:'transparent'}`,transition:'border-color .15s'}} onClick={()=>setFilter(f=>f===m.status?'todos':m.status)}>
+            <div style={{fontSize:22,marginBottom:4}}>{m.icon}</div>
+            <div style={{fontSize:26,fontWeight:800,color:m.color,lineHeight:1}}>{bos.filter(b=>b.status===m.status).length}</div>
+            <div style={{fontSize:12,color:m.color,marginTop:3,fontWeight:600}}>{m.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <div style={{flex:1}}><div className="card-title">Back-orders {filter!=='todos'?`· ${statusMap[filter]?.label}`:''}</div><div className="card-sub">{filtered.length} registros</div></div>
+          <button className="btn-secondary-web" onClick={exportCSV}>📥 Exportar Excel</button>
+        </div>
+        <table className="data-table">
+          <thead><tr><th>ID</th><th>Producto</th><th>Empresa · Vendedor</th><th>Cliente</th><th>Cant.</th><th>F. Solicitud</th><th>F. Estimada</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>
+            {filtered.map(bo=>{
+              const emp=empresas.find(e=>e.id===bo.empresa);
+              return (
+                <tr key={bo.id}>
+                  <td style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--gray-400)'}}>{bo.id}</td>
+                  <td><div style={{fontSize:11,fontFamily:'var(--mono)',color:'var(--teal)',marginBottom:2}}>{bo.producto}</div><div style={{fontSize:12,color:'var(--gray-700)'}}>{bo.desc}</div></td>
+                  <td>
+                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}>
+                      <div style={{width:8,height:8,borderRadius:'50%',background:emp?.color||'var(--gray-300)',flexShrink:0}}/>
+                      <span style={{fontSize:12,fontWeight:600}}>{emp?.nombre||bo.empresa}</span>
+                    </div>
+                    <div style={{fontSize:11,color:'var(--gray-400)'}}>{bo.vendedor}</div>
+                  </td>
+                  <td style={{fontSize:12,fontWeight:500}}>{bo.cliente}</td>
+                  <td style={{fontWeight:700,fontFamily:'var(--mono)',fontSize:12}}>{bo.cantidad} {bo.unidad}</td>
+                  <td style={{fontSize:11,color:'var(--gray-400)'}}>{bo.fecha}</td>
+                  <td>
+                    {editBO===bo.id
+                      ? <input className="field-input" type="date" defaultValue={bo.estimado} style={{width:130,fontSize:12,padding:'4px 8px'}}
+                          onChange={e=>setBos(prev=>prev.map(b=>b.id===bo.id?{...b,estimado:e.target.value}:b))}
+                          onBlur={()=>{ setEditBO(null); showToast('Fecha estimada actualizada'); }} autoFocus />
+                      : <button onClick={()=>setEditBO(bo.id)} style={{fontSize:11,padding:'4px 10px',border:'1px solid var(--gray-200)',borderRadius:6,background:'#fff',cursor:'pointer',fontFamily:'var(--font)',color:bo.estimado?'var(--gray-700)':'var(--amber)',whiteSpace:'nowrap'}}>
+                          {bo.estimado||'+ Fecha est.'} ✏️
+                        </button>
+                    }
+                  </td>
+                  <td><span className={`badge ${statusMap[bo.status]?.badge}`}>{statusMap[bo.status]?.icon} {statusMap[bo.status]?.label}</span></td>
+                  <td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                    {bo.status==='pendiente' && <button className="btn-secondary-web" style={{padding:'4px 10px',fontSize:11}} onClick={()=>cambiarStatus(bo.id,'en_camino')}>🚚 En camino</button>}
+                    {bo.status==='en_camino' && <button className="btn-primary-web" style={{padding:'4px 10px',fontSize:11}} onClick={()=>cambiarStatus(bo.id,'llegado')}>✅ Surtido</button>}
+                    {(bo.status==='en_camino'||bo.status==='llegado') && <button onClick={()=>sendNotif(bo)} style={{fontSize:11,padding:'4px 10px',border:'1px solid var(--teal)',borderRadius:6,background:'var(--teal-light)',cursor:'pointer',fontFamily:'var(--font)',color:'var(--teal)',whiteSpace:'nowrap'}}>🔔 Notificar</button>}
+                  </div></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
-async function removeReseller(idx){
-  if(!confirm('¿Eliminar reseller?'))return;
-  const resellers=getResellers();
-  const user=resellers[idx].user;
-  resellers.splice(idx,1);
-  saveResellers(resellers);
-  const users=getUsers();
-  const ui=users.findIndex(u=>u.user===user);
-  if(ui>=0)users.splice(ui,1);
-  saveUsers(users);
-  renderResellersAcceso();
-  renderUserList();
-  await autoSync();
+
+/* ── Equivalencias ────────────────────────────────────── */
+function EquivalenciasSection() {
+  const [items,setItems]=useState(INIT_EQ);
+  const [tab,setTab]=useState('Todos');
+  const [search,setSearch]=useState('');
+  const [showNew,setShowNew]=useState(false);
+  const [newItem,setNewItem]=useState({competidor:'Gates',ref:'',descripcion:'',equivalente:'',marca:'Megadyne',tipo:'Bandas'});
+  const [toast,setToast]=useState(null);
+
+  const tabs=['Todos','Bandas','Mangueras'];
+  const compColor={Gates:'badge-red',Optibelt:'badge-amber',Parker:'badge-blue','SKF':'badge-purple',Dunlop:'badge-gray'};
+
+  const filtered = items.filter(i=>{
+    const q=search.toLowerCase();
+    const matchTab=tab==='Todos'||i.tipo===tab;
+    const matchQ=!q||i.ref.toLowerCase().includes(q)||i.competidor.toLowerCase().includes(q)||i.descripcion.toLowerCase().includes(q)||i.equivalente.toLowerCase().includes(q);
+    return matchTab&&matchQ;
+  });
+
+  const add=()=>{ if(!newItem.ref||!newItem.equivalente)return; setItems(p=>[...p,{...newItem}]); setShowNew(false); setNewItem({competidor:'Gates',ref:'',descripcion:'',equivalente:'',marca:'Megadyne',tipo:'Bandas'}); setToast('Equivalencia agregada'); setTimeout(()=>setToast(null),3000); };
+  const del=i=>{ setItems(p=>p.filter((_,j)=>j!==i)); setToast('Equivalencia eliminada'); setTimeout(()=>setToast(null),3000); };
+
+  return (
+    <div className="content">
+      {toast && <div className="notif-toast">✅ {toast}</div>}
+      {/* Catálogos por tipo */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
+        {[{marca:'Megadyne',tipo:'Bandas',icon:'🔧',color:'var(--teal)',desc:'Bandas de transmisión · Dentadas · Métricas · Clásicas',count:items.filter(i=>i.marca==='Megadyne').length,logo:'megadyne-logo.png'},
+          {marca:'Jasson',tipo:'Mangueras',icon:'🌊',color:'var(--amber)',desc:'Mangueras hidráulicas · Industriales · SAE 100R1/R2',count:items.filter(i=>i.marca==='Jasson').length,logo:'jasson-logo.png'}
+        ].map(cat=>(
+          <div key={cat.marca} style={{background:'#fff',border:`2px solid ${tab===cat.tipo?cat.color:'var(--gray-200)'}`,borderRadius:14,padding:'16px 20px',cursor:'pointer',transition:'border-color .15s,box-shadow .15s',boxShadow:tab===cat.tipo?`0 0 0 3px ${cat.color}22`:''}} onClick={()=>setTab(t=>t===cat.tipo?'Todos':cat.tipo)}>
+            <div style={{display:'flex',alignItems:'center',gap:14}}>
+              <div style={{width:52,height:52,borderRadius:12,background:cat.color+'18',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,overflow:'hidden'}}>
+                <img src={cat.logo} alt="" style={{width:'85%',objectFit:'contain',padding:2}} />
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:700,color:'var(--gray-900)',marginBottom:3}}>{cat.marca} — {cat.tipo}</div>
+                <div style={{fontSize:11,color:'var(--gray-500)',marginBottom:6}}>{cat.desc}</div>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span style={{fontSize:22,fontWeight:800,color:cat.color}}>{cat.count}</span>
+                  <span style={{fontSize:11,color:'var(--gray-400)'}}>equivalencias registradas</span>
+                </div>
+              </div>
+              {tab===cat.tipo && <span style={{fontSize:20,color:cat.color}}>●</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <div style={{flex:1}}><div className="card-title">Cross-reference {tab!=='Todos'?`· ${tab}`:''}</div><div className="card-sub">{filtered.length} referencias</div></div>
+          <div className="search-web"><span>🔍</span><input placeholder="Buscar referencia…" value={search} onChange={e=>setSearch(e.target.value)} /></div>
+          <button className="btn-primary-web" onClick={()=>setShowNew(v=>!v)}>+ Agregar</button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{padding:'0 22px'}}>
+          <div className="tabs-web">
+            {tabs.map(t=><button key={t} className={`tab-web ${tab===t?'active':''}`} onClick={()=>setTab(t)}>{t==='Bandas'?'🔧 ':t==='Mangueras'?'🌊 ':''}{t} {t!=='Todos'?`(${items.filter(i=>t==='Todos'||i.tipo===t).length})`:''}</button>)}
+          </div>
+        </div>
+
+        <table className="data-table">
+          <thead><tr><th>Competidor</th><th>Ref. competidor</th><th>Descripción</th><th>SKU Binasa</th><th>Marca</th><th>Tipo</th><th></th></tr></thead>
+          <tbody>
+            {filtered.map((item,i)=>(
+              <tr key={i}>
+                <td><span className={`badge ${compColor[item.competidor]||'badge-gray'}`}>{item.competidor}</span></td>
+                <td style={{fontFamily:'var(--mono)',fontSize:12,fontWeight:600}}>{item.ref}</td>
+                <td style={{fontSize:13}}>{item.descripcion}</td>
+                <td style={{fontFamily:'var(--mono)',fontSize:12,color:'var(--teal)',fontWeight:600}}>{item.equivalente}</td>
+                <td><span className={`badge ${item.marca==='Megadyne'?'badge-teal':'badge-amber'}`}>{item.marca}</span></td>
+                <td><span className="badge badge-gray">{item.tipo}</span></td>
+                <td><button style={{fontSize:11,padding:'4px 8px',border:'1px solid var(--gray-200)',borderRadius:6,background:'#fff',cursor:'pointer',color:'var(--red)',fontFamily:'var(--font)'}} onClick={()=>del(items.indexOf(item))}>🗑</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {showNew && (
+          <div style={{padding:'14px 22px',borderTop:'1px solid var(--gray-100)',background:'var(--gray-50)'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr) auto',gap:10,alignItems:'flex-end'}}>
+              {[{l:'Competidor',f:'competidor',sel:['Gates','Optibelt','Parker','SKF','Dunlop']},{l:'Tipo',f:'tipo',sel:['Bandas','Mangueras']},{l:'Ref. competidor',f:'ref'},{l:'Descripción',f:'descripcion'},{l:'SKU Binasa',f:'equivalente'},{l:'Marca',f:'marca',sel:['Megadyne','Jasson']}].map(fld=>(
+                <div key={fld.f}><label className="field-label">{fld.l}</label>
+                  {fld.sel
+                    ? <select className="field-select" value={newItem[fld.f]} onChange={e=>setNewItem(n=>({...n,[fld.f]:e.target.value}))}>{fld.sel.map(o=><option key={o}>{o}</option>)}</select>
+                    : <input className="field-input" value={newItem[fld.f]} onChange={e=>setNewItem(n=>({...n,[fld.f]:e.target.value}))} />
+                  }
+                </div>
+              ))}
+              <div style={{display:'flex',gap:6,paddingBottom:1}}>
+                <button className="btn-primary-web" onClick={add}>Agregar</button>
+                <button className="btn-secondary-web" onClick={()=>setShowNew(false)}>✕</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
+
+/* ── Root ─────────────────────────────────────────────── */
+function App() {
+  const [section,setSection]=useState('dashboard');
+  const [empresas,setEmpresas]=useState(INIT_EMPRESAS);
+  const [usuarios,setUsuarios]=useState(INIT_USUARIOS);
+  const [uploads,setUploads]=useState(INIT_UPLOADS);
+  const [bos,setBos]=useState(INIT_BO);
+  const boPending = bos.filter(b=>b.status==='pendiente').length;
+
+  const render=()=>{
+    switch(section){
+      case 'dashboard':    return <Dashboard empresas={empresas} usuarios={usuarios} uploads={uploads} bos={bos} onNav={setSection} />;
+      case 'empresas':     return <EmpresasSection empresas={empresas} setEmpresas={setEmpresas} usuarios={usuarios} bos={bos} />;
+      case 'usuarios':     return <UsuariosSection usuarios={usuarios} setUsuarios={setUsuarios} empresas={empresas} />;
+      case 'catalogo':     return <CatalogoSection uploads={uploads} setUploads={setUploads} />;
+      case 'backorders':   return <BackordersAdmin bos={bos} setBos={setBos} empresas={empresas} usuarios={usuarios} />;
+      case 'equivalencias':return <EquivalenciasSection />;
+      default: return null;
+    }
+  };
+
+  return (
+    <>
+      <Sidebar section={section} onSection={setSection} boPending={boPending} />
+      <div className="main"><TopbarWeb section={section} />{render()}</div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
 </html>
