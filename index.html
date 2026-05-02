@@ -362,6 +362,28 @@
   .pdf-grand { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: var(--teal-dark); border-top: 1.5px solid var(--teal); padding-top: 5px; margin-top: 4px; gap: 12px; }
   .pdf-footer { text-align: center; font-size: 7px; color: var(--gray-400); margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--gray-100); line-height: 1.6; }
   .pdf-footer-bar { height: 4px; background: linear-gradient(90deg, var(--teal), var(--teal-mid)); border-radius: 0 0 2px 2px; position: absolute; bottom: 0; left: 0; right: 0; }
+
+  /* ── Login Screen ── */
+  .login-screen { background: #fff; justify-content: space-between; }
+  .login-header { padding: 52px 28px 20px; display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .login-title { font-size: 22px; font-weight: 800; color: var(--gray-900); margin-top: 14px; }
+  .login-sub { font-size: 13px; color: var(--gray-500); margin-top: 4px; text-align: center; }
+  .login-body { padding: 4px 24px 0; display: flex; flex-direction: column; gap: 14px; }
+  .login-field { display: flex; flex-direction: column; gap: 6px; }
+  .login-label { font-size: 12px; font-weight: 600; color: var(--gray-700); letter-spacing: .3px; }
+  .login-input { border: 1.5px solid var(--gray-200); border-radius: 10px; padding: 13px 14px; font-size: 15px; font-family: var(--font); color: var(--gray-900); outline: none; transition: border-color .15s, box-shadow .15s; background: #fff; }
+  .login-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(26,122,120,.1); }
+  .login-error { background: var(--red-light); color: var(--red); border-radius: 8px; padding: 10px 12px; font-size: 13px; font-weight: 500; }
+  .login-btn { margin-top: 4px; padding: 14px; font-size: 15px; letter-spacing: .2px; }
+  .login-footer { padding: 20px 24px 32px; text-align: center; font-size: 12px; color: var(--gray-400); line-height: 1.6; }
+
+  /* ── User badge in topbar ── */
+  .topbar-user { display: flex; align-items: center; gap: 7px; padding: 4px 8px 4px 4px; border-radius: 20px; background: var(--gray-100); cursor: pointer; border: none; transition: background .15s; }
+  .topbar-user:active { background: var(--gray-200); }
+  .topbar-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--teal); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .topbar-uname { font-size: 12px; font-weight: 600; color: var(--gray-800); max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar-admin-btn { background: var(--teal); color: #fff; border: none; border-radius: 8px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background .12s; flex-shrink: 0; }
+  .topbar-admin-btn:active { background: var(--teal-dark); }
 </style>
 </head>
 <body>
@@ -369,6 +391,79 @@
 
 <script type="text/babel">
 const { useState, useCallback, useMemo, useRef, useEffect } = React;
+
+// ─── AUTH HELPERS
+async function sha256hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function getSession() {
+  try { return JSON.parse(localStorage.getItem('ammega_session')); } catch { return null; }
+}
+function saveSession(u) { localStorage.setItem('ammega_session', JSON.stringify(u)); }
+function clearSession() { localStorage.removeItem('ammega_session'); }
+
+// ─── LOGIN SCREEN
+function LoginScreen({ onLogin }) {
+  const [user, setUser] = useState('');
+  const [pass, setPass] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!user.trim() || !pass.trim()) { setError('Ingresa usuario y contraseña'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('access_config.json');
+      const cfg = await res.json();
+      const hash = await sha256hex(pass.trim());
+      const found = cfg.users.find(u2 => u2.user.toLowerCase() === user.toLowerCase().trim() && u2.passHash === hash);
+      if (found) {
+        const session = { user: found.user, role: found.role, nombre: found.nombre || found.user };
+        saveSession(session);
+        onLogin(session);
+      } else {
+        setError('Usuario o contraseña incorrectos');
+      }
+    } catch {
+      setError('Error al conectar. Intenta de nuevo.');
+    }
+    setLoading(false);
+  };
+
+  const onKey = (e) => { if (e.key === 'Enter') handleLogin(); };
+
+  return (
+    <div className="screen login-screen">
+      <div className="login-header">
+        <AmmegaLogo height={38} />
+        <div className="login-title">Cotizador B2B</div>
+        <div className="login-sub">Acceso exclusivo para distribuidores autorizados</div>
+      </div>
+      <div className="login-body">
+        <div className="login-field">
+          <label className="login-label">Usuario</label>
+          <input className="login-input" placeholder="Tu nombre de usuario" value={user}
+            onChange={e => setUser(e.target.value)} onKeyDown={onKey}
+            autoCapitalize="none" autoCorrect="off" autoComplete="username" />
+        </div>
+        <div className="login-field">
+          <label className="login-label">Contraseña</label>
+          <input className="login-input" type="password" placeholder="••••••••" value={pass}
+            onChange={e => setPass(e.target.value)} onKeyDown={onKey} autoComplete="current-password" />
+        </div>
+        {error && <div className="login-error">{error}</div>}
+        <button className="btn-primary login-btn" onClick={handleLogin} disabled={loading}>
+          {loading ? 'Verificando…' : 'Ingresar →'}
+        </button>
+      </div>
+      <div className="login-footer">
+        ¿Problemas de acceso?<br/>Contacta a tu administrador Ammega.
+      </div>
+    </div>
+  );
+}
 
 // ─── Logo SVG (teal AM/MEGA wordmark)
 function AmmegaLogo({ height = 24 }) {
@@ -399,19 +494,29 @@ const calcItemPrecio = (item) => {
 };
 
 // ─── HOME SCREEN
-function HomeScreen({ onNav, cart, onSearch }) {
+function HomeScreen({ onNav, cart, onSearch, session, onLogout }) {
   const totalItems = cart.reduce((s, i) => s + i.qty, 0);
+  const initials = (session?.nombre || session?.user || '?').slice(0, 2).toUpperCase();
   return (
     <div className="screen">
       <div className="topbar">
         <AmmegaLogo height={28} />
         <div className="topbar-spacer" />
+        {session?.role === 'admin' && (
+          <button className="topbar-admin-btn" onClick={() => window.location.href = 'admin.html'}>
+            ⚙️ Admin
+          </button>
+        )}
         <div style={{ position: 'relative' }}>
           <button className="topbar-btn" onClick={() => onNav('backorders')}>🔔</button>
           {window.BACKORDERS.filter(b => b.status === 'en_camino').length > 0 && <div className="notif-dot" />}
         </div>
         <button className="topbar-btn" onClick={() => onNav('cart')}>
           🛒{totalItems > 0 && <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', background: '#dc2626', borderRadius: '50%', minWidth: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginLeft: -4, marginTop: -10, position: 'absolute', right: 4, top: 4, padding: '0 3px' }}>{totalItems}</span>}
+        </button>
+        <button className="topbar-user" onClick={onLogout} title={`${session?.nombre || session?.user} — Cerrar sesión`}>
+          <div className="topbar-avatar">{initials}</div>
+          <span className="topbar-uname">{session?.nombre?.split(' ')[0] || session?.user}</span>
         </button>
       </div>
 
@@ -1154,12 +1259,16 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 }/*EDITMODE-END*/;
 
 function App() {
+  const [session, setSession] = useState(getSession);
   const [screen, setScreen] = useState('home');
   const [prevScreen, setPrevScreen] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [cart, setCart] = useState([]);
   const [quoteData, setQuoteData] = useState(null);
   const [tweaks, setTweak] = window.useTweaks(TWEAK_DEFAULTS);
+
+  const handleLogin = (s) => setSession(s);
+  const handleLogout = () => { clearSession(); setSession(null); setScreen('home'); setCart([]); };
 
   const navigate = useCallback((to, data = null) => {
     setPrevScreen(screen);
@@ -1199,8 +1308,9 @@ function App() {
   }, []);
 
   const renderScreen = () => {
+    if (!session) return <LoginScreen onLogin={handleLogin} />;
     switch (screen) {
-      case 'home': return <HomeScreen onNav={navigate} cart={cart} />;
+      case 'home': return <HomeScreen onNav={navigate} cart={cart} session={session} onLogout={handleLogout} />;
       case 'catalog': return <CatalogScreen onBack={() => setScreen('home')} onProduct={(p, dest) => dest ? setScreen(dest) : navigate('detail', p)} onAddToCart={addToCart} cart={cart} />;
       case 'detail': return selectedProduct ? <DetailScreen product={selectedProduct} onBack={goBack} onAddToCart={(p, qty, ancho, anchoUnidad) => { addToCart(p, qty, ancho, anchoUnidad); goBack(); }} /> : null;
       case 'cart': return <CartScreen cart={cart} onBack={() => setScreen('home')} onRemove={removeFromCart} onChangeQty={changeQty} onGenerate={generatePdf} />;
