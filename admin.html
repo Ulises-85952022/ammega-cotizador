@@ -161,12 +161,25 @@ function ghToken() { return localStorage.getItem('ammega_gh_token') || ''; }
 function saveGhToken(t) { localStorage.setItem('ammega_gh_token', t); }
 
 async function ghGetFile(token) {
-  const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
-    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
-  });
+  const headers = { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' };
+
+  // Obtener metadata (SHA y tamaño)
+  const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, { headers });
   if (!r.ok) { const e = await r.json(); throw new Error(e.message || `GitHub ${r.status}`); }
   const info = await r.json();
-  const content = decodeURIComponent(escape(atob(info.content.replace(/\n/g,''))));
+
+  // Archivos >1MB no traen content en la API de Contents — usar Blobs API
+  let content;
+  if (!info.content || info.content.trim() === '') {
+    const blobR = await fetch(`https://api.github.com/repos/${GH_REPO}/git/blobs/${info.sha}`, {
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3.raw' }
+    });
+    if (!blobR.ok) throw new Error(`Error descargando blob grande: ${blobR.status}`);
+    content = await blobR.text();
+  } else {
+    content = decodeURIComponent(escape(atob(info.content.replace(/\n/g, ''))));
+  }
+
   return { sha: info.sha, content };
 }
 
@@ -280,13 +293,11 @@ function applyPrecios(catalog, rows) {
 }
 
 function serializeCatalog(cat) {
-  const s = obj => JSON.stringify(obj, null, 2);
+  const s = obj => JSON.stringify(obj);
   return `// Catálogo actualizado desde panel admin — ${new Date().toISOString()}
-window.CATALOG = ${s(cat.CATALOG)};
-
-window.BACKORDERS = ${s(cat.BACKORDERS)};
-
-window.EQUIVALENCIAS = ${s(cat.EQUIVALENCIAS)};
+window.CATALOG=${s(cat.CATALOG)};
+window.BACKORDERS=${s(cat.BACKORDERS)};
+window.EQUIVALENCIAS=${s(cat.EQUIVALENCIAS)};
 `;
 }
 
