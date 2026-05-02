@@ -541,9 +541,11 @@ function EmpresasSection({ empresas, setEmpresas, usuarios, bos }) {
 
   const openEdit = e => { setForm({...e}); setEditing(true); };
   const saveEdit = () => { setEmpresas(prev => prev.map(e => e.id===form.id ? form : e)); setSelected(form); setEditing(false); };
-  const F = ({ label, field, type='text' }) => (
-    <div><label className="field-label">{label}</label>
-      <input className="field-input" type={type} value={form[field]||''} onChange={e => setForm(f=>({...f,[field]:e.target.value}))} /></div>
+  const fld = (label, field, type='text') => (
+    <div key={field}>
+      <label className="field-label">{label}</label>
+      <input className="field-input" type={type} value={form[field]||''} onChange={e => { const v=e.target.value; setForm(f=>({...f,[field]:v})); }} />
+    </div>
   );
 
   const empUsers = selected ? usuarios.filter(u=>u.empresa===selected.id) : [];
@@ -627,7 +629,7 @@ function EmpresasSection({ empresas, setEmpresas, usuarios, bos }) {
                         <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files[0]; if(f){const u=URL.createObjectURL(f); setForm(ff=>({...ff,logo:u}));} }} />
                       </div>
                     </div>
-                    <div className="form-grid form-grid-2"><F label="Nombre empresa" field="nombre" /><F label="RFC" field="rfc" /><F label="Email" field="email" type="email" /><F label="Teléfono" field="tel" /><F label="Ciudad" field="ciudad" /><F label="Dirección" field="direccion" /></div>
+                    <div className="form-grid form-grid-2">{fld('Nombre empresa','nombre')}{fld('RFC','rfc')}{fld('Email','email','email')}{fld('Teléfono','tel')}{fld('Ciudad','ciudad')}{fld('Dirección','direccion')}</div>
                     <div className="form-grid form-grid-2">
                       {[['Color principal','color'],['Color secundario','colorSec']].map(([l,f])=>(
                         <div key={f}><label className="field-label">{l}</label>
@@ -734,9 +736,9 @@ function UsuariosSection({ usuarios, setUsuarios, empresas }) {
   const statusColor = { activo:'badge-green', inactivo:'badge-gray', pendiente:'badge-amber', cancelado:'badge-red' };
   const statusLabel = { activo:'● Activo', inactivo:'○ Inactivo', pendiente:'⏳ Pendiente', cancelado:'✕ Cancelado' };
 
-  const PermToggle = ({ field, label }) => (
-    <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'7px 0',borderBottom:'1px solid var(--gray-100)'}}>
-      <label className="toggle"><input type="checkbox" checked={!!form.permisos?.[field]} onChange={e=>setForm(f=>({...f,permisos:{...f.permisos,[field]:e.target.checked}}))} /><span className="toggle-slider"/></label>
+  const permToggle = (field, label) => (
+    <label key={field} style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'7px 0',borderBottom:'1px solid var(--gray-100)'}}>
+      <label className="toggle"><input type="checkbox" checked={!!form.permisos?.[field]} onChange={e=>{ const v=e.target.checked; setForm(f=>({...f,permisos:{...f.permisos,[field]:v}})); }} /><span className="toggle-slider"/></label>
       <span style={{fontSize:13,color:'var(--gray-700)'}}>{label}</span>
     </label>
   );
@@ -828,11 +830,11 @@ function UsuariosSection({ usuarios, setUsuarios, empresas }) {
                 </div>
                 <div>
                   <div style={{fontSize:12,fontWeight:700,color:'var(--gray-700)',marginBottom:10}}>Permisos específicos</div>
-                  <PermToggle field="catalogo" label="Ver catálogo de productos" />
-                  <PermToggle field="cotizar" label="Generar cotizaciones" />
-                  <PermToggle field="backorders" label="Solicitar back-orders" />
-                  <PermToggle field="equivalencias" label="Ver equivalencias de competidores" />
-                  <PermToggle field="adminPrecios" label="Ver precio de lista (costo)" />
+                  {permToggle('catalogo','Ver catálogo de productos')}
+                  {permToggle('cotizar','Generar cotizaciones')}
+                  {permToggle('backorders','Solicitar back-orders')}
+                  {permToggle('equivalencias','Ver equivalencias de competidores')}
+                  {permToggle('adminPrecios','Ver precio de lista (costo)')}
                   {!editUser && (
                     <div style={{background:'var(--teal-light)',borderRadius:8,padding:'10px 12px',fontSize:12,color:'var(--teal-dark)',marginTop:14,display:'flex',gap:8}}>
                       <span>🔗</span><div>Se generará un link de acceso único válido 7 días. No requiere contraseña.</div>
