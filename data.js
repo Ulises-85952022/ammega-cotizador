@@ -1,4 +1,4 @@
-// Catálogo actualizado desde panel admin — 2026-05-02T00:56:34.800Z
+// Catálogo actualizado desde panel admin — 2026-05-02T00:59:40.525Z
 window.CATALOG = {
   "bandas": [
     {
