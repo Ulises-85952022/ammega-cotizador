@@ -199,7 +199,7 @@ function parseXlsxFile(file) {
 function detectTipo(rows) {
   if (!rows.length) return 'unknown';
   const cols = Object.keys(rows[0]).map(c => String(c).toUpperCase());
-  if (cols.some(c => c.includes('LISTA') || c.includes('BINASA') || c.includes('COSTO'))) return 'precios';
+  if (cols.some(c => c.includes('LISTA') || c.includes('BINASA') || c.includes('COSTO') || c.includes('PRICE'))) return 'precios';
   if (cols.some(c => c.includes('DISPONIBLE') || c.includes('EXISTENCIA') || c.includes('STOCK'))) return 'inventario';
   return 'unknown';
 }
@@ -228,23 +228,55 @@ function applyInventario(catalog, rows) {
 }
 
 function applyPrecios(catalog, rows) {
-  const map = {};
-  for (const row of rows) {
-    const sku = String(colVal(row,'ITEM','ARTICULO','CODIGO','CODE','SKU') || '').trim();
-    const lista  = parseFloat(colVal(row,'LISTA','PRICE','PRECIO L') || 0) || null;
-    const binasa = parseFloat(colVal(row,'BINASA','COSTO','COST','PRECIO B') || 0) || null;
-    if (sku && (lista || binasa)) map[sku] = { lista, binasa };
-  }
-  let updated = 0;
-  const upd = arr => arr.map(p => {
-    if (map[p.id]) {
-      updated++;
-      const { lista, binasa } = map[p.id];
-      return { ...p, ...(lista ? { precioLista: lista } : {}), ...(binasa ? { precioBinasa: binasa } : {}) };
-    }
-    return p;
+  // Construir mapa de stock del catálogo actual para preservarlo
+  const stockMap = {};
+  [...(catalog.bandas||[]), ...(catalog.mangueras||[])].forEach(p => { stockMap[p.id] = p.stock || 0; });
+
+  // Construir mapa de campos especiales (bandas métricas, etc.)
+  const extraMap = {};
+  [...(catalog.bandas||[]), ...(catalog.mangueras||[])].forEach(p => {
+    const extra = {};
+    if (p.esBandaMetrica) extra.esBandaMetrica = true;
+    if (p.paso) extra.paso = p.paso;
+    if (p.longitud) extra.longitud = p.longitud;
+    if (p.anchoOpciones) extra.anchoOpciones = p.anchoOpciones;
+    if (Object.keys(extra).length) extraMap[p.id] = extra;
   });
-  return { catalog: { ...catalog, bandas: upd(catalog.bandas), mangueras: upd(catalog.mangueras) }, updated };
+
+  const bandas = [], mangueras = [];
+
+  for (const row of rows) {
+    const id = String(colVal(row,'ITEM','ARTICULO','CODIGO','CODE','SKU','CLAVE') || '').trim();
+    if (!id || id === 'undefined') continue;
+
+    const desc       = String(colVal(row,'DESCRIPTION','DESCRIPCION','DESC','NOMBRE') || '').trim();
+    const grupo      = String(colVal(row,'GRUPO','GROUP','CLASE','CLASS','FAMILIA','LINEA') || '').trim();
+    const precioLista  = parseFloat(String(colVal(row,'LISTA','P.LISTA','PRICE','PRECIO L','PRECIO_LISTA') || '0').replace(/[,$]/g,'')) || 0;
+    const precioBinasa = parseFloat(String(colVal(row,'BINASA','P.BINASA','COSTO','COST','PRECIO B','PRECIO_BINASA','NETO') || '0').replace(/[,$]/g,'')) || 0;
+    const unidad     = String(colVal(row,'UNIDAD','UNIT','UM','U.M.') || 'pz').trim().toLowerCase() || 'pz';
+    const marca      = String(colVal(row,'MARCA','BRAND','FABRICANTE') || 'Megadyne').trim();
+
+    if (!precioLista && !precioBinasa) continue;
+
+    const product = {
+      id, desc,
+      grupo: grupo.toUpperCase() || 'GENERAL',
+      categoria: grupo.toUpperCase() || 'GENERAL',
+      precioLista, precioBinasa,
+      stock: stockMap[id] || 0,
+      unidad, marca,
+      ...(extraMap[id] || {})
+    };
+
+    const grupoU = grupo.toUpperCase();
+    const descU  = desc.toUpperCase();
+    const esManguera = grupoU.includes('MANG') || descU.startsWith('MANG') || grupoU.includes('HIDRA') || grupoU.includes('CONEXION') || grupoU.includes('FITTING');
+    if (esManguera) mangueras.push(product);
+    else bandas.push(product);
+  }
+
+  const updated = bandas.length + mangueras.length;
+  return { catalog: { ...catalog, bandas, mangueras }, updated };
 }
 
 function serializeCatalog(cat) {
