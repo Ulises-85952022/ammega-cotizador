@@ -16,6 +16,7 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -151,6 +152,121 @@ const { useState, useRef, useEffect, useCallback } = React;
 /* ── helpers ─────────────────────────────────────────── */
 const fmt = n => `$${Number(n).toLocaleString('es-MX',{minimumFractionDigits:0})}`;
 const today = () => new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'});
+
+/* ── GitHub API helpers ───────────────────────────────── */
+const GH_REPO = 'Ulises-85952022/ammega-cotizador';
+const GH_FILE = 'data.js';
+
+function ghToken() { return localStorage.getItem('ammega_gh_token') || ''; }
+function saveGhToken(t) { localStorage.setItem('ammega_gh_token', t); }
+
+async function ghGetFile(token) {
+  const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
+    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+  });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.message || `GitHub ${r.status}`); }
+  const info = await r.json();
+  const content = decodeURIComponent(escape(atob(info.content.replace(/\n/g,''))));
+  return { sha: info.sha, content };
+}
+
+async function ghPushFile(token, content, sha, message) {
+  const encoded = btoa(unescape(encodeURIComponent(content)));
+  const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
+    method: 'PUT',
+    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, content: encoded, sha })
+  });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.message || `GitHub ${r.status}`); }
+  return r.json();
+}
+
+function parseXlsxFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        resolve(XLSX.utils.sheet_to_json(ws, { defval: '' }));
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function detectTipo(rows) {
+  if (!rows.length) return 'unknown';
+  const cols = Object.keys(rows[0]).map(c => String(c).toUpperCase());
+  if (cols.some(c => c.includes('LISTA') || c.includes('BINASA') || c.includes('COSTO'))) return 'precios';
+  if (cols.some(c => c.includes('DISPONIBLE') || c.includes('EXISTENCIA') || c.includes('STOCK'))) return 'inventario';
+  return 'unknown';
+}
+
+function colVal(row, ...terms) {
+  for (const [k, v] of Object.entries(row)) {
+    const ku = String(k).toUpperCase();
+    if (terms.some(t => ku.includes(t))) return v;
+  }
+  return null;
+}
+
+function applyInventario(catalog, rows) {
+  const map = {};
+  for (const row of rows) {
+    const sku = String(colVal(row,'ARTICULO','CODIGO','CODE','ITEM') || '').trim();
+    const stock = parseFloat(colVal(row,'DISPONIBLE','EXISTENCIA','STOCK','QTY') || 0) || 0;
+    if (sku) map[sku] = (map[sku] || 0) + stock;
+  }
+  let updated = 0;
+  const upd = arr => arr.map(p => {
+    if (map.hasOwnProperty(p.id)) { updated++; return { ...p, stock: Math.round(map[p.id]) }; }
+    return p;
+  });
+  return { catalog: { ...catalog, bandas: upd(catalog.bandas), mangueras: upd(catalog.mangueras) }, updated };
+}
+
+function applyPrecios(catalog, rows) {
+  const map = {};
+  for (const row of rows) {
+    const sku = String(colVal(row,'ITEM','ARTICULO','CODIGO','CODE','SKU') || '').trim();
+    const lista  = parseFloat(colVal(row,'LISTA','PRICE','PRECIO L') || 0) || null;
+    const binasa = parseFloat(colVal(row,'BINASA','COSTO','COST','PRECIO B') || 0) || null;
+    if (sku && (lista || binasa)) map[sku] = { lista, binasa };
+  }
+  let updated = 0;
+  const upd = arr => arr.map(p => {
+    if (map[p.id]) {
+      updated++;
+      const { lista, binasa } = map[p.id];
+      return { ...p, ...(lista ? { precioLista: lista } : {}), ...(binasa ? { precioBinasa: binasa } : {}) };
+    }
+    return p;
+  });
+  return { catalog: { ...catalog, bandas: upd(catalog.bandas), mangueras: upd(catalog.mangueras) }, updated };
+}
+
+function serializeCatalog(cat) {
+  const s = obj => JSON.stringify(obj, null, 2);
+  return `// Catálogo actualizado desde panel admin — ${new Date().toISOString()}
+window.CATALOG = ${s(cat.CATALOG)};
+
+window.BACKORDERS = ${s(cat.BACKORDERS)};
+
+window.EQUIVALENCIAS = ${s(cat.EQUIVALENCIAS)};
+`;
+}
+
+function parseCatalogFromJs(jsContent) {
+  const fake = {};
+  try {
+    const fn = new Function('window', jsContent);
+    fn(fake);
+  } catch(e) { throw new Error('No se pudo parsear data.js: ' + e.message); }
+  if (!fake.CATALOG) throw new Error('data.js no tiene window.CATALOG');
+  return fake;
+}
 
 /* ── seed data ────────────────────────────────────────── */
 const INIT_EMPRESAS = [
@@ -692,49 +808,179 @@ function UsuariosSection({ usuarios, setUsuarios, empresas }) {
 
 /* ── Catálogo CSV ─────────────────────────────────────── */
 function CatalogoSection({ uploads, setUploads }) {
-  const [dragging,setDragging]=useState(false);
-  const [uploading,setUploading]=useState(false);
-  const [progress,setProgress]=useState(0);
-  const fileRef=useRef();
-  const sim=()=>{ setUploading(true);setProgress(0); const iv=setInterval(()=>setProgress(p=>{if(p>=100){clearInterval(iv);setUploading(false);return 100;}return p+Math.random()*18;}),200); };
+  const [dragging, setDragging] = useState(false);
+  const [status, setStatus]     = useState(null); // null | {phase,pct,msg} | {ok,updated,tipo,nombre} | {err}
+  const [token, setToken]       = useState(ghToken());
+  const [showToken, setShowToken] = useState(!ghToken());
+  const fileRef = useRef();
+
+  const saveToken = () => { saveGhToken(token); setShowToken(false); };
+
+  const processFile = async (file) => {
+    if (!ghToken() && !token) { setShowToken(true); return; }
+    const tok = token || ghToken();
+    try {
+      setStatus({ phase: 'leyendo', pct: 10, msg: 'Leyendo archivo Excel…' });
+      const rows = await parseXlsxFile(file);
+      if (!rows.length) throw new Error('El archivo está vacío o no tiene datos.');
+
+      const tipo = detectTipo(rows);
+      if (tipo === 'unknown') throw new Error('No se reconocen las columnas. Revisa el formato requerido.');
+
+      setStatus({ phase: 'descargando', pct: 35, msg: 'Descargando catálogo actual desde GitHub…' });
+      const { sha, content } = await ghGetFile(tok);
+
+      setStatus({ phase: 'procesando', pct: 60, msg: `Aplicando ${tipo === 'precios' ? 'lista de precios' : 'inventario'}…` });
+      const cat = parseCatalogFromJs(content);
+      const { catalog: newCat, updated } = tipo === 'precios'
+        ? applyPrecios(cat.CATALOG, rows)
+        : applyInventario(cat.CATALOG, rows);
+
+      if (updated === 0) throw new Error('No se encontraron SKUs coincidentes. Verifica que los códigos del Excel coincidan con el catálogo.');
+
+      setStatus({ phase: 'subiendo', pct: 80, msg: `Subiendo ${updated} productos actualizados a GitHub…` });
+      const newContent = serializeCatalog({ ...cat, CATALOG: newCat });
+      const fechaStr = new Date().toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' });
+      await ghPushFile(tok, newContent, sha, `admin: actualizar ${tipo} — ${file.name} (${updated} registros) ${fechaStr}`);
+
+      const entry = { id: Date.now(), nombre: file.name, tipo, fecha: fechaStr, registros: updated, empresa: 'todos', status: 'activo' };
+      setUploads(p => [entry, ...p.slice(0,9)]);
+      setStatus({ ok: true, updated, tipo, nombre: file.name });
+    } catch(e) {
+      setStatus({ err: e.message });
+    }
+  };
+
+  const onDrop = (e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) processFile(f); };
+  const onChange = (e) => { const f = e.target.files[0]; if (f) { processFile(f); e.target.value=''; } };
+
+  const isLoading = status && status.phase;
+
   return (
     <div className="content">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 360px',gap:22}}>
-        <div style={{display:'flex',flexDirection:'column',gap:20}}>
-          <div className="card">
-            <div className="card-header"><div><div className="card-title">Subir archivo CSV / Excel</div><div className="card-sub">Precios o inventario · xlsx, csv · máx 10MB</div></div></div>
-            <div className="card-body">
-              <div className={`upload-zone ${dragging?'dragover':''}`} onDragOver={e=>{e.preventDefault();setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={e=>{e.preventDefault();setDragging(false);sim();}} onClick={()=>fileRef.current?.click()}>
-                <div style={{fontSize:38,marginBottom:8}}>📂</div>
-                <div style={{fontSize:15,fontWeight:600,color:'var(--gray-700)',marginBottom:4}}>Arrastra tu archivo aquí</div>
-                <div style={{fontSize:13,color:'var(--gray-400)',marginBottom:12}}>o haz clic para seleccionar</div>
-                <button className="btn-secondary-web" style={{margin:'0 auto'}}>Seleccionar archivo</button>
-                <input ref={fileRef} type="file" accept=".xlsx,.csv" style={{display:'none'}} onChange={sim} />
-              </div>
-              {uploading && <div style={{marginTop:14}}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}><span style={{fontSize:13,color:'var(--gray-700)',fontWeight:500}}>Procesando…</span><span style={{fontSize:13,fontWeight:700,color:'var(--teal)'}}>{Math.min(100,Math.round(progress))}%</span></div>
-                <div style={{height:8,background:'var(--gray-200)',borderRadius:4,overflow:'hidden'}}><div style={{height:'100%',width:`${Math.min(100,progress)}%`,background:'var(--teal)',borderRadius:4,transition:'width .2s'}} /></div>
-                <div style={{fontSize:12,color:'var(--gray-400)',marginTop:5}}>Validando columnas · Verificando SKUs · Actualizando precios…</div>
-              </div>}
+      {/* Token config */}
+      {showToken && (
+        <div className="card" style={{marginBottom:20,borderLeft:'4px solid var(--amber)'}}>
+          <div className="card-body">
+            <div style={{fontWeight:700,fontSize:14,marginBottom:6}}>🔑 Configurar token de GitHub</div>
+            <div style={{fontSize:13,color:'var(--gray-500)',marginBottom:12}}>
+              Necesitas un <strong>Personal Access Token</strong> de GitHub con permiso <code>contents:write</code> en el repositorio.<br/>
+              Créalo en: <strong>github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens</strong>
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <input
+                type="password"
+                placeholder="github_pat_xxxx…"
+                value={token}
+                onChange={e=>setToken(e.target.value)}
+                onKeyDown={e=>e.key==='Enter'&&saveToken()}
+                style={{flex:1,border:'1.5px solid var(--gray-200)',borderRadius:8,padding:'9px 12px',fontSize:13,fontFamily:'var(--mono)'}}
+              />
+              <button className="btn-primary-web" onClick={saveToken} disabled={!token.trim()}>Guardar</button>
+              {ghToken() && <button className="btn-secondary-web" onClick={()=>setShowToken(false)}>Cancelar</button>}
             </div>
           </div>
-          <div className="card">
-            <div className="card-header"><div className="card-title">Archivos activos</div></div>
-            <table className="data-table">
-              <thead><tr><th>Archivo</th><th>Tipo</th><th>Empresa</th><th>Registros</th><th>Fecha</th><th></th></tr></thead>
-              <tbody>{uploads.map(u=>(
-                <tr key={u.id}>
-                  <td><div style={{display:'flex',alignItems:'center',gap:8}}><span style={{fontSize:18}}>📊</span><div style={{fontSize:12,fontWeight:600}}>{u.nombre}</div></div></td>
-                  <td><span className={`badge ${u.tipo==='precios'?'badge-purple':'badge-blue'}`}>{u.tipo==='precios'?'💰 Precios':'📦 Inventario'}</span></td>
-                  <td style={{fontSize:12}}>{u.empresa}</td>
-                  <td style={{fontWeight:600,fontFamily:'var(--mono)',fontSize:12}}>{u.registros.toLocaleString()}</td>
-                  <td style={{fontSize:12,color:'var(--gray-400)'}}>{u.fecha}</td>
-                  <td><button style={{fontSize:11,padding:'4px 8px',border:'1px solid var(--gray-200)',borderRadius:6,background:'#fff',cursor:'pointer',color:'var(--red)',fontFamily:'var(--font)'}} onClick={()=>setUploads(p=>p.filter(x=>x.id!==u.id))}>Eliminar</button></td>
-                </tr>
-              ))}</tbody>
-            </table>
-          </div>
         </div>
+      )}
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 340px',gap:22}}>
+        <div style={{display:'flex',flexDirection:'column',gap:20}}>
+
+          {/* Upload card */}
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <div className="card-title">Subir archivo Excel / CSV</div>
+                <div className="card-sub">Precios o inventario · xlsx, csv · actualiza el catálogo en vivo</div>
+              </div>
+              {ghToken() && (
+                <button className="btn-secondary-web" style={{marginLeft:'auto'}} onClick={()=>setShowToken(true)}>🔑 Token</button>
+              )}
+            </div>
+            <div className="card-body">
+              <div
+                className={`upload-zone ${dragging?'dragover':''} ${isLoading?'disabled':''}`}
+                onDragOver={e=>{e.preventDefault();setDragging(true);}}
+                onDragLeave={()=>setDragging(false)}
+                onDrop={onDrop}
+                onClick={()=>!isLoading&&fileRef.current?.click()}
+                style={{cursor:isLoading?'not-allowed':'pointer',opacity:isLoading?.5:1}}
+              >
+                <div style={{fontSize:38,marginBottom:8}}>{isLoading?'⏳':'📂'}</div>
+                <div style={{fontSize:15,fontWeight:600,color:'var(--gray-700)',marginBottom:4}}>
+                  {isLoading?'Procesando…':'Arrastra tu archivo aquí'}
+                </div>
+                <div style={{fontSize:13,color:'var(--gray-400)',marginBottom:12}}>
+                  {isLoading?status.msg:'o haz clic para seleccionar'}
+                </div>
+                {!isLoading && <button className="btn-secondary-web" style={{margin:'0 auto'}}>Seleccionar archivo</button>}
+                <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={onChange} />
+              </div>
+
+              {/* Progress bar */}
+              {isLoading && (
+                <div style={{marginTop:14}}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
+                    <span style={{fontSize:13,color:'var(--gray-700)',fontWeight:500}}>{status.msg}</span>
+                    <span style={{fontSize:13,fontWeight:700,color:'var(--teal)'}}>{status.pct}%</span>
+                  </div>
+                  <div style={{height:8,background:'var(--gray-200)',borderRadius:4,overflow:'hidden'}}>
+                    <div style={{height:'100%',width:`${status.pct}%`,background:'var(--teal)',borderRadius:4,transition:'width .4s'}} />
+                  </div>
+                </div>
+              )}
+
+              {/* Success */}
+              {status?.ok && (
+                <div style={{marginTop:14,background:'var(--green-light)',borderRadius:10,padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
+                  <span style={{fontSize:24}}>✅</span>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:14,color:'#15803d'}}>¡Catálogo actualizado!</div>
+                    <div style={{fontSize:13,color:'#166534',marginTop:2}}>
+                      <strong>{status.updated}</strong> productos de {status.tipo === 'precios' ? 'precios' : 'inventario'} actualizados · <em>{status.nombre}</em>
+                    </div>
+                    <div style={{fontSize:12,color:'#166534',marginTop:4}}>Vercel redesplegará en ~1 minuto. El cotizador ya tendrá los datos nuevos.</div>
+                  </div>
+                  <button style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',fontSize:18,color:'#15803d'}} onClick={()=>setStatus(null)}>✕</button>
+                </div>
+              )}
+
+              {/* Error */}
+              {status?.err && (
+                <div style={{marginTop:14,background:'var(--red-light)',borderRadius:10,padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
+                  <span style={{fontSize:24}}>❌</span>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:14,color:'var(--red)'}}>Error al procesar</div>
+                    <div style={{fontSize:13,color:'var(--red)',marginTop:2}}>{status.err}</div>
+                    {status.err.includes('token') || status.err.includes('401') || status.err.includes('403') ? (
+                      <button style={{marginTop:6,fontSize:12,color:'var(--teal)',background:'none',border:'none',cursor:'pointer',padding:0,textDecoration:'underline'}} onClick={()=>{setShowToken(true);setStatus(null);}}>Configurar token</button>
+                    ) : null}
+                  </div>
+                  <button style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',fontSize:18,color:'var(--red)'}} onClick={()=>setStatus(null)}>✕</button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Historial */}
+          {uploads.length > 0 && (
+            <div className="card">
+              <div className="card-header"><div className="card-title">Historial de actualizaciones</div></div>
+              <table className="data-table">
+                <thead><tr><th>Archivo</th><th>Tipo</th><th>Registros</th><th>Fecha</th></tr></thead>
+                <tbody>{uploads.map(u=>(
+                  <tr key={u.id}>
+                    <td><div style={{display:'flex',alignItems:'center',gap:8}}><span style={{fontSize:16}}>📊</span><div style={{fontSize:12,fontWeight:600}}>{u.nombre}</div></div></td>
+                    <td><span className={`badge ${u.tipo==='precios'?'badge-purple':'badge-blue'}`}>{u.tipo==='precios'?'💰 Precios':'📦 Inventario'}</span></td>
+                    <td style={{fontWeight:600,fontFamily:'var(--mono)',fontSize:12}}>{u.registros.toLocaleString()}</td>
+                    <td style={{fontSize:12,color:'var(--gray-400)'}}>{u.fecha}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
         {/* Formato */}
         <div className="card" style={{height:'fit-content'}}>
           <div className="card-header"><div className="card-title">Formato requerido</div></div>
@@ -752,6 +998,9 @@ function CatalogoSection({ uploads, setUploads }) {
                 </div>
               </div>
             ))}
+            <div style={{background:'var(--amber-light)',borderRadius:8,padding:'10px 12px',fontSize:12,color:'var(--amber)',marginTop:4}}>
+              ⚠️ La columna de código (Item/Articulo) debe coincidir exactamente con los SKUs del catálogo.
+            </div>
           </div>
         </div>
       </div>
