@@ -3,222 +3,1091 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Cotizador — Jason de Mexico</title>
+<title>Cotizador Ammega — B2B</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="data.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  background:#EAECEE;
-  font-family:'Inter',system-ui,sans-serif;
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  padding:20px 16px;
-  gap:0;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #fafaf8;
+  --surface: #ffffff;
+  --surface-2: #f3f3f0;
+  --border: oklch(92% 0.005 180);
+  --text: oklch(18% 0.008 200);
+  --text-mute: oklch(50% 0.012 200);
+  --accent: oklch(46% 0.08 195);
+  --accent-fg: #ffffff;
+  --accent-soft: oklch(95% 0.025 195);
+  --accent-glow: oklch(46% 0.08 195 / 0.12);
+  --accent-shadow: oklch(46% 0.08 195 / 0.4);
+  --accent-2: oklch(54% 0.14 50);
+  --accent-2-soft: oklch(96% 0.025 50);
+  --ok-bg: oklch(94% 0.04 155);
+  --ok-fg: oklch(42% 0.12 155);
+  --warn-bg: oklch(94% 0.05 75);
+  --warn-fg: oklch(48% 0.14 60);
+  --err-bg: oklch(94% 0.04 25);
+  --err-fg: oklch(48% 0.18 25);
+  --font: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
-@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-.wrap{width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px;animation:fadeUp .4s ease}
+@keyframes slideInRight { from { opacity:0; transform:translateX(12px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideInLeft  { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideUpFade  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes popIn        { 0%{transform:scale(.5)} 70%{transform:scale(1.08)} 100%{transform:scale(1)} }
+@keyframes spin         { to { transform:rotate(360deg); } }
+@keyframes fadeUp       { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 
-/* ── Logo Card ── */
-.logo-card{
-  background:#005762;
-  border-radius:16px;
-  padding:28px 24px 24px;
-  text-align:center;
-  position:relative;
-  overflow:hidden;
-}
-.logo-card::before{
-  content:'';position:absolute;top:-40px;right:-40px;
-  width:140px;height:140px;border-radius:50%;
-  background:rgba(255,255,255,.04);
-}
-.logo-card::after{
-  content:'';position:absolute;bottom:-30px;left:-30px;
-  width:100px;height:100px;border-radius:50%;
-  background:rgba(255,255,255,.03);
-}
-.logo-img{height:56px;max-width:220px;object-fit:contain;margin-bottom:10px}
-.logo-text-main{
-  font-size:26px;font-weight:900;color:#fff;
-  letter-spacing:2px;line-height:1;
-  font-family:'Inter',sans-serif;
-}
-.logo-text-main span{font-size:13px;font-weight:600;letter-spacing:4px;opacity:.7;display:block}
-.logo-subtitle{
-  font-size:10px;font-weight:700;color:rgba(230,252,255,.6);
-  letter-spacing:3px;text-transform:uppercase;margin-top:8px;
-}
+html, body { height:100%; overflow:hidden; background:#0d1f1f; font-family:var(--font); -webkit-font-smoothing:antialiased; }
+#root { height:100%; display:flex; align-items:center; justify-content:center; }
 
-/* ── Selector Cards ── */
-.selector-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.sel-card{
-  background:#fff;
-  border-radius:14px;
-  padding:22px 16px;
-  text-align:center;
-  cursor:pointer;
-  border:2px solid transparent;
-  transition:border-color .15s, transform .12s, box-shadow .15s;
-  box-shadow:0 1px 4px rgba(0,0,0,.06);
-  text-decoration:none;
-  display:block;
+.app-bg {
+  width:100vw; height:100vh; height:100dvh;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at 30% 20%, oklch(20% 0.04 195) 0%, #0d1f1f 60%);
+  position:relative; overflow:hidden;
 }
-.sel-card:hover{border-color:#005762;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,87,98,.12)}
-.sel-card:active{transform:translateY(0)}
-.sel-icon{font-size:28px;margin-bottom:8px;display:block}
-.sel-label{font-size:15px;font-weight:800;color:#111;letter-spacing:.3px}
-
-/* ── Bottom nav ── */
-.bottom-nav{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:10px 14px;
-  background:#fff;border-radius:12px;
-  box-shadow:0 1px 4px rgba(0,0,0,.06);
-  font-size:12px;
+.app-bg::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 70% 80%, oklch(46% 0.08 195 / 0.08) 0%, transparent 60%);
+  pointer-events:none;
 }
-.nav-user{color:#757575;font-weight:600}
-.nav-user span{color:#005762;font-weight:700}
-.btn-logout{
-  background:none;border:1px solid #ddd;border-radius:6px;
-  padding:4px 10px;font-size:11px;color:#999;cursor:pointer;
-  font-family:inherit;font-weight:600;transition:all .15s;
+.phone-frame {
+  width:390px; height:844px;
+  overflow:hidden; border-radius:40px;
+  box-shadow:0 40px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06);
+  flex-shrink:0; position:relative;
+  animation: fadeUp .5s cubic-bezier(.2,.8,.2,1);
 }
-.btn-logout:hover{border-color:#ef4444;color:#ef4444}
-
-/* extra links for director/admin */
-.extra-nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:0}
-.ext-link{
-  flex:1;padding:10px;background:#fff;border-radius:10px;
-  text-align:center;text-decoration:none;font-size:12px;font-weight:700;
-  color:#005762;border:1.5px solid #DDDEDF;
-  transition:border-color .15s, background .15s;
-  box-shadow:0 1px 4px rgba(0,0,0,.06);
+.brand-watermark {
+  position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+  opacity:.12; user-select:none; pointer-events:none;
+  font-size:10px; font-weight:600; letter-spacing:3px; color:#fff; text-transform:uppercase;
+  white-space:nowrap;
 }
-.ext-link:hover{border-color:#005762;background:#E6FCFF}
+@media (max-width:600px) {
+  html,body { background:var(--bg); }
+  .app-bg { background:var(--bg); align-items:stretch; justify-content:stretch; }
+  .phone-frame { width:100%; height:100%; border-radius:0; box-shadow:none; animation:none; }
+  .brand-watermark { display:none; }
+}
+.hide-scroll { scrollbar-width:none; }
+.hide-scroll::-webkit-scrollbar { display:none; }
 </style>
 </head>
 <body>
+<div id="root"></div>
 
-<!-- AUTH GUARD -->
-<script>
-(function(){
-  // Permitir reseller (no tiene jdm_session, usa jdm_reseller_user)
-  const resellerUser=localStorage.getItem('jdm_reseller_user');
-  if(resellerUser){window._isReseller=true;return;}
-  function getSession(){try{return JSON.parse(localStorage.getItem('jdm_session')||'null');}catch{return null;}}
-  const s=getSession();
-  const allowed=['vendedor','director','admin'];
-  if(!s||!allowed.includes(s.role)){localStorage.removeItem('jdm_session');location.href='index.html';}
-  else window._session=s;
-})();
-function logout(){localStorage.removeItem('jdm_session');location.href='index.html';}
-function logoutReseller(){
-  ['jdm_reseller_user','jdm_reseller_nombre','jdm_reseller_discount','jdm_reseller_logo'].forEach(k=>localStorage.removeItem(k));
-  location.href='index.html';
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+// ── HELPERS ──────────────────────────────────────────────────────────────
+async function sha256hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
-</script>
+const SESSION_KEY = 'jdm_session';
+function getSession() { try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; } }
+function saveSession(s) { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+function clearSession() { localStorage.removeItem(SESSION_KEY); }
 
-<div class="wrap" id="main-wrap">
+const fmt = (n) => `$${Number(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+const fmtCompact = (n) => n >= 1000 ? `$${(n/1000).toFixed(1)}k` : `$${Math.round(n)}`;
 
-  <!-- Encabezado reseller logueado -->
-  <div id="reseller-header" style="display:none;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:14px;border:1.5px solid #10b981;padding:14px 16px">
-    <div style="display:flex;align-items:center;gap:12px">
-      <img id="reseller-logo-header" style="width:52px;height:52px;border-radius:8px;border:1px solid #10b981;background:#fff;object-fit:contain" alt="Logo">
-      <div style="flex:1">
-        <div style="font-size:14px;font-weight:800;color:#059669" id="reseller-name-header"></div>
-        <div style="font-size:11px;color:#065f46;margin-top:2px">Descuento: <strong id="reseller-disc-header"></strong></div>
+// ── ICONS ─────────────────────────────────────────────────────────────────
+const Icon = ({ name, size=20, stroke=2, style:s, ...rest }) => {
+  const paths = {
+    search:    <path d="M11 4a7 7 0 1 1-4.95 11.95L3 19M11 4a7 7 0 0 1 4.95 11.95"/>,
+    close:     <path d="M5 5l14 14M19 5L5 19"/>,
+    back:      <path d="M14 6l-6 6 6 6"/>,
+    plus:      <path d="M12 5v14M5 12h14"/>,
+    minus:     <path d="M5 12h14"/>,
+    cart:      <path d="M3 4h2l2.5 11h10L20 7H6.5M9 19a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm10 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>,
+    check:     <path d="M5 12.5l4.5 4.5L19 7"/>,
+    user:      <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-8 9a8 8 0 0 1 16 0"/>,
+    bell:      <path d="M6 8a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6zm3 10a3 3 0 0 0 6 0"/>,
+    box:       <path d="M3 7l9-4 9 4M3 7l9 4m-9-4v10l9 4m0-14v14m0-14l9-4m0 0v10l-9 4"/>,
+    swap:      <path d="M7 4l-3 3 3 3M4 7h12a4 4 0 0 1 0 8M17 20l3-3-3-3M20 17H8a4 4 0 0 1 0-8"/>,
+    chevron:   <path d="M9 6l6 6-6 6"/>,
+    doc:       <path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8l-5-5zM14 3v5h5M9 13h6M9 17h6"/>,
+    download:  <path d="M12 4v12m0 0l-5-5m5 5l5-5M4 20h16"/>,
+    send:      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>,
+    home:      <path d="M3 11l9-8 9 8M5 10v10h14V10"/>,
+    trash:     <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>,
+    sparkle:   <path d="M12 3v6m0 6v6m-9-9h6m6 0h6M5 5l4 4m6 6l4 4m0-14l-4 4m-6 6l-4 4"/>,
+    history:   <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 7v5l3 2"/>,
+    info:      <path d="M12 8h.01M11 12h1v5h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/>,
+    arrowRight:<path d="M5 12h14m0 0l-6-6m6 6l-6 6"/>,
+    truck:     <path d="M3 7h11v8H3zM14 10h4l3 3v2h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>,
+    grid:      <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>,
+    list:      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>,
+    eye:       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" style={s} {...rest}>
+      {paths[name] || null}
+    </svg>
+  );
+};
+
+// ── PRIMITIVES ────────────────────────────────────────────────────────────
+const Wordmark = ({ size=22 }) => (
+  <span style={{ display:'inline-flex', alignItems:'baseline', gap:0, fontFamily:'var(--font)', fontWeight:900, fontSize:size, letterSpacing:'-0.02em', color:'var(--text)', lineHeight:1 }}>
+    <span>amm</span><span style={{color:'var(--accent)'}}>e</span><span>ga</span>
+    <span style={{ fontWeight:400, fontSize:size*0.42, marginLeft:4, letterSpacing:'0.18em', textTransform:'uppercase', color:'var(--text-mute)', alignSelf:'center' }}>MX</span>
+  </span>
+);
+
+const StockPill = ({ stock, unidad }) => {
+  let kind='ok', label=`${stock} ${unidad}`;
+  if (stock===0) { kind='zero'; label='agotado'; }
+  else if (stock<10) kind='low';
+  const c = { ok:{bg:'var(--ok-bg)',fg:'var(--ok-fg)'}, low:{bg:'var(--warn-bg)',fg:'var(--warn-fg)'}, zero:{bg:'var(--err-bg)',fg:'var(--err-fg)'} }[kind];
+  return (
+    <span style={{ display:'inline-flex', alignItems:'center', gap:4, background:c.bg, color:c.fg, fontFamily:'var(--font-mono)', fontSize:10, fontWeight:600, padding:'2px 7px', borderRadius:4, letterSpacing:'-0.01em', whiteSpace:'nowrap' }}>
+      <span style={{ width:5, height:5, borderRadius:'50%', background:c.fg, opacity:0.85 }}/>
+      {label}
+    </span>
+  );
+};
+
+const BrandTag = ({ marca }) => {
+  const isMega = marca === 'Megadyne';
+  return <span style={{ fontSize:9, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:isMega?'var(--accent)':'var(--text-mute)' }}>{marca}</span>;
+};
+
+const Pressable = ({ children, onClick, disabled, style:s, as:As='button', ...rest }) => {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <As onClick={disabled?undefined:onClick}
+      onMouseDown={()=>setPressed(true)} onMouseUp={()=>setPressed(false)} onMouseLeave={()=>setPressed(false)}
+      onTouchStart={()=>setPressed(true)} onTouchEnd={()=>setPressed(false)}
+      disabled={disabled}
+      style={{ transform:pressed&&!disabled?'scale(0.97)':'scale(1)', transition:'transform 120ms cubic-bezier(.2,.8,.2,1)', ...s }}
+      {...rest}>{children}</As>
+  );
+};
+
+// ── BOTTOM NAV ────────────────────────────────────────────────────────────
+function BottomNav({ active, onNav, cartCount }) {
+  const items = [
+    {key:'home',   icon:'home',  label:'Inicio'},
+    {key:'catalog',icon:'grid',  label:'Catálogo'},
+    {key:'xref',   icon:'swap',  label:'Equiv.'},
+    {key:'cart',   icon:'cart',  label:'Cotización'},
+  ];
+  return (
+    <div style={{ display:'flex', flexShrink:0, borderTop:'1px solid var(--border)', background:'var(--surface)', padding:'6px 8px 10px' }}>
+      {items.map(it => {
+        const isActive = active===it.key;
+        return (
+          <button key={it.key} onClick={()=>onNav(it.key)}
+            style={{ flex:1, padding:'8px 4px', display:'flex', flexDirection:'column', alignItems:'center', gap:3, background:'none', border:'none', cursor:'pointer', color:isActive?'var(--accent)':'var(--text-mute)', position:'relative', transition:'color 150ms' }}>
+            <span style={{ position:'relative' }}>
+              <Icon name={it.icon} size={20} stroke={isActive?2.2:1.8}/>
+              {it.key==='cart' && cartCount>0 && (
+                <span style={{ position:'absolute', top:-6, right:-8, background:'var(--accent)', color:'var(--accent-fg)', fontSize:9, fontWeight:700, minWidth:14, height:14, borderRadius:7, padding:'0 4px', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--font-mono)' }}>{cartCount}</span>
+              )}
+            </span>
+            <span style={{ fontSize:10, fontWeight:isActive?600:500, letterSpacing:'0.02em' }}>{it.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── LOGIN SCREEN ──────────────────────────────────────────────────────────
+function LoginScreen({ onLogin }) {
+  const [user, setUser] = useState('');
+  const [pass, setPass] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState(null);
+
+  const submit = async () => {
+    if (!user.trim() || !pass.trim()) { setError('Ingresa usuario y contraseña'); return; }
+    setLoading(true); setError('');
+    try {
+      const res = await fetch('access_config.json');
+      const cfg = await res.json();
+      const hash = await sha256hex(pass.trim());
+      const found = cfg.users.find(u => u.user.toLowerCase()===user.toLowerCase().trim() && u.passHash===hash);
+      if (found) {
+        const s = { user:found.user, role:found.role, nombre:found.nombre||found.user };
+        saveSession(s);
+        onLogin(s);
+      } else {
+        setError('Usuario o contraseña incorrectos');
+      }
+    } catch { setError('Error al conectar. Intenta de nuevo.'); }
+    setLoading(false);
+  };
+
+  const inp = (focused_key) => ({
+    width:'100%', padding:'14px 16px', borderRadius:12, border:'1.5px solid',
+    borderColor: focused===focused_key ? 'var(--accent)' : 'var(--border)',
+    background:'var(--surface)', color:'var(--text)',
+    fontSize:15, fontFamily:'var(--font)', outline:'none',
+    transition:'border-color 150ms, box-shadow 150ms',
+    boxShadow: focused===focused_key ? '0 0 0 4px var(--accent-glow)' : 'none',
+  });
+
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', background:'var(--bg)', position:'relative', overflow:'hidden' }}>
+      <div style={{ position:'absolute', top:-120, right:-100, width:320, height:320, borderRadius:'50%', background:'var(--accent)', opacity:0.06, filter:'blur(40px)', pointerEvents:'none' }}/>
+      <div style={{ position:'absolute', bottom:-160, left:-80, width:280, height:280, borderRadius:'50%', background:'var(--accent)', opacity:0.04, filter:'blur(60px)', pointerEvents:'none' }}/>
+
+      <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center', padding:'0 28px', position:'relative', zIndex:1 }}>
+        <div style={{ marginBottom:48 }}>
+          <Wordmark size={34}/>
+          <div style={{ fontSize:13, color:'var(--text-mute)', marginTop:10, fontFamily:'var(--font-mono)', letterSpacing:'0.04em' }}>COTIZADOR · B2B</div>
+        </div>
+        <div style={{ fontSize:26, fontWeight:700, color:'var(--text)', lineHeight:1.15, letterSpacing:'-0.02em', marginBottom:8 }}>Cotiza en segundos.</div>
+        <div style={{ fontSize:14, color:'var(--text-mute)', marginBottom:32, lineHeight:1.5 }}>Catálogo Megadyne y Jasson de México. Acceso para distribuidores autorizados.</div>
+
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          <div>
+            <label style={{ fontSize:11, fontWeight:600, color:'var(--text-mute)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, display:'block' }}>Usuario</label>
+            <input value={user} onChange={e=>setUser(e.target.value)}
+              onFocus={()=>setFocused('user')} onBlur={()=>setFocused(null)}
+              onKeyDown={e=>e.key==='Enter'&&submit()}
+              placeholder="vendedor01" autoCapitalize="none" autoCorrect="off" style={inp('user')}/>
+          </div>
+          <div>
+            <label style={{ fontSize:11, fontWeight:600, color:'var(--text-mute)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, display:'block' }}>Contraseña</label>
+            <input type="password" value={pass} onChange={e=>setPass(e.target.value)}
+              onFocus={()=>setFocused('pass')} onBlur={()=>setFocused(null)}
+              onKeyDown={e=>e.key==='Enter'&&submit()}
+              placeholder="••••••••" style={inp('pass')}/>
+          </div>
+
+          {error && (
+            <div style={{ fontSize:13, color:'var(--err-fg)', background:'var(--err-bg)', padding:'10px 12px', borderRadius:8, display:'flex', alignItems:'center', gap:8 }}>
+              <Icon name="info" size={14}/>{error}
+            </div>
+          )}
+
+          <Pressable onClick={submit} disabled={loading} style={{ marginTop:6, padding:'15px 20px', borderRadius:12, border:'none', background:'var(--accent)', color:'var(--accent-fg)', fontSize:15, fontWeight:600, fontFamily:'var(--font)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'0 10px 24px -8px var(--accent-shadow)', opacity:loading?0.7:1 }}>
+            {loading
+              ? <span style={{ width:16, height:16, border:'2px solid var(--accent-fg)', borderTopColor:'transparent', borderRadius:'50%', animation:'spin 700ms linear infinite' }}/>
+              : <>Ingresar <Icon name="arrowRight" size={16}/></>
+            }
+          </Pressable>
+        </div>
       </div>
-      <button onclick="logoutReseller()" style="padding:6px 12px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Cerrar sesión</button>
+
+      <div style={{ padding:'16px 28px 28px', textAlign:'center', fontSize:11, color:'var(--text-mute)', letterSpacing:'0.02em' }}>
+        © Jason de México · Distribuidor autorizado
+      </div>
     </div>
-  </div>
+  );
+}
 
-  <!-- Logo Card -->
-  <div class="logo-card">
-    <div id="logo-area">
-      <!-- Logo o texto según disponibilidad -->
+// ── HOME SCREEN ───────────────────────────────────────────────────────────
+function HomeScreen({ session, onNav, cart, onLogout, recents }) {
+  const totalItems = cart.reduce((s,i)=>s+i.qty,0);
+  const cartValue  = cart.reduce((s,i)=>s+(i.product.precioBinasa*i.qty),0);
+  const initials   = (session?.nombre||'?').slice(0,2).toUpperCase();
+
+  const allProducts = [...window.CATALOG.bandas, ...window.CATALOG.mangueras];
+  const topProducts = recents.length>0
+    ? recents.map(id=>allProducts.find(p=>p.id===id)).filter(Boolean).slice(0,4)
+    : allProducts.slice(0,4);
+
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', background:'var(--bg)', overflow:'hidden' }}>
+      <div style={{ padding:'14px 18px 0', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+        <Wordmark size={20}/>
+        <div style={{ flex:1 }}/>
+        <Pressable onClick={()=>onNav('backorders')} style={{ width:36, height:36, borderRadius:10, border:'none', background:'var(--surface-2)', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative' }}>
+          <Icon name="bell" size={16}/>
+          {window.BACKORDERS.filter(b=>b.status==='en_camino').length>0 && (
+            <span style={{ position:'absolute', top:8, right:8, width:6, height:6, borderRadius:'50%', background:'var(--err-fg)' }}/>
+          )}
+        </Pressable>
+        <Pressable onClick={onLogout} style={{ display:'flex', alignItems:'center', gap:8, padding:'4px 10px 4px 4px', borderRadius:20, border:'none', background:'var(--surface-2)', cursor:'pointer' }} title="Cerrar sesión">
+          <span style={{ width:28, height:28, borderRadius:'50%', background:'var(--accent)', color:'var(--accent-fg)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>{initials}</span>
+          <span style={{ fontSize:12, fontWeight:600, color:'var(--text)' }}>{session?.nombre?.split(' ')[0]||session?.user}</span>
+        </Pressable>
+      </div>
+
+      <div style={{ flex:1, overflowY:'auto', padding:'20px 18px 12px' }}>
+        <div style={{ marginBottom:18 }}>
+          <div style={{ fontSize:12, color:'var(--text-mute)', fontFamily:'var(--font-mono)', letterSpacing:'0.04em', textTransform:'uppercase' }}>Hola, {session?.nombre?.split(' ')[0]||session?.user}</div>
+          <div style={{ fontSize:26, fontWeight:700, color:'var(--text)', letterSpacing:'-0.02em', lineHeight:1.15, marginTop:4 }}>¿Qué cotizamos<br/>hoy?</div>
+        </div>
+
+        <Pressable onClick={()=>onNav('catalog')} as="div" style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderRadius:14, background:'var(--surface-2)', border:'1.5px solid var(--border)', cursor:'pointer', textAlign:'left', marginBottom:20 }}>
+          <Icon name="search" size={18} style={{ color:'var(--text-mute)' }}/>
+          <span style={{ flex:1, fontSize:14, color:'var(--text-mute)' }}>Buscar SKU, marca o medida…</span>
+          <kbd style={{ fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-mute)', background:'var(--bg)', padding:'2px 6px', borderRadius:4, border:'1px solid var(--border)' }}>⌘K</kbd>
+        </Pressable>
+
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:20 }}>
+          <CategoryTile title="Bandas" sub="Megadyne" count={window.CATALOG.bandas.length} accent="var(--accent)" logo="megadyne-logo.png" onClick={()=>onNav('catalog',{tab:'bandas'})}/>
+          <CategoryTile title="Mangueras" sub="Jasson" count={window.CATALOG.mangueras.length} accent="var(--accent-2)" logo="jasson-logo.png" onClick={()=>onNav('catalog',{tab:'mangueras'})}/>
+        </div>
+
+        {totalItems>0 && (
+          <Pressable onClick={()=>onNav('cart')} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderRadius:14, background:'var(--accent)', color:'var(--accent-fg)', border:'none', cursor:'pointer', textAlign:'left', marginBottom:20, boxShadow:'0 8px 24px -8px var(--accent-shadow)' }}>
+            <div style={{ width:36, height:36, borderRadius:10, background:'rgba(255,255,255,.18)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <Icon name="cart" size={18}/>
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, fontWeight:600 }}>Cotización en curso</div>
+              <div style={{ fontSize:11, opacity:0.85, fontFamily:'var(--font-mono)' }}>{totalItems} producto{totalItems!==1?'s':''} · {fmt(cartValue)}</div>
+            </div>
+            <Icon name="chevron" size={16}/>
+          </Pressable>
+        )}
+
+        <div style={{ display:'flex', gap:8, marginBottom:24 }}>
+          <ShortcutCard icon="swap"    label="Equivalencias" sub={`${window.EQUIVALENCIAS.length} refs`}  onClick={()=>onNav('xref')}/>
+          <ShortcutCard icon="history" label="Recientes"     sub={`${recents.length}`}                    onClick={()=>onNav('catalog')}/>
+          <ShortcutCard icon="box"     label="Back-orders"   sub={`${window.BACKORDERS.length}`}           onClick={()=>onNav('backorders')}/>
+        </div>
+
+        {(session?.role==='director'||session?.role==='admin') && (
+          <div style={{ display:'flex', gap:8, marginBottom:20 }}>
+            <a href="dashboard.html" style={{ flex:1, padding:'10px 12px', background:'var(--surface)', border:'1.5px solid var(--border)', borderRadius:12, textDecoration:'none', fontSize:12, fontWeight:700, color:'var(--accent)', textAlign:'center' }}>📊 Dashboard</a>
+            {session?.role==='admin' && <a href="admin.html" style={{ flex:1, padding:'10px 12px', background:'var(--surface)', border:'1.5px solid var(--border)', borderRadius:12, textDecoration:'none', fontSize:12, fontWeight:700, color:'var(--accent)', textAlign:'center' }}>⚙️ Admin</a>}
+          </div>
+        )}
+
+        <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:10 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'var(--text-mute)', textTransform:'uppercase', letterSpacing:'0.1em' }}>{recents.length>0?'Tus recientes':'Más cotizados'}</div>
+          <button onClick={()=>onNav('catalog')} style={{ fontSize:12, color:'var(--accent)', background:'none', border:'none', cursor:'pointer', fontWeight:600, padding:0 }}>Ver todo</button>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          {topProducts.map(p=>(
+            <MiniProductRow key={p.id} product={p} onClick={()=>onNav('detail',{product:p})}/>
+          ))}
+        </div>
+      </div>
+
+      <BottomNav active="home" onNav={onNav} cartCount={totalItems}/>
     </div>
-    <div class="logo-subtitle">Jason de Mexico · Cotizador</div>
-  </div>
+  );
+}
 
-  <!-- Selector de tipo -->
-  <div class="selector-grid">
-    <a href="cotizador_bandas.html" class="sel-card">
-      <span class="sel-icon">⚡</span>
-      <span class="sel-label">Bandas</span>
-    </a>
-    <a href="cotizador_mangueras.html" class="sel-card">
-      <span class="sel-icon">💧</span>
-      <span class="sel-label">Mangueras</span>
-    </a>
-  </div>
+function CategoryTile({ title, sub, count, accent, onClick, logo }) {
+  return (
+    <Pressable onClick={onClick} style={{ position:'relative', padding:'16px 14px', borderRadius:16, border:'1.5px solid var(--border)', background:'var(--surface)', cursor:'pointer', textAlign:'left', height:130, display:'flex', flexDirection:'column', justifyContent:'space-between', overflow:'hidden' }}>
+      <div style={{ position:'absolute', top:12, right:12, fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-mute)' }}>{count}</div>
+      <img src={logo} alt={sub} style={{ height:22, width:'auto', objectFit:'contain', alignSelf:'flex-start', opacity:0.85, maxWidth:'70%' }}/>
+      <div>
+        <div style={{ fontSize:18, fontWeight:700, color:'var(--text)', letterSpacing:'-0.01em' }}>{title}</div>
+        <div style={{ fontSize:11, color:'var(--text-mute)', marginTop:2, fontFamily:'var(--font-mono)', letterSpacing:'0.04em', textTransform:'uppercase' }}>{sub}</div>
+      </div>
+      <div style={{ position:'absolute', bottom:-6, right:-6, width:60, height:60, borderRadius:'50%', background:accent, opacity:0.08 }}/>
+    </Pressable>
+  );
+}
 
-  <!-- Links extra (Director / Admin) -->
-  <div class="extra-nav" id="extra-nav" style="display:none"></div>
+function ShortcutCard({ icon, label, sub, onClick }) {
+  return (
+    <Pressable onClick={onClick} style={{ flex:1, padding:'12px 10px', borderRadius:12, border:'1.5px solid var(--border)', background:'var(--surface)', cursor:'pointer', textAlign:'left', display:'flex', flexDirection:'column', gap:6 }}>
+      <Icon name={icon} size={16} style={{ color:'var(--accent)' }}/>
+      <div>
+        <div style={{ fontSize:12, fontWeight:600, color:'var(--text)', lineHeight:1.2 }}>{label}</div>
+        <div style={{ fontSize:10, color:'var(--text-mute)', fontFamily:'var(--font-mono)', marginTop:2 }}>{sub}</div>
+      </div>
+    </Pressable>
+  );
+}
 
-  <!-- Barra inferior: usuario + salir -->
-  <div class="bottom-nav">
-    <div class="nav-user" id="nav-user-info"></div>
-    <button class="btn-logout" onclick="logout()">Salir</button>
-  </div>
+function MiniProductRow({ product:p, onClick }) {
+  return (
+    <Pressable onClick={onClick} as="div" style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:12, background:'var(--surface)', border:'1.5px solid var(--border)', cursor:'pointer', textAlign:'left' }}>
+      <div style={{ width:38, height:38, borderRadius:8, background:p.marca==='Megadyne'?'var(--accent-soft)':'var(--accent-2-soft)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        <Icon name={p.marca==='Megadyne'?'sparkle':'swap'} size={16} style={{ color:p.marca==='Megadyne'?'var(--accent)':'var(--accent-2)' }}/>
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-mute)', marginBottom:2 }}>{p.id}</div>
+        <div style={{ fontSize:13, fontWeight:600, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.desc}</div>
+      </div>
+      <div style={{ textAlign:'right', flexShrink:0 }}>
+        <div style={{ fontSize:14, fontWeight:700, color:'var(--text)', fontFamily:'var(--font-mono)', letterSpacing:'-0.02em' }}>{fmtCompact(p.precioBinasa)}</div>
+        <div style={{ fontSize:10, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>/{p.unidad}</div>
+      </div>
+    </Pressable>
+  );
+}
 
-</div>
+// ── CATALOG SCREEN ────────────────────────────────────────────────────────
+function CatalogScreen({ onNav, cart, initialTab='bandas', onAddToCart, onBack }) {
+  const [tab, setTab] = useState(initialTab);
+  const [search, setSearch] = useState('');
+  const [cat, setCat] = useState('Todos');
+  const [view, setView] = useState('list');
 
-<script>
-(function(){
-  // Caso reseller
-  if(window._isReseller){
-    const nombre=localStorage.getItem('jdm_reseller_nombre')||'';
-    const desc=localStorage.getItem('jdm_reseller_discount')||'0';
-    const logo=localStorage.getItem('jdm_reseller_logo')||'';
-    // Mostrar header reseller
-    document.getElementById('reseller-header').style.display='block';
-    document.getElementById('reseller-name-header').textContent=nombre;
-    document.getElementById('reseller-disc-header').textContent=desc+'%';
-    if(logo) document.getElementById('reseller-logo-header').src='data:image/png;base64,'+logo;
-    // Logo card: mostrar logo del reseller
-    const logoArea=document.getElementById('logo-area');
-    if(logo){
-      logoArea.innerHTML=`<img class="logo-img" src="data:image/png;base64,${logo}" alt="Logo">`;
-    } else {
-      logoArea.innerHTML=`<div class="logo-text-main">${nombre}<span style="font-size:13px;font-weight:600;letter-spacing:4px;opacity:.7;display:block">RESELLER</span></div>`;
-    }
-    // Nav: solo salir (sin links de admin)
-    document.getElementById('nav-user-info').innerHTML=
-      `<span style="color:#005762;font-weight:700">${nombre}</span>`;
-    return;
+  const allProducts = tab==='bandas' ? window.CATALOG.bandas : window.CATALOG.mangueras;
+  const cats = useMemo(()=>['Todos',...new Set(allProducts.map(p=>p.categoria))],[tab]);
+  const totalItems = cart.reduce((s,i)=>s+i.qty,0);
+
+  const filtered = useMemo(()=>{
+    const q = search.toLowerCase().trim();
+    return allProducts.filter(p=>{
+      const m = !q||p.id.toLowerCase().includes(q)||p.desc.toLowerCase().includes(q)||p.categoria.toLowerCase().includes(q);
+      return m && (cat==='Todos'||p.categoria===cat);
+    });
+  },[allProducts,search,cat]);
+
+  const grouped = useMemo(()=>{
+    if (cat!=='Todos'||search) return null;
+    return filtered.reduce((g,p)=>{ (g[p.categoria]||(g[p.categoria]=[])).push(p); return g; },{});
+  },[filtered,cat,search]);
+
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', background:'var(--bg)', overflow:'hidden', position:'relative' }}>
+      <div style={{ padding:'14px 16px 8px', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+        <Pressable onClick={onBack} style={{ width:36, height:36, borderRadius:10, border:'none', background:'var(--surface-2)', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+          <Icon name="back" size={18}/>
+        </Pressable>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:16, fontWeight:700, color:'var(--text)', letterSpacing:'-0.01em' }}>Catálogo</div>
+          <div style={{ fontSize:11, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>{filtered.length} productos</div>
+        </div>
+        <Pressable onClick={()=>setView(v=>v==='list'?'grid':'list')} style={{ width:36, height:36, borderRadius:10, border:'none', background:'var(--surface-2)', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+          <Icon name={view==='list'?'grid':'list'} size={16}/>
+        </Pressable>
+      </div>
+
+      <div style={{ padding:'0 16px 12px', flexShrink:0 }}>
+        <div style={{ display:'flex', gap:4, padding:4, background:'var(--surface-2)', borderRadius:12 }}>
+          {[{key:'bandas',label:'Bandas',sub:'Megadyne',count:window.CATALOG.bandas.length},{key:'mangueras',label:'Mangueras',sub:'Jasson',count:window.CATALOG.mangueras.length}].map(t=>{
+            const isActive = tab===t.key;
+            return (
+              <button key={t.key} onClick={()=>{setTab(t.key);setCat('Todos');}}
+                style={{ flex:1, padding:'10px 12px', background:isActive?'var(--surface)':'transparent', border:'none', borderRadius:9, cursor:'pointer', textAlign:'center', boxShadow:isActive?'0 1px 3px rgba(0,0,0,.08)':'none', transition:'background 180ms' }}>
+                <div style={{ fontSize:13, fontWeight:600, color:isActive?'var(--text)':'var(--text-mute)' }}>
+                  {t.label}
+                  <span style={{ marginLeft:6, fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-mute)' }}>{t.count}</span>
+                </div>
+                <div style={{ fontSize:10, color:'var(--text-mute)', marginTop:1, fontFamily:'var(--font-mono)', letterSpacing:'0.04em', textTransform:'uppercase' }}>{t.sub}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ padding:'0 16px 10px', flexShrink:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, background:'var(--surface-2)', borderRadius:12, padding:'11px 14px' }}>
+          <Icon name="search" size={16} style={{ color:'var(--text-mute)' }}/>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="SKU, descripción, medida…"
+            style={{ flex:1, border:'none', background:'transparent', outline:'none', fontSize:14, fontFamily:'var(--font)', color:'var(--text)' }}/>
+          {search && <button onClick={()=>setSearch('')} style={{ width:20, height:20, borderRadius:'50%', background:'var(--border)', color:'var(--text-mute)', border:'none', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', padding:0 }}>
+            <Icon name="close" size={12} stroke={2.5}/>
+          </button>}
+        </div>
+      </div>
+
+      <div className="hide-scroll" style={{ display:'flex', gap:6, padding:'0 16px 12px', overflowX:'auto', flexShrink:0 }}>
+        {cats.map(c=>{
+          const active = c===cat;
+          return (
+            <button key={c} onClick={()=>setCat(c)} style={{ padding:'6px 12px', borderRadius:20, border:'1.5px solid', borderColor:active?'var(--accent)':'var(--border)', background:active?'var(--accent)':'var(--surface)', color:active?'var(--accent-fg)':'var(--text)', fontSize:11, fontWeight:600, whiteSpace:'nowrap', cursor:'pointer', flexShrink:0, transition:'all 150ms' }}>{c}</button>
+          );
+        })}
+      </div>
+
+      <div className="hide-scroll" style={{ flex:1, overflowY:'auto', padding:'0 12px 80px' }}>
+        {filtered.length===0 && (
+          <div style={{ padding:40, textAlign:'center', color:'var(--text-mute)' }}>
+            <Icon name="search" size={32} style={{ opacity:0.4, marginBottom:12 }}/>
+            <div style={{ fontSize:14, fontWeight:600 }}>Sin resultados</div>
+            <div style={{ fontSize:12, marginTop:4 }}>Prueba con otra búsqueda</div>
+          </div>
+        )}
+        {view==='list' && (
+          grouped
+            ? Object.entries(grouped).map(([cn,prods])=>(
+                <div key={cn}>
+                  <div style={{ padding:'14px 4px 6px', fontSize:10, fontWeight:700, color:'var(--text-mute)', textTransform:'uppercase', letterSpacing:'0.12em', fontFamily:'var(--font-mono)' }}>{cn} <span style={{ opacity:0.6 }}>{prods.length}</span></div>
+                  {prods.map(p=><ProductRow key={p.id} product={p} onNav={onNav} onAdd={onAddToCart} cart={cart}/>)}
+                </div>
+              ))
+            : filtered.map(p=><ProductRow key={p.id} product={p} onNav={onNav} onAdd={onAddToCart} cart={cart}/>)
+        )}
+        {view==='grid' && (
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, paddingTop:4 }}>
+            {filtered.map(p=><ProductGridCard key={p.id} product={p} onNav={onNav} onAdd={onAddToCart} cart={cart}/>)}
+          </div>
+        )}
+      </div>
+
+      {totalItems>0 && <FloatingCartBar cart={cart} onClick={()=>onNav('cart')}/>}
+      <BottomNav active="catalog" onNav={onNav} cartCount={totalItems}/>
+    </div>
+  );
+}
+
+function ProductRow({ product:p, onNav, onAdd, cart }) {
+  const inCart = cart.find(i=>i.product.id===p.id);
+  return (
+    <Pressable onClick={()=>onNav('detail',{product:p})} as="div" style={{ width:'100%', display:'flex', alignItems:'stretch', gap:0, padding:0, borderRadius:12, background:'var(--surface)', border:'1.5px solid var(--border)', cursor:'pointer', textAlign:'left', marginBottom:6, overflow:'hidden' }}>
+      <div style={{ width:3, background:p.marca==='Megadyne'?'var(--accent)':'var(--accent-2)' }}/>
+      <div style={{ flex:1, minWidth:0, padding:'11px 12px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
+          <span style={{ fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-mute)' }}>{p.id}</span>
+          {p.esBandaMetrica && <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, background:'var(--accent-soft)', color:'var(--accent)', fontWeight:600, letterSpacing:'0.04em', textTransform:'uppercase' }}>{p.paso}</span>}
+        </div>
+        <div style={{ fontSize:13, fontWeight:600, color:'var(--text)', lineHeight:1.3, marginBottom:5, overflow:'hidden', textOverflow:'ellipsis', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{p.desc}</div>
+        <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+          <StockPill stock={p.stock} unidad={p.unidad}/>
+          <span style={{ fontSize:10, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>·</span>
+          <span style={{ fontSize:10, color:'var(--text-mute)', fontFamily:'var(--font-mono)', textTransform:'lowercase' }}>{p.categoria.toLowerCase()}</span>
+        </div>
+      </div>
+      <div style={{ display:'flex', flexDirection:'column', justifyContent:'space-between', alignItems:'flex-end', padding:'11px 12px', flexShrink:0, gap:6 }}>
+        <div style={{ textAlign:'right' }}>
+          <div style={{ fontSize:15, fontWeight:700, color:'var(--text)', fontFamily:'var(--font-mono)', letterSpacing:'-0.02em', lineHeight:1 }}>{fmt(p.precioBinasa)}</div>
+          <div style={{ fontSize:9, color:'var(--text-mute)', fontFamily:'var(--font-mono)', marginTop:2 }}>por {p.unidad}</div>
+        </div>
+        <button onClick={e=>{e.stopPropagation();if(p.stock>0&&!p.esBandaMetrica)onAdd(p,1);else onNav('detail',{product:p});}} disabled={p.stock===0}
+          style={{ width:30, height:30, borderRadius:8, border:'none', background:p.stock===0?'var(--surface-2)':(inCart?'var(--ok-bg)':'var(--accent)'), color:p.stock===0?'var(--text-mute)':(inCart?'var(--ok-fg)':'var(--accent-fg)'), display:'flex', alignItems:'center', justifyContent:'center', cursor:p.stock===0?'not-allowed':'pointer', transition:'all 150ms', position:'relative' }}>
+          {inCart?<Icon name="check" size={14} stroke={2.5}/>:<Icon name="plus" size={14} stroke={2.5}/>}
+          {inCart && <span style={{ position:'absolute', top:-4, right:-4, background:'var(--accent)', color:'var(--accent-fg)', fontSize:9, fontWeight:700, minWidth:14, height:14, borderRadius:7, padding:'0 3px', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--font-mono)' }}>{inCart.qty}</span>}
+        </button>
+      </div>
+    </Pressable>
+  );
+}
+
+function ProductGridCard({ product:p, onNav, onAdd, cart }) {
+  const inCart = cart.find(i=>i.product.id===p.id);
+  return (
+    <Pressable onClick={()=>onNav('detail',{product:p})} as="div" style={{ padding:'12px 12px 10px', borderRadius:12, background:'var(--surface)', border:'1.5px solid var(--border)', cursor:'pointer', textAlign:'left', display:'flex', flexDirection:'column', gap:8, position:'relative', overflow:'hidden' }}>
+      <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:p.marca==='Megadyne'?'var(--accent)':'var(--accent-2)' }}/>
+      <div style={{ paddingTop:4 }}>
+        <div style={{ fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-mute)' }}>{p.id}</div>
+        <div style={{ fontSize:12, fontWeight:600, color:'var(--text)', lineHeight:1.3, marginTop:4, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden', minHeight:32 }}>{p.desc}</div>
+      </div>
+      <StockPill stock={p.stock} unidad={p.unidad}/>
+      <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginTop:'auto' }}>
+        <div>
+          <div style={{ fontSize:14, fontWeight:700, color:'var(--text)', fontFamily:'var(--font-mono)', letterSpacing:'-0.02em' }}>{fmtCompact(p.precioBinasa)}</div>
+          <div style={{ fontSize:9, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>/{p.unidad}</div>
+        </div>
+        <button onClick={e=>{e.stopPropagation();if(p.stock>0&&!p.esBandaMetrica)onAdd(p,1);else onNav('detail',{product:p});}} disabled={p.stock===0}
+          style={{ width:28, height:28, borderRadius:7, border:'none', background:p.stock===0?'var(--surface-2)':(inCart?'var(--ok-bg)':'var(--accent)'), color:p.stock===0?'var(--text-mute)':(inCart?'var(--ok-fg)':'var(--accent-fg)'), display:'flex', alignItems:'center', justifyContent:'center', cursor:p.stock===0?'not-allowed':'pointer' }}>
+          {inCart?<Icon name="check" size={12} stroke={2.5}/>:<Icon name="plus" size={12} stroke={2.5}/>}
+        </button>
+      </div>
+    </Pressable>
+  );
+}
+
+function FloatingCartBar({ cart, onClick }) {
+  const total = cart.reduce((s,i)=>{ const p=i.product; return s+(p.esBandaMetrica&&i.ancho?p.precioBinasa*(i.ancho/25.4)*i.qty:p.precioBinasa*i.qty); },0);
+  const qty   = cart.reduce((s,i)=>s+i.qty,0);
+  return (
+    <div style={{ position:'absolute', bottom:78, left:12, right:12, zIndex:10, animation:'slideUpFade 280ms cubic-bezier(.2,.8,.2,1)' }}>
+      <Pressable onClick={onClick} style={{ width:'100%', background:'var(--accent)', color:'var(--accent-fg)', borderRadius:14, padding:'12px 16px', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:12, boxShadow:'0 12px 32px -8px var(--accent-shadow)' }}>
+        <div style={{ width:30, height:30, borderRadius:8, background:'rgba(255,255,255,.18)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--font-mono)', fontSize:13, fontWeight:700 }}>{qty}</div>
+        <div style={{ flex:1, textAlign:'left' }}>
+          <div style={{ fontSize:11, opacity:0.85, fontWeight:500 }}>Cotización</div>
+          <div style={{ fontSize:14, fontWeight:700, fontFamily:'var(--font-mono)', letterSpacing:'-0.02em' }}>{fmt(total)}</div>
+        </div>
+        <div style={{ fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>Ver <Icon name="arrowRight" size={14}/></div>
+      </Pressable>
+    </div>
+  );
+}
+
+// ── DETAIL SCREEN ─────────────────────────────────────────────────────────
+function DetailScreen({ product:p, onBack, onAddToCart, cart }) {
+  const [qty, setQty] = useState(1);
+  const [ancho, setAncho] = useState(p.esBandaMetrica&&p.anchoOpciones?p.anchoOpciones[0]:null);
+  const [anchoCustom, setAnchoCustom] = useState('');
+  const [added, setAdded] = useState(false);
+
+  const isMega = p.marca==='Megadyne';
+  const accent = isMega?'var(--accent)':'var(--accent-2)';
+  const accentSoft = isMega?'var(--accent-soft)':'var(--accent-2-soft)';
+  const anchoFinal = anchoCustom?Number(anchoCustom):ancho;
+  const precioEfectivo = p.esBandaMetrica&&anchoFinal ? p.precioBinasa*(anchoFinal/25.4) : p.precioBinasa;
+  const totalLinea = precioEfectivo*qty;
+  const descuento = Math.round((1-p.precioBinasa/p.precioLista)*100);
+
+  const handleAdd = () => {
+    if (p.esBandaMetrica&&!anchoFinal) return;
+    onAddToCart(p,qty,anchoFinal);
+    setAdded(true);
+    setTimeout(()=>setAdded(false),1400);
+  };
+
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', background:'var(--bg)', overflow:'hidden' }}>
+      <div style={{ padding:'14px 16px 12px', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+        <Pressable onClick={onBack} style={{ width:36, height:36, borderRadius:10, border:'none', background:'var(--surface-2)', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+          <Icon name="back" size={18}/>
+        </Pressable>
+        <div style={{ flex:1, fontSize:13, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>Detalle / <span style={{ color:'var(--text)' }}>{p.id}</span></div>
+      </div>
+
+      <div className="hide-scroll" style={{ flex:1, overflowY:'auto', padding:'0 18px 16px' }}>
+        <div style={{ background:accentSoft, borderRadius:16, padding:'20px 18px', marginBottom:14, position:'relative', overflow:'hidden', border:'1.5px solid var(--border)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+            <BrandTag marca={p.marca}/>
+            <span style={{ fontSize:10, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>·</span>
+            <span style={{ fontSize:10, color:'var(--text-mute)', fontFamily:'var(--font-mono)', textTransform:'uppercase', letterSpacing:'0.06em' }}>{p.categoria}</span>
+          </div>
+          <div style={{ fontSize:20, fontWeight:700, color:'var(--text)', lineHeight:1.25, letterSpacing:'-0.01em', marginBottom:10 }}>{p.desc}</div>
+          <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:4 }}>
+            <div style={{ fontSize:28, fontWeight:700, color:'var(--text)', fontFamily:'var(--font-mono)', letterSpacing:'-0.03em', lineHeight:1 }}>{fmt(p.precioBinasa)}</div>
+            <div style={{ fontSize:12, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>/ {p.unidad}</div>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>
+            <span style={{ textDecoration:'line-through' }}>Lista {fmt(p.precioLista)}</span>
+            <span style={{ background:'var(--ok-bg)', color:'var(--ok-fg)', padding:'1px 6px', borderRadius:3, fontWeight:600 }}>−{descuento}%</span>
+          </div>
+        </div>
+
+        <div style={{ background:'var(--surface)', borderRadius:14, border:'1.5px solid var(--border)', overflow:'hidden', marginBottom:14 }}>
+          {[['SKU',p.id,true],['Grupo',p.grupo],['Categoría',p.categoria]].map(([l,v,m])=>(
+            <div key={l} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'11px 16px', borderBottom:'1px solid var(--border)' }}>
+              <span style={{ fontSize:12, color:'var(--text-mute)' }}>{l}</span>
+              <span style={{ fontSize:13, fontWeight:600, color:'var(--text)', fontFamily:m?'var(--font-mono)':'var(--font)' }}>{v}</span>
+            </div>
+          ))}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'11px 16px', borderBottom:p.esBandaMetrica?'1px solid var(--border)':'none' }}>
+            <span style={{ fontSize:12, color:'var(--text-mute)' }}>Disponibilidad</span>
+            <StockPill stock={p.stock} unidad={p.unidad}/>
+          </div>
+          {p.esBandaMetrica && (
+            <>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'11px 16px', borderBottom:'1px solid var(--border)' }}>
+                <span style={{ fontSize:12, color:'var(--text-mute)' }}>Paso</span>
+                <span style={{ fontSize:13, fontWeight:600, color:'var(--text)', fontFamily:'var(--font-mono)' }}>{p.paso}</span>
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'11px 16px' }}>
+                <span style={{ fontSize:12, color:'var(--text-mute)' }}>Longitud</span>
+                <span style={{ fontSize:13, fontWeight:600, color:'var(--text)', fontFamily:'var(--font-mono)' }}>{p.longitud} mm</span>
+              </div>
+            </>
+          )}
+        </div>
+
+        {p.esBandaMetrica && (
+          <div style={{ background:'var(--surface)', borderRadius:14, border:'1.5px solid var(--border)', padding:16, marginBottom:14 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'var(--text)', textTransform:'uppercase', letterSpacing:'0.08em' }}>Ancho del corte</div>
+              <div style={{ fontSize:10, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>{anchoFinal?`${anchoFinal}mm`:'— mm'}</div>
+            </div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:10 }}>
+              {p.anchoOpciones.map(a=>{
+                const active = ancho===a&&!anchoCustom;
+                return (
+                  <button key={a} onClick={()=>{setAncho(a);setAnchoCustom('');}}
+                    style={{ padding:'8px 14px', borderRadius:10, border:'1.5px solid', borderColor:active?accent:'var(--border)', background:active?accent:'var(--surface)', color:active?'var(--accent-fg)':'var(--text)', fontSize:13, fontWeight:600, fontFamily:'var(--font-mono)', cursor:'pointer', transition:'all 150ms' }}>
+                    {a}<span style={{ fontSize:9, marginLeft:2, opacity:0.7 }}>mm</span>
+                  </button>
+                );
+              })}
+            </div>
+            <input type="number" value={anchoCustom} onChange={e=>{setAnchoCustom(e.target.value);setAncho(null);}} placeholder="o ancho personalizado (mm)"
+              style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid', borderColor:anchoCustom?accent:'var(--border)', background:'var(--surface-2)', color:'var(--text)', fontSize:13, fontFamily:'var(--font-mono)', outline:'none' }}/>
+          </div>
+        )}
+
+        <div style={{ background:'var(--surface)', borderRadius:14, border:'1.5px solid var(--border)', padding:16 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:'var(--text)', textTransform:'uppercase', letterSpacing:'0.08em' }}>Cantidad</div>
+            <div style={{ display:'flex', alignItems:'center', background:'var(--surface-2)', borderRadius:10, padding:2 }}>
+              <button onClick={()=>setQty(q=>Math.max(1,q-1))} style={{ width:32, height:32, border:'none', background:'transparent', color:'var(--text)', cursor:'pointer', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}><Icon name="minus" size={14} stroke={2.5}/></button>
+              <div style={{ minWidth:44, textAlign:'center', fontSize:15, fontWeight:700, fontFamily:'var(--font-mono)', color:'var(--text)' }}>{qty}</div>
+              <button onClick={()=>setQty(q=>q+1)} style={{ width:32, height:32, border:'none', background:'transparent', color:'var(--text)', cursor:'pointer', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}><Icon name="plus" size={14} stroke={2.5}/></button>
+            </div>
+          </div>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', paddingTop:12, borderTop:'1px solid var(--border)' }}>
+            <div style={{ fontSize:11, color:'var(--text-mute)', textTransform:'uppercase', letterSpacing:'0.08em', fontWeight:600 }}>Subtotal de línea</div>
+            <div style={{ fontSize:20, fontWeight:700, color:'var(--text)', fontFamily:'var(--font-mono)', letterSpacing:'-0.02em' }}>{fmt(totalLinea)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding:'12px 18px 16px', flexShrink:0, borderTop:'1px solid var(--border)', background:'var(--surface)' }}>
+        <Pressable onClick={handleAdd} disabled={(p.esBandaMetrica&&!anchoFinal)||p.stock===0}
+          style={{ width:'100%', padding:'15px 20px', borderRadius:12, border:'none', background:added?'var(--ok-fg)':(p.stock===0?'var(--surface-2)':accent), color:p.stock===0?'var(--text-mute)':'var(--accent-fg)', fontSize:15, fontWeight:700, fontFamily:'var(--font)', cursor:p.stock===0?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:p.stock===0?'none':'0 8px 20px -8px var(--accent-shadow)', transition:'background 220ms' }}>
+          {added ? <><Icon name="check" size={18} stroke={2.5}/> Agregado a cotización</>
+           : p.stock===0 ? <>Sin stock — solicitar back-order</>
+           : p.esBandaMetrica&&!anchoFinal ? <>Selecciona el ancho</>
+           : <>+ Agregar {qty} {p.unidad} · {fmt(totalLinea)}</>}
+        </Pressable>
+      </div>
+    </div>
+  );
+}
+
+// ── CART SCREEN ───────────────────────────────────────────────────────────
+function CartScreen({ cart, onBack, onNav, onRemove, onChangeQty, onGenerate, session }) {
+  const [margin, setMargin] = useState(25);
+  const [client, setClient] = useState({nombre:'',empresa:'',email:''});
+  const [entrega, setEntrega] = useState('3-5 días hábiles');
+  const [showClient, setShowClient] = useState(false);
+
+  const calcLinea = (i) => {
+    const p=i.product;
+    return (p.esBandaMetrica&&i.ancho) ? p.precioBinasa*(i.ancho/25.4)*i.qty : p.precioBinasa*i.qty;
+  };
+  const subtotal = useMemo(()=>cart.reduce((s,i)=>s+calcLinea(i),0),[cart]);
+  const margenMonto = subtotal*(margin/100);
+  const totalSinIva = subtotal+margenMonto;
+  const iva = totalSinIva*0.16;
+  const total = totalSinIva+iva;
+
+  const inpSm = { width:'100%', padding:'9px 12px', borderRadius:9, border:'1.5px solid var(--border)', background:'var(--surface-2)', color:'var(--text)', fontSize:13, fontFamily:'var(--font)', outline:'none' };
+
+  if (cart.length===0) return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', background:'var(--bg)' }}>
+      <div style={{ padding:'14px 16px 12px', display:'flex', alignItems:'center', gap:10 }}>
+        <Pressable onClick={onBack} style={{ width:36, height:36, borderRadius:10, border:'none', background:'var(--surface-2)', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}><Icon name="back" size={18}/></Pressable>
+        <div style={{ fontSize:16, fontWeight:700, color:'var(--text)' }}>Cotización</div>
+      </div>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:40, gap:16 }}>
+        <div style={{ width:72, height:72, borderRadius:18, background:'var(--surface-2)', display:'flex', alignItems:'center', justifyContent:'center' }}><Icon name="cart" size={32} style={{ color:'var(--text-mute)' }}/></div>
+        <div style={{ textAlign:'center' }}>
+          <div style={{ fontSize:16, fontWeight:700, color:'var(--text)', marginBottom:4 }}>Sin productos</div>
+          <div style={{ fontSize:13, color:'var(--text-mute)' }}>Agrega productos desde el catálogo</div>
+        </div>
+        <Pressable onClick={()=>onNav('catalog')} style={{ padding:'12px 24px', borderRadius:12, border:'none', background:'var(--accent)', color:'var(--accent-fg)', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>Ver catálogo <Icon name="arrowRight" size={14}/></Pressable>
+      </div>
+      <BottomNav active="cart" onNav={onNav} cartCount={0}/>
+    </div>
+  );
+
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', background:'var(--bg)', overflow:'hidden' }}>
+      <div style={{ padding:'14px 16px 12px', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+        <Pressable onClick={onBack} style={{ width:36, height:36, borderRadius:10, border:'none', background:'var(--surface-2)', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}><Icon name="back" size={18}/></Pressable>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:16, fontWeight:700, color:'var(--text)', letterSpacing:'-0.01em' }}>Cotización</div>
+          <div style={{ fontSize:11, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>{cart.length} líneas · {cart.reduce((s,i)=>s+i.qty,0)} piezas</div>
+        </div>
+        <Pressable onClick={()=>onNav('catalog')} style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 10px', borderRadius:8, border:'1.5px solid var(--border)', background:'var(--surface)', color:'var(--text)', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+          <Icon name="plus" size={12} stroke={2.5}/> Agregar
+        </Pressable>
+      </div>
+
+      <div className="hide-scroll" style={{ flex:1, overflowY:'auto', padding:'0 14px 12px' }}>
+        <div style={{ background:'var(--surface)', borderRadius:14, border:'1.5px solid var(--border)', overflow:'hidden', marginBottom:10 }}>
+          <button onClick={()=>setShowClient(s=>!s)} style={{ width:'100%', padding:'12px 14px', background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:10, textAlign:'left' }}>
+            <div style={{ width:30, height:30, borderRadius:8, background:'var(--accent-soft)', color:'var(--accent)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="user" size={14}/></div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:11, color:'var(--text-mute)', textTransform:'uppercase', letterSpacing:'0.08em', fontWeight:600 }}>Cliente</div>
+              <div style={{ fontSize:13, fontWeight:600, color:'var(--text)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {client.nombre||client.empresa ? `${client.nombre}${client.empresa?' · '+client.empresa:''}` : 'Sin datos del cliente'}
+              </div>
+            </div>
+            <Icon name="chevron" size={16} style={{ color:'var(--text-mute)', transform:showClient?'rotate(90deg)':'rotate(0deg)', transition:'transform 200ms' }}/>
+          </button>
+          {showClient && (
+            <div style={{ padding:'4px 14px 14px', display:'flex', flexDirection:'column', gap:8, borderTop:'1px solid var(--border)' }}>
+              <input value={client.nombre} onChange={e=>setClient({...client,nombre:e.target.value})} placeholder="Nombre contacto" style={inpSm}/>
+              <input value={client.empresa} onChange={e=>setClient({...client,empresa:e.target.value})} placeholder="Empresa" style={inpSm}/>
+              <input value={client.email} onChange={e=>setClient({...client,email:e.target.value})} placeholder="email@empresa.com" style={inpSm}/>
+              <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px', background:'var(--surface-2)', borderRadius:10 }}>
+                <Icon name="truck" size={14} style={{ color:'var(--text-mute)' }}/>
+                <span style={{ fontSize:12, color:'var(--text-mute)' }}>Entrega:</span>
+                <select value={entrega} onChange={e=>setEntrega(e.target.value)} style={{ flex:1, border:'none', background:'none', outline:'none', fontSize:13, color:'var(--text)', fontFamily:'var(--font)' }}>
+                  <option>Inmediata (en stock)</option>
+                  <option>1-2 días hábiles</option>
+                  <option>3-5 días hábiles</option>
+                  <option>1 semana</option>
+                  <option>2 semanas</option>
+                  <option>Bajo pedido (3-4 sem)</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:12 }}>
+          {cart.map(item=>{
+            const p=item.product, linea=calcLinea(item);
+            return (
+              <div key={p.id+(item.ancho||'')} style={{ background:'var(--surface)', borderRadius:12, border:'1.5px solid var(--border)', padding:'10px 12px', animation:'slideUpFade 240ms cubic-bezier(.2,.8,.2,1)' }}>
+                <div style={{ display:'flex', gap:10 }}>
+                  <div style={{ width:3, background:p.marca==='Megadyne'?'var(--accent)':'var(--accent-2)', borderRadius:2 }}/>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+                      <span style={{ fontSize:9, fontFamily:'var(--font-mono)', color:'var(--text-mute)' }}>{p.id}</span>
+                      {item.ancho && <span style={{ fontSize:9, fontFamily:'var(--font-mono)', color:'var(--accent)', background:'var(--accent-soft)', padding:'1px 5px', borderRadius:3, fontWeight:600 }}>{item.ancho}mm</span>}
+                    </div>
+                    <div style={{ fontSize:12, fontWeight:600, color:'var(--text)', lineHeight:1.3 }}>{p.desc}</div>
+                  </div>
+                  <button onClick={()=>onRemove(p.id,item.ancho)} style={{ width:24, height:24, border:'none', background:'transparent', color:'var(--text-mute)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', borderRadius:6, flexShrink:0 }}><Icon name="close" size={14}/></button>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10, paddingLeft:13 }}>
+                  <div style={{ display:'flex', alignItems:'center', background:'var(--surface-2)', borderRadius:8, padding:1 }}>
+                    <button onClick={()=>onChangeQty(p.id,item.ancho,Math.max(1,item.qty-1))} style={{ width:26, height:26, border:'none', background:'transparent', color:'var(--text)', cursor:'pointer', borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center' }}><Icon name="minus" size={12} stroke={2.5}/></button>
+                    <div style={{ minWidth:32, textAlign:'center', fontSize:13, fontWeight:700, fontFamily:'var(--font-mono)', color:'var(--text)' }}>{item.qty}</div>
+                    <button onClick={()=>onChangeQty(p.id,item.ancho,item.qty+1)} style={{ width:26, height:26, border:'none', background:'transparent', color:'var(--text)', cursor:'pointer', borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center' }}><Icon name="plus" size={12} stroke={2.5}/></button>
+                  </div>
+                  <div style={{ fontSize:14, fontWeight:700, color:'var(--text)', fontFamily:'var(--font-mono)', letterSpacing:'-0.02em' }}>{fmt(linea)}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ background:'var(--surface)', borderRadius:14, border:'1.5px solid var(--border)', padding:'14px 16px', marginBottom:10 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10 }}>
+            <div>
+              <div style={{ fontSize:11, color:'var(--text-mute)', textTransform:'uppercase', letterSpacing:'0.08em', fontWeight:600 }}>Margen comercial</div>
+              <div style={{ fontSize:10, color:'var(--text-mute)', fontFamily:'var(--font-mono)', marginTop:2 }}>Utilidad: {fmt(margenMonto)}</div>
+            </div>
+            <div style={{ fontSize:24, fontWeight:700, color:'var(--accent)', fontFamily:'var(--font-mono)', letterSpacing:'-0.02em' }}>{margin}<span style={{ fontSize:14, opacity:0.7 }}>%</span></div>
+          </div>
+          <input type="range" min="0" max="60" value={margin} onChange={e=>setMargin(+e.target.value)} style={{ width:'100%', accentColor:'var(--accent)', cursor:'pointer' }}/>
+          <div style={{ display:'flex', gap:6, marginTop:10 }}>
+            {[15,20,25,30,40].map(m=>(
+              <button key={m} onClick={()=>setMargin(m)} style={{ flex:1, padding:'6px 0', borderRadius:6, border:'1.5px solid', borderColor:margin===m?'var(--accent)':'var(--border)', background:margin===m?'var(--accent-soft)':'var(--surface-2)', color:margin===m?'var(--accent)':'var(--text-mute)', fontSize:11, fontWeight:700, fontFamily:'var(--font-mono)', cursor:'pointer' }}>{m}%</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ background:'var(--text)', color:'var(--bg)', borderRadius:14, padding:'14px 16px' }}>
+          {[['Subtotal Binasa',fmt(subtotal)],['Margen ('+margin+'%)',fmt(margenMonto)],['IVA 16%',fmt(iva)]].map(([l,v])=>(
+            <div key={l} style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', padding:'3px 0' }}>
+              <div style={{ fontSize:12, opacity:0.6 }}>{l}</div>
+              <div style={{ fontSize:13, fontWeight:600, fontFamily:'var(--font-mono)', letterSpacing:'-0.02em', opacity:0.85 }}>{v}</div>
+            </div>
+          ))}
+          <div style={{ height:1, background:'rgba(255,255,255,.15)', margin:'8px 0' }}/>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
+            <div style={{ fontSize:13, fontWeight:600, opacity:0.7 }}>Total cliente</div>
+            <div style={{ fontSize:24, fontWeight:700, fontFamily:'var(--font-mono)', letterSpacing:'-0.02em' }}>{fmt(total)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding:'12px 14px 14px', display:'flex', gap:8, flexShrink:0, borderTop:'1px solid var(--border)', background:'var(--surface)' }}>
+        <Pressable onClick={()=>onGenerate({cart,client,entrega,margin,subtotal,total,iva,margenMonto})}
+          style={{ flex:1, padding:'14px', borderRadius:12, border:'none', background:'var(--accent)', color:'var(--accent-fg)', fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'0 8px 20px -8px var(--accent-shadow)' }}>
+          <Icon name="doc" size={16}/> Generar PDF · {fmt(total)}
+        </Pressable>
+      </div>
+    </div>
+  );
+}
+
+// ── SUCCESS SCREEN ────────────────────────────────────────────────────────
+function SuccessScreen({ quote, onDone }) {
+  const folio = 'COT-'+Date.now().toString().slice(-6);
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', background:'var(--bg)' }}>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:28, gap:16 }}>
+        <div style={{ width:72, height:72, borderRadius:20, background:'var(--ok-bg)', color:'var(--ok-fg)', display:'flex', alignItems:'center', justifyContent:'center', animation:'popIn 360ms cubic-bezier(.2,1.4,.4,1)' }}>
+          <Icon name="check" size={36} stroke={3}/>
+        </div>
+        <div style={{ textAlign:'center', animation:'slideUpFade 360ms 120ms backwards' }}>
+          <div style={{ fontSize:22, fontWeight:700, color:'var(--text)', letterSpacing:'-0.02em' }}>Cotización lista</div>
+          <div style={{ fontSize:13, color:'var(--text-mute)', marginTop:6, lineHeight:1.5 }}>
+            Folio <span style={{ fontFamily:'var(--font-mono)', color:'var(--text)', background:'var(--surface-2)', padding:'2px 7px', borderRadius:4 }}>{folio}</span>
+          </div>
+        </div>
+        <div style={{ width:'100%', maxWidth:280, background:'var(--surface)', borderRadius:14, border:'1.5px solid var(--border)', padding:16, marginTop:8 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+            <span style={{ fontSize:11, color:'var(--text-mute)' }}>Cliente</span>
+            <span style={{ fontSize:12, fontWeight:600, color:'var(--text)' }}>{quote.client.empresa||quote.client.nombre||'Sin nombre'}</span>
+          </div>
+          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+            <span style={{ fontSize:11, color:'var(--text-mute)' }}>Productos</span>
+            <span style={{ fontSize:12, fontWeight:600, color:'var(--text)', fontFamily:'var(--font-mono)' }}>{quote.cart.length}</span>
+          </div>
+          <div style={{ display:'flex', justifyContent:'space-between', paddingTop:8, borderTop:'1px solid var(--border)' }}>
+            <span style={{ fontSize:11, color:'var(--text-mute)' }}>Total</span>
+            <span style={{ fontSize:16, fontWeight:700, color:'var(--accent)', fontFamily:'var(--font-mono)', letterSpacing:'-0.02em' }}>{fmt(quote.total)}</span>
+          </div>
+        </div>
+      </div>
+      <div style={{ padding:'12px 18px 18px', display:'flex', flexDirection:'column', gap:8 }}>
+        <Pressable onClick={()=>alert('PDF descargado (demo)')} style={{ padding:'14px', borderRadius:12, border:'none', background:'var(--accent)', color:'var(--accent-fg)', fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'0 8px 20px -8px var(--accent-shadow)' }}>
+          <Icon name="download" size={16}/> Descargar PDF
+        </Pressable>
+        <div style={{ display:'flex', gap:8 }}>
+          <Pressable onClick={()=>alert('Compartido (demo)')} style={{ flex:1, padding:'12px', borderRadius:12, border:'1.5px solid var(--border)', background:'var(--surface)', color:'var(--text)', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+            <Icon name="send" size={14}/> Enviar
+          </Pressable>
+          <Pressable onClick={onDone} style={{ flex:1, padding:'12px', borderRadius:12, border:'1.5px solid var(--border)', background:'var(--surface)', color:'var(--text)', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            Nueva cotización
+          </Pressable>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── XREF SCREEN ───────────────────────────────────────────────────────────
+function XrefScreen({ onBack, onNav }) {
+  const [search, setSearch] = useState('');
+  const filtered = window.EQUIVALENCIAS.filter(e=>{
+    const q=search.toLowerCase();
+    return !q||e.ref.toLowerCase().includes(q)||e.descripcion.toLowerCase().includes(q)||e.competidor.toLowerCase().includes(q);
+  });
+  const totalItems = 0;
+
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', background:'var(--bg)', overflow:'hidden' }}>
+      <div style={{ padding:'14px 16px 8px', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+        <Pressable onClick={onBack} style={{ width:36, height:36, borderRadius:10, border:'none', background:'var(--surface-2)', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}><Icon name="back" size={18}/></Pressable>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:16, fontWeight:700, color:'var(--text)' }}>Equivalencias</div>
+          <div style={{ fontSize:11, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>Gates · Optibelt · Parker → Megadyne / Jasson</div>
+        </div>
+      </div>
+      <div style={{ padding:'8px 16px 12px', flexShrink:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, background:'var(--surface-2)', borderRadius:12, padding:'11px 14px' }}>
+          <Icon name="search" size={16} style={{ color:'var(--text-mute)' }}/>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar referencia competencia…"
+            style={{ flex:1, border:'none', background:'transparent', outline:'none', fontSize:14, fontFamily:'var(--font)', color:'var(--text)' }}/>
+        </div>
+      </div>
+      <div className="hide-scroll" style={{ flex:1, overflowY:'auto', padding:'0 14px 12px' }}>
+        {filtered.map((e,i)=>{
+          const eq=[...window.CATALOG.bandas,...window.CATALOG.mangueras].find(p=>p.id===e.equivalente);
+          return (
+            <Pressable key={i} onClick={()=>eq&&onNav('detail',{product:eq})} as="div"
+              style={{ width:'100%', display:'block', padding:'14px', borderRadius:12, background:'var(--surface)', border:'1.5px solid var(--border)', cursor:'pointer', textAlign:'left', marginBottom:8 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                <span style={{ fontSize:9, fontWeight:700, padding:'3px 8px', borderRadius:4, background:'var(--warn-bg)', color:'var(--warn-fg)', textTransform:'uppercase', letterSpacing:'0.08em' }}>{e.competidor}</span>
+                <span style={{ fontSize:12, fontFamily:'var(--font-mono)', color:'var(--text)', fontWeight:600 }}>{e.ref}</span>
+              </div>
+              <div style={{ fontSize:12, color:'var(--text-mute)', marginBottom:10 }}>{e.descripcion}</div>
+              <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', background:'var(--accent-soft)', borderRadius:8 }}>
+                <Icon name="arrowRight" size={14} style={{ color:'var(--accent)' }}/>
+                <span style={{ fontSize:11, color:'var(--text-mute)', textTransform:'uppercase', letterSpacing:'0.06em', fontWeight:600 }}>Equivale a</span>
+                <span style={{ fontSize:12, fontFamily:'var(--font-mono)', fontWeight:700, color:'var(--accent)', marginLeft:'auto' }}>{e.equivalente}</span>
+              </div>
+            </Pressable>
+          );
+        })}
+      </div>
+      <BottomNav active="xref" onNav={onNav} cartCount={totalItems}/>
+    </div>
+  );
+}
+
+// ── BACKORDERS SCREEN ─────────────────────────────────────────────────────
+function BackordersScreen({ onBack }) {
+  const statusLabel = { pendiente:'Pendiente', en_camino:'En camino', llegado:'Llegó' };
+  const statusColors = {
+    pendiente: { bg:'var(--warn-bg)', fg:'var(--warn-fg)' },
+    en_camino: { bg:'var(--accent-soft)', fg:'var(--accent)' },
+    llegado:   { bg:'var(--ok-bg)', fg:'var(--ok-fg)' },
+  };
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', background:'var(--bg)', overflow:'hidden' }}>
+      <div style={{ padding:'14px 16px 12px', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+        <Pressable onClick={onBack} style={{ width:36, height:36, borderRadius:10, border:'none', background:'var(--surface-2)', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}><Icon name="back" size={18}/></Pressable>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:16, fontWeight:700, color:'var(--text)' }}>Back-orders</div>
+          <div style={{ fontSize:11, color:'var(--text-mute)', fontFamily:'var(--font-mono)' }}>{window.BACKORDERS.length} solicitudes</div>
+        </div>
+      </div>
+      <div className="hide-scroll" style={{ flex:1, overflowY:'auto', padding:'0 14px 12px' }}>
+        {window.BACKORDERS.map(bo=>{
+          const c = statusColors[bo.status]||statusColors.pendiente;
+          return (
+            <div key={bo.id} style={{ background:'var(--surface)', borderRadius:12, border:'1.5px solid var(--border)', padding:'12px 14px', marginBottom:8 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
+                <span style={{ fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-mute)' }}>{bo.id} · {bo.producto}</span>
+                <span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:c.bg, color:c.fg }}>{statusLabel[bo.status]}</span>
+              </div>
+              <div style={{ fontSize:13, fontWeight:600, color:'var(--text)', marginBottom:4 }}>{bo.desc}</div>
+              <div style={{ fontSize:12, color:'var(--text-mute)' }}>{bo.cliente} · {bo.cantidad} unidades · {bo.fecha}</div>
+              {bo.status==='en_camino' && (
+                <div style={{ marginTop:8, background:'var(--accent-soft)', borderRadius:8, padding:'8px 10px', fontSize:12, color:'var(--accent)', fontWeight:500 }}>Mercancía en camino · Notificación activa</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── APP ROOT ──────────────────────────────────────────────────────────────
+function App() {
+  const [session, setSession] = useState(()=>getSession());
+  const [screen, setScreen] = useState('home');
+  const [screenData, setScreenData] = useState({});
+  const [navDir, setNavDir] = useState('forward');
+  const [cart, setCart] = useState([]);
+  const [recents, setRecents] = useState([]);
+  const [lastQuote, setLastQuote] = useState(null);
+
+  useEffect(()=>{
+    const s = getSession();
+    if (s) setSession(s);
+  },[]);
+
+  const nav = useCallback((to, data={}, dir='forward')=>{
+    setNavDir(dir);
+    setScreen(to);
+    setScreenData(data);
+  },[]);
+  const back = useCallback(()=>nav('home',{},'back'),[nav]);
+
+  const handleLogin = (s)=>{ setSession(s); };
+  const handleLogout = ()=>{ clearSession(); setSession(null); setCart([]); setScreen('home'); };
+
+  const addToCart = useCallback((product, qty=1, ancho=null)=>{
+    setCart(prev=>{
+      const key = product.id+(ancho||'');
+      const ex = prev.find(i=>(i.product.id+(i.ancho||''))===key);
+      if (ex) return prev.map(i=>i===ex?{...i,qty:i.qty+qty}:i);
+      return [...prev,{product,qty,ancho}];
+    });
+    setRecents(prev=>[product.id,...prev.filter(id=>id!==product.id)].slice(0,6));
+  },[]);
+
+  const removeFromCart = useCallback((id, ancho)=>{
+    setCart(prev=>prev.filter(i=>!(i.product.id===id&&(i.ancho||null)===(ancho||null))));
+  },[]);
+
+  const changeQty = useCallback((id, ancho, qty)=>{
+    setCart(prev=>prev.map(i=>(i.product.id===id&&(i.ancho||null)===(ancho||null))?{...i,qty}:i));
+  },[]);
+
+  const handleGenerate = (quote)=>{ setLastQuote(quote); nav('success'); setCart([]); };
+
+  if (!session) return <LoginScreen onLogin={handleLogin}/>;
+
+  let body;
+  switch(screen) {
+    case 'home':      body=<HomeScreen session={session} onNav={nav} cart={cart} onLogout={handleLogout} recents={recents}/>;break;
+    case 'catalog':   body=<CatalogScreen onNav={nav} cart={cart} initialTab={screenData.tab||'bandas'} onAddToCart={addToCart} onBack={back}/>;break;
+    case 'detail':    body=<DetailScreen product={screenData.product} onBack={()=>nav('catalog',{},'back')} onAddToCart={addToCart} cart={cart}/>;break;
+    case 'cart':      body=<CartScreen cart={cart} onBack={back} onNav={nav} onRemove={removeFromCart} onChangeQty={changeQty} onGenerate={handleGenerate} session={session}/>;break;
+    case 'success':   body=<SuccessScreen quote={lastQuote} onDone={()=>nav('home',{},'back')}/>;break;
+    case 'xref':      body=<XrefScreen onBack={back} onNav={nav}/>;break;
+    case 'backorders':body=<BackordersScreen onBack={back}/>;break;
+    default:          body=<HomeScreen session={session} onNav={nav} cart={cart} onLogout={handleLogout} recents={recents}/>;
   }
 
-  const s=window._session;
-  if(!s)return;
+  return (
+    <div className="app-bg">
+      <div className="phone-frame">
+        <div key={screen} style={{ width:'100%', height:'100%', animation:`${navDir==='back'?'slideInLeft':'slideInRight'} 220ms cubic-bezier(.2,.8,.2,1)` }}>
+          {body}
+        </div>
+      </div>
+      <div className="brand-watermark">Ammega Binasa · Cotizador B2B</div>
+    </div>
+  );
+}
 
-  const ROLE_LABEL={vendedor:'Vendedor',director:'Director',admin:'Admin'};
-  document.getElementById('nav-user-info').innerHTML=
-    `${s.user} &nbsp;·&nbsp; <span>${ROLE_LABEL[s.role]||s.role}</span>`;
-
-  // Logo: intentar cargar desde localStorage (admin lo puede guardar)
-  const logoB64=localStorage.getItem('jdm_logo_b64');
-  const logoArea=document.getElementById('logo-area');
-  if(logoB64){
-    logoArea.innerHTML=`<img class="logo-img" src="data:image/png;base64,${logoB64}" alt="Logo">`;
-  } else {
-    logoArea.innerHTML=`
-      <div class="logo-text-main">AMMEGA<span>GROUP</span></div>`;
-  }
-
-  // Links extra para director y admin
-  const extraNav=document.getElementById('extra-nav');
-  if(s.role==='director'||s.role==='admin'){
-    extraNav.style.display='flex';
-    let html=`<a href="dashboard.html" class="ext-link">📊 Dashboard</a>`;
-    if(s.role==='admin') html+=`<a href="admin.html" class="ext-link">⚙️ Admin</a>`;
-    extraNav.innerHTML=html;
-  }
-})();
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
