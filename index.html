@@ -6,9 +6,9 @@
 <title>Cotizador Ammega — B2B</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
 <script src="data.js"></script>
 <script type="text/babel" src="ios-frame.jsx"></script>
 <script type="text/babel" src="tweaks-panel.jsx"></script>
@@ -604,21 +604,42 @@ function ProductCard({ product: p, onPress, onAdd, compact }) {
   );
 }
 
+const PAGE_SIZE = 40;
+
 // ─── CATALOG SCREEN
 function CatalogScreen({ onBack, onProduct, onAddToCart, cart }) {
   const [tab, setTab] = useState('bandas');
   const [search, setSearch] = useState('');
   const [cat, setCat] = useState('Todos');
+  const [page, setPage] = useState(1);
+  const listRef = useRef(null);
   const allProducts = tab === 'bandas' ? window.CATALOG.bandas : window.CATALOG.mangueras;
   const cats = ['Todos', ...new Set(allProducts.map(p => p.categoria))];
   const totalItems = cart.reduce((s, i) => s + i.qty, 0);
 
-  const filtered = allProducts.filter(p => {
+  const filtered = useMemo(() => allProducts.filter(p => {
     const q = search.toLowerCase();
     const matchSearch = !q || p.id.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.grupo.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q);
     const matchCat = cat === 'Todos' || p.categoria === cat;
     return matchSearch && matchCat;
-  });
+  }), [allProducts, search, cat]);
+
+  // Reset pagination when filters change
+  useEffect(() => { setPage(1); if (listRef.current) listRef.current.scrollTop = 0; }, [search, cat, tab]);
+
+  const visible = filtered.slice(0, page * PAGE_SIZE);
+  const hasMore = visible.length < filtered.length;
+
+  // Infinite scroll
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) setPage(p => p + 1);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <div className="screen">
@@ -687,16 +708,21 @@ function CatalogScreen({ onBack, onProduct, onAddToCart, cart }) {
         {cats.map(c => <button key={c} className={`chip ${cat === c ? 'active' : ''}`} onClick={() => setCat(c)}>{c}</button>)}
       </div>
 
-      <div className="product-list">
+      <div className="product-list" ref={listRef}>
         {filtered.length === 0 && (
           <div className="cart-empty">
             <div className="cart-empty-icon">🔍</div>
             <div className="cart-empty-text">No se encontraron productos<br/>para "{search}"</div>
           </div>
         )}
-        {filtered.map(p => (
+        {visible.map(p => (
           <ProductCard key={p.id} product={p} onPress={() => onProduct(p)} onAdd={() => vendePorCorte(p.unidad) && !p.esBandaMetrica ? onProduct(p) : onAddToCart(p)} />
         ))}
+        {hasMore && (
+          <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--gray-400)', fontSize: 12 }}>
+            Cargando más… ({visible.length} de {filtered.length})
+          </div>
+        )}
       </div>
     </div>
   );
