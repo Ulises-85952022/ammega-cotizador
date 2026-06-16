@@ -1412,7 +1412,7 @@ function App() {
     switch (screen) {
       case 'home': return <HomeScreen onNav={navigate} cart={cart} session={session} onLogout={handleLogout} />;
       case 'catalog': return <CatalogScreen onBack={() => setScreen('home')} onProduct={(p, dest) => dest ? setScreen(dest) : navigate('detail', p)} onAddToCart={addToCart} cart={cart} />;
-      case 'detail': return selectedProduct ? <DetailScreen product={selectedProduct} onBack={goBack} onAddToCart={(p, qty, ancho, anchoUnidad) => { addToCart(p, qty, ancho, anchoUnidad); goBack(); }} /> : null;
+      case 'detail': return selectedProduct ? <DetailScreen product={selectedProduct} onBack={goBack} onAddToCart={(p, qty, ancho, anchoUnidad, corte) => { addToCart(p, qty, ancho, anchoUnidad, corte); goBack(); }} /> : null;
       case 'cart': return <CartScreen cart={cart} onBack={() => setScreen('home')} onRemove={removeFromCart} onChangeQty={changeQty} onGenerate={generatePdf} />;
       case 'pdf': return <PdfScreen cart={cart} quoteData={quoteData} onBack={() => setScreen('cart')} onDone={() => setScreen('success')} />;
       case 'success': return <SuccessScreen onDone={() => { setCart([]); setScreen('home'); }} />;
