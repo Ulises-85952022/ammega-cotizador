@@ -485,10 +485,17 @@ function StockBadge({ stock, unidad }) {
 // ─── Format currency
 const fmt = (n) => `$${Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-// ─── Precio efectivo de un item del carrito (soporta bandas métricas)
+// ─── Unidades que se venden por corte (precio × tamaño × piezas)
+const UNIDADES_CORTE = ['mm', 'mt', 'metro', 'm', 'pulg', 'in', 'pulgada', 'cm'];
+const vendePorCorte = (unidad) => UNIDADES_CORTE.includes((unidad || '').toLowerCase().trim());
+
+// ─── Precio efectivo de un item del carrito
 const calcItemPrecio = (item) => {
   if (item.product.esBandaMetrica && item.ancho) {
     return item.product.precioBinasa * (item.ancho / 25.4) * item.qty;
+  }
+  if (item.corte && vendePorCorte(item.product.unidad)) {
+    return item.product.precioBinasa * Number(item.corte) * item.qty;
   }
   return item.product.precioBinasa * item.qty;
 };
@@ -688,7 +695,7 @@ function CatalogScreen({ onBack, onProduct, onAddToCart, cart }) {
           </div>
         )}
         {filtered.map(p => (
-          <ProductCard key={p.id} product={p} onPress={() => onProduct(p)} onAdd={() => onAddToCart(p)} />
+          <ProductCard key={p.id} product={p} onPress={() => onProduct(p)} onAdd={() => vendePorCorte(p.unidad) && !p.esBandaMetrica ? onProduct(p) : onAddToCart(p)} />
         ))}
       </div>
     </div>
@@ -701,13 +708,18 @@ function DetailScreen({ product: p, onBack, onAddToCart }) {
   const [ancho, setAncho] = useState(p.esBandaMetrica && p.anchoOpciones ? p.anchoOpciones[0] : null);
   const [anchoUnidad, setAnchoUnidad] = useState('mm');
   const [anchoCustom, setAnchoCustom] = useState('');
+  const [corte, setCorte] = useState('');
   const accentColor = p.marca === 'Megadyne' ? 'var(--teal)' : 'var(--amber)';
   const descuento = Math.round((1 - p.precioBinasa / p.precioLista) * 100);
+  const esCorte = vendePorCorte(p.unidad) && !p.esBandaMetrica;
 
   const anchofinal = anchoCustom ? Number(anchoCustom) : ancho;
-  const precioConAncho = p.esBandaMetrica && anchofinal
+  const precioUnitario = p.esBandaMetrica && anchofinal
     ? p.precioBinasa * (anchoUnidad === 'in' ? anchofinal * 25.4 / 25.4 : anchofinal / 25.4)
-    : p.precioBinasa;
+    : esCorte && corte
+      ? p.precioBinasa * Number(corte)
+      : p.precioBinasa;
+  const precioConAncho = precioUnitario;
 
   return (
     <div className="screen">
@@ -732,7 +744,9 @@ function DetailScreen({ product: p, onBack, onAddToCart }) {
           <div className="detail-price-main" style={{ color: p.marca === 'Megadyne' ? 'var(--teal-dark)' : 'var(--amber)' }}>
             {p.esBandaMetrica && anchofinal
               ? <>{fmt(precioConAncho)} <span style={{ fontSize: 14, fontWeight: 400 }}>/ pz ({anchofinal}{anchoUnidad} ancho)</span></>
-              : <>{fmt(p.precioBinasa)} <span style={{ fontSize: 14, fontWeight: 400 }}>/ {p.unidad}</span></>
+              : esCorte && corte
+                ? <>{fmt(precioConAncho)} <span style={{ fontSize: 14, fontWeight: 400 }}>/ pz ({corte} {p.unidad})</span></>
+                : <>{fmt(p.precioBinasa)} <span style={{ fontSize: 14, fontWeight: 400 }}>/ {p.unidad}</span></>
             }
           </div>
           <div className="detail-price-lista">P. Lista: {fmt(p.precioLista)} · Descuento {descuento}%</div>
@@ -793,6 +807,34 @@ function DetailScreen({ product: p, onBack, onAddToCart }) {
           </div>
         )}
 
+        {/* Selector de corte para productos vendidos por medida */}
+        {esCorte && (
+          <div style={{ background: '#fff', border: '1.5px solid var(--amber)', borderRadius: 12, padding: '14px', marginBottom: 4 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--amber)', marginBottom: 4 }}>
+              ✂️ Venta por corte — precio por {p.unidad}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--gray-500)', marginBottom: 10 }}>
+              Ingresa el tamaño del corte. El precio se multiplica: {fmt(p.precioBinasa)} × corte × piezas
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--gray-100)', borderRadius: 8, padding: '0 12px', border: corte ? '1.5px solid var(--amber)' : '1.5px solid transparent' }}>
+              <input
+                type="number" min="0.01" step="0.01"
+                placeholder={`Tamaño en ${p.unidad}…`}
+                value={corte}
+                onChange={e => setCorte(e.target.value)}
+                style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: 14, padding: '11px 0', fontFamily: 'var(--font)' }}
+              />
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--amber)' }}>{p.unidad}</span>
+            </div>
+            {corte > 0 && (
+              <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fef3c7', borderRadius: 8, padding: '8px 12px' }}>
+                <span style={{ fontSize: 12, color: 'var(--amber)', fontWeight: 600 }}>✓ {fmt(p.precioBinasa)} × {corte}{p.unidad} = precio/pz:</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--amber)' }}>{fmt(p.precioBinasa * Number(corte))}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="detail-row">
           <span className="detail-label">Disponibilidad</span>
           <StockBadge stock={p.stock} unidad={p.esBandaMetrica ? 'pz' : p.unidad} />
@@ -802,13 +844,18 @@ function DetailScreen({ product: p, onBack, onAddToCart }) {
           <span className="detail-value">{p.grupo}</span>
         </div>
         <div className="detail-row">
-          <span className="detail-label">Cantidad</span>
+          <span className="detail-label">{esCorte ? 'Piezas' : 'Cantidad'}</span>
           <div className="qty-row">
             <button className="qty-btn" onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
             <span className="qty-val">{qty}</span>
             <button className="qty-btn" onClick={() => setQty(q => q + 1)}>+</button>
           </div>
         </div>
+        {esCorte && corte > 0 && qty > 1 && (
+          <div style={{ background: '#fef3c7', borderRadius: 8, padding: '8px 14px', fontSize: 12, color: 'var(--amber)', fontWeight: 600 }}>
+            Total: {fmt(p.precioBinasa)} × {corte}{p.unidad} × {qty} pz = {fmt(p.precioBinasa * Number(corte) * qty)}
+          </div>
+        )}
 
         {p.stock === 0 && (
           <div style={{ background: 'var(--red-light)', borderRadius: 10, padding: '12px 14px', marginTop: 12 }}>
@@ -821,15 +868,19 @@ function DetailScreen({ product: p, onBack, onAddToCart }) {
       <div className="btn-row" style={{ flexDirection: 'column', gap: 8 }}>
         <button
           className="btn-primary"
-          style={{ background: p.esBandaMetrica && !anchofinal ? 'var(--gray-300)' : accentColor }}
-          disabled={p.esBandaMetrica && !anchofinal}
-          onClick={() => onAddToCart(p, qty, anchofinal, anchoUnidad)}
+          style={{ background: (p.esBandaMetrica && !anchofinal) || (esCorte && !corte) ? 'var(--gray-300)' : accentColor }}
+          disabled={(p.esBandaMetrica && !anchofinal) || (esCorte && !corte)}
+          onClick={() => onAddToCart(p, qty, anchofinal, anchoUnidad, esCorte ? corte : null)}
         >
           {p.esBandaMetrica && !anchofinal
             ? 'Selecciona el ancho primero'
-            : p.stock > 0
-              ? `+ Agregar ${qty} pz a cotización`
-              : '📦 Solicitar back-order'
+            : esCorte && !corte
+              ? `Ingresa el tamaño del corte`
+              : p.stock > 0
+                ? esCorte
+                  ? `+ Agregar ${qty} pz (${corte} ${p.unidad} c/u)`
+                  : `+ Agregar ${qty} pz a cotización`
+                : '📦 Solicitar back-order'
           }
         </button>
       </div>
@@ -919,7 +970,13 @@ function CartScreen({ cart, onBack, onRemove, onChangeQty, onGenerate }) {
         <div className="section-header">Productos</div>
         {cart.map(item => {
           const esMet = item.product.esBandaMetrica;
+          const esC = item.corte && vendePorCorte(item.product.unidad);
           const precio = calcItemPrecio(item);
+          const pUnit = esMet && item.ancho
+            ? item.product.precioBinasa * (item.ancho / 25.4)
+            : esC
+              ? item.product.precioBinasa * Number(item.corte)
+              : item.product.precioBinasa;
           return (
           <div key={item.product.id} className="cart-item">
             <div className="cart-item-top">
@@ -931,17 +988,22 @@ function CartScreen({ cart, onBack, onRemove, onChangeQty, onGenerate }) {
                     {item.product.paso} · {item.product.longitud}mm · <span style={{ background: 'var(--teal-light)', padding: '1px 6px', borderRadius: 4 }}>{item.ancho}{item.anchoUnidad || 'mm'} ancho</span>
                   </div>
                 )}
+                {esC && (
+                  <div style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600, marginTop: 2 }}>
+                    ✂️ Corte: <span style={{ background: '#fef3c7', padding: '1px 6px', borderRadius: 4 }}>{item.corte} {item.product.unidad} / pz</span>
+                  </div>
+                )}
               </div>
               <button className="cart-item-del" onClick={() => onRemove(item.product.id)}>✕</button>
             </div>
             <div className="cart-item-bottom">
               <div className="qty-row" style={{ width: 100 }}>
                 <button className="qty-btn" style={{ fontSize: 16, width: 32, height: 32 }} onClick={() => onChangeQty(item.product.id, Math.max(1, item.qty - 1))}>−</button>
-                <span className="qty-val" style={{ fontSize: 14 }}>{item.qty}</span>
+                <span className="qty-val" style={{ fontSize: 14 }}>{item.qty} pz</span>
                 <button className="qty-btn" style={{ fontSize: 16, width: 32, height: 32 }} onClick={() => onChangeQty(item.product.id, item.qty + 1)}>+</button>
               </div>
               <span style={{ fontSize: 11, color: 'var(--gray-400)' }}>
-                {esMet ? `${fmt(item.product.precioBinasa * (item.ancho / 25.4))} c/pz` : `${fmt(item.product.precioBinasa)} c/u`}
+                {fmt(pUnit)} c/pz
               </span>
               <span className="cart-item-price">{fmt(precio)}</span>
             </div>
@@ -1068,15 +1130,23 @@ function PdfScreen({ cart, quoteData, onBack, onDone }) {
             <tbody>
               {cart.map(item => {
                 const esMet = item.product.esBandaMetrica;
-                const pUnit = esMet && item.ancho
-                  ? item.product.precioBinasa * (item.ancho / 25.4) * (1 + quoteData.margin / 100)
-                  : item.product.precioBinasa * (1 + quoteData.margin / 100);
-                const descExtra = esMet && item.ancho ? ` (${item.ancho}${item.anchoUnidad || 'mm'})` : '';
+                const esC = item.corte && vendePorCorte(item.product.unidad);
+                const baseUnit = esMet && item.ancho
+                  ? item.product.precioBinasa * (item.ancho / 25.4)
+                  : esC
+                    ? item.product.precioBinasa * Number(item.corte)
+                    : item.product.precioBinasa;
+                const pUnit = baseUnit * (1 + quoteData.margin / 100);
+                const descExtra = esMet && item.ancho
+                  ? ` (${item.ancho}${item.anchoUnidad || 'mm'} ancho)`
+                  : esC
+                    ? ` (corte ${item.corte} ${item.product.unidad})`
+                    : '';
                 return (
                   <tr key={item.product.id}>
                     <td style={{ fontFamily: 'var(--mono)', color: 'var(--gray-400)', fontSize: 7 }}>{item.product.id}</td>
                     <td style={{ fontWeight: 500 }}>{item.product.desc}{descExtra}</td>
-                    <td style={{ textAlign: 'center' }}>{item.qty} {esMet ? 'pz' : item.product.unidad}</td>
+                    <td style={{ textAlign: 'center' }}>{item.qty} pz</td>
                     <td>{fmt(pUnit)}</td>
                     <td style={{ fontWeight: 700, color: 'var(--gray-900)' }}>{fmt(pUnit * item.qty)}</td>
                   </tr>
@@ -1285,11 +1355,11 @@ function App() {
     setPrevScreen(null);
   }, [prevScreen]);
 
-  const addToCart = useCallback((product, qty = 1, ancho = null, anchoUnidad = 'mm') => {
+  const addToCart = useCallback((product, qty = 1, ancho = null, anchoUnidad = 'mm', corte = null) => {
     setCart(prev => {
       const existing = prev.find(i => i.product.id === product.id);
-      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty + qty, ancho: ancho || i.ancho, anchoUnidad: anchoUnidad || i.anchoUnidad } : i);
-      return [...prev, { product, qty, ancho, anchoUnidad }];
+      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty + qty, ancho: ancho || i.ancho, anchoUnidad: anchoUnidad || i.anchoUnidad, corte: corte || i.corte } : i);
+      return [...prev, { product, qty, ancho, anchoUnidad, corte }];
     });
     if (screen !== 'cart') setScreen('catalog');
   }, [screen]);

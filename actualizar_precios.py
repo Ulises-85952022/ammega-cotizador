@@ -2,16 +2,15 @@
 ACTUALIZADOR DE PRECIOS E INVENTARIO — Cotizador Ammega
 =======================================================
 Lee el archivo Excel de lista de precios y actualiza data.js con:
-  - precioLista   → columna PUBLICO  (hoja "Listas por Artículo")
-  - precioBinasa  → columna PRIME    (hoja "Listas por Artículo")
-  - stock         → suma DISPONIBLE  (hoja "existencias XXXX")
+  - precioLista   → columna "Precio de Lista"   (hoja "_Datos")
+  - precioBinasa  → columna "Precio Binasa"      (hoja "_Datos")
+  - stock         → columna "Disponible"         (hoja "Consolidado_Inv")
+
+Separación bandas / mangueras según columna "Tabla" en _Datos.
 
 Uso:
   python actualizar_precios.py
-  python actualizar_precios.py "mi lista precios.xlsx"
-
-El script conserva todos los campos especiales del catálogo existente
-(esBandaMetrica, paso, longitud, anchoOpciones, unidad, marca, etc.)
+  python actualizar_precios.py "Mi_lista_de_precios_Junio_2026.xlsx"
 """
 
 import sys, os, re, json, glob
@@ -33,98 +32,107 @@ def encontrar_excel(arg=None):
     if arg and os.path.isfile(arg):
         return arg
     candidatos = []
-    for pat in ["lista*.xlsx", "Lista*.xlsx", "precios*.xlsx", "Precios*.xlsx",
-                "inventario*.xlsx", "Inventario*.xlsx", "*.xlsx"]:
+    for pat in ["Mi_lista*.xlsx", "lista*.xlsx", "Lista*.xlsx", "precios*.xlsx",
+                "Precios*.xlsx", "inventario*.xlsx", "Inventario*.xlsx", "*.xlsx"]:
         candidatos += glob.glob(os.path.join(SCRIPT_DIR, pat))
     if candidatos:
         return sorted(candidatos, key=os.path.getmtime, reverse=True)[0]
     return None
 
-# ── Detectar hoja de existencias ───────────────────────────────────────────────
-
-def hoja_existencias(xl):
-    for name in xl.sheet_names:
-        if "exis" in name.lower() or "stock" in name.lower() or "inventario" in name.lower():
-            return name
-    return None
-
-# ── Leer precios ───────────────────────────────────────────────────────────────
+# ── Leer precios desde _Datos ──────────────────────────────────────────────────
 
 def leer_precios(xl):
     """
-    Hoja 'Listas por Artículo': encabezado real en fila 6 (índice 6).
-    Columnas requeridas: Item, PRIME (precioBinasa), PUBLICO (precioLista).
+    Hoja '_Datos': encabezado en fila 1.
+    Columnas: Artículo, Descripción, Unidad, Categoría, Precio de Lista, Precio Binasa, Tabla
+    Retorna dict: {sku: {...}} separado por tabla (Bandas / Mangueras)
     """
+    # Buscar la hoja _Datos
     hoja = None
     for name in xl.sheet_names:
-        if "lista" in name.lower() or "art" in name.lower() or "precio" in name.lower():
+        if "_datos" in name.lower() or name.strip() == "_Datos":
             hoja = name
             break
     if not hoja:
-        hoja = xl.sheet_names[1]  # segunda hoja por convención
+        raise ValueError(f"No se encontró hoja '_Datos'. Hojas disponibles: {xl.sheet_names}")
 
-    df = xl.parse(hoja, header=6)   # fila 7 como encabezado (0-indexed = 6)
-
-    # Normalizar nombres de columna
+    df = xl.parse(hoja, header=0)
     df.columns = [str(c).strip() for c in df.columns]
 
-    required = {"Item", "PRIME", "PUBLICO"}
+    required = {"Artículo", "Precio de Lista", "Precio Binasa"}
     missing = required - set(df.columns)
     if missing:
         raise ValueError(f"Faltan columnas en '{hoja}': {missing}\n"
                          f"Columnas disponibles: {list(df.columns)}")
 
-    df = df[df["Item"].notna() & (df["Item"].astype(str).str.strip() != "")].copy()
-    df["Item"] = df["Item"].astype(str).str.strip()
-    df["PRIME"]   = pd.to_numeric(df["PRIME"],   errors="coerce")
-    df["PUBLICO"] = pd.to_numeric(df["PUBLICO"], errors="coerce")
-    df = df.dropna(subset=["PRIME", "PUBLICO"])
+    df = df[df["Artículo"].notna() & (df["Artículo"].astype(str).str.strip() != "")].copy()
+    df["Artículo"]       = df["Artículo"].astype(str).str.strip()
+    df["Precio de Lista"] = pd.to_numeric(df["Precio de Lista"], errors="coerce")
+    df["Precio Binasa"]  = pd.to_numeric(df["Precio Binasa"],   errors="coerce")
+    df = df.dropna(subset=["Precio de Lista", "Precio Binasa"])
 
-    precios = {}
+    precios_bandas    = {}
+    precios_mangueras = {}
+
     for _, row in df.iterrows():
-        item = row["Item"]
-        extra = {}
-        for col in ["Grupo", "Categoria", "Description", "Clase"]:
-            if col in df.columns and pd.notna(row.get(col)):
-                extra[col] = str(row[col]).strip()
-        precios[item] = {
-            "precioBinasa": round(float(row["PRIME"]),   2),
-            "precioLista":  round(float(row["PUBLICO"]), 2),
-            **extra,
+        sku  = row["Artículo"]
+        tabla = str(row.get("Tabla", "")).strip().lower() if "Tabla" in df.columns else ""
+        desc  = str(row.get("Descripción", sku)).strip() if "Descripción" in df.columns else sku
+        unidad = str(row.get("Unidad", "pz")).strip() if "Unidad" in df.columns else "pz"
+        cat   = str(row.get("Categoría", "GENERAL")).strip().upper() if "Categoría" in df.columns else "GENERAL"
+
+        entry = {
+            "precioBinasa": round(float(row["Precio Binasa"]),   2),
+            "precioLista":  round(float(row["Precio de Lista"]), 2),
+            "desc":         desc,
+            "unidad":       unidad,
+            "categoria":    cat,
         }
 
-    print(f"  [{hoja}] {len(precios)} productos con precio")
-    return precios
+        if tabla == "mangueras":
+            precios_mangueras[sku] = entry
+        else:
+            precios_bandas[sku] = entry
 
-# ── Leer stock ─────────────────────────────────────────────────────────────────
+    print(f"  [{hoja}] Bandas: {len(precios_bandas)} | Mangueras: {len(precios_mangueras)}")
+    return precios_bandas, precios_mangueras
+
+# ── Leer stock desde Consolidado_Inv ──────────────────────────────────────────
 
 def leer_stock(xl):
     """
-    Hoja de existencias: suma DISPONIBLE por ARTICULO.
+    Hoja 'Consolidado_Inv': columnas Artículo, Disponible.
     """
-    hoja = hoja_existencias(xl)
+    hoja = None
+    for name in xl.sheet_names:
+        n = name.lower()
+        if "consolidado" in n or "consol" in n:
+            hoja = name
+            break
     if not hoja:
-        print("  ⚠  No se encontró hoja de existencias — stock no se actualizará")
+        for name in xl.sheet_names:
+            n = name.lower()
+            if "exis" in n or "stock" in n or "inventario" in n:
+                hoja = name
+                break
+
+    if not hoja:
+        print("  ⚠  No se encontró hoja de inventario — stock no se actualizará")
         return {}
 
-    df = xl.parse(hoja)
-    df.columns = [str(c).strip().upper() for c in df.columns]
+    df = xl.parse(hoja, header=0)
+    df.columns = [str(c).strip() for c in df.columns]
 
-    # Buscar columna SKU: preferir coincidencia exacta "ARTICULO"
-    exact = [c for c in df.columns if c == "ARTICULO"]
-    col_art = exact[0] if exact else next(
-        (c for c in df.columns if "ARTICULO" in c and "D" not in c and "A" not in c), None
-    )
-    col_dis = next((c for c in df.columns if c == "DISPONIBLE"), None) or next(
-        (c for c in df.columns if "DISPONIBLE" in c or "STOCK" in c), None
-    )
+    col_art = next((c for c in df.columns if c.lower() == "artículo" or c.lower() == "articulo"), None)
+    col_dis = next((c for c in df.columns if c.lower() == "disponible" or c.lower() == "stock"), None)
 
     if not col_art or not col_dis:
-        print(f"  ⚠  Columnas de inventario no detectadas en '{hoja}'. Cols: {list(df.columns)}")
+        print(f"  ⚠  Columnas no detectadas en '{hoja}'. Cols: {list(df.columns)}")
         return {}
 
     df["_art"] = df[col_art].astype(str).str.strip()
     df["_dis"] = pd.to_numeric(df[col_dis], errors="coerce").fillna(0)
+    df = df[df["_art"] != "" ]
 
     stock = df.groupby("_art")["_dis"].sum()
     result = {k: round(float(v), 2) for k, v in stock.items()}
@@ -137,16 +145,14 @@ def leer_data_js():
     with open(DATA_JS, encoding="utf-8") as f:
         content = f.read()
 
-    # Extraer sección CATALOG (termina antes de window.BACKORDERS u otro window.)
     m_start = content.find("window.CATALOG=")
     if m_start == -1:
         raise ValueError("No se encontró window.CATALOG en data.js")
     json_start = m_start + len("window.CATALOG=")
 
-    # Encontrar el cierre del objeto JSON
     m_next = re.search(r';\s*\n?window\.', content[json_start:])
     if m_next:
-        json_end = json_start + m_next.start() + 1  # incluir el ;
+        json_end = json_start + m_next.start() + 1
     else:
         json_end = len(content)
 
@@ -154,59 +160,47 @@ def leer_data_js():
     catalog = json.loads(catalog_str)
     return content, catalog, json_start, json_end
 
-# ── Actualizar catálogo ────────────────────────────────────────────────────────
+# ── Actualizar una sección del catálogo (bandas o mangueras) ──────────────────
 
-def actualizar_catalogo(catalog, precios, stock):
-    bandas = catalog.get("bandas", [])
+def actualizar_seccion(items, precios, stock, nombre_seccion):
     updated = skipped = new_products = 0
 
-    for prod in bandas:
+    for prod in items:
         pid = prod.get("id", "").strip()
         if pid in precios:
             p = precios[pid]
             prod["precioLista"]  = p["precioLista"]
             prod["precioBinasa"] = p["precioBinasa"]
-            if "Grupo" in p and p["Grupo"]:
-                prod["grupo"] = p["Grupo"].upper()
-            if "Categoria" in p and p["Categoria"]:
-                prod["categoria"] = p["Categoria"].upper()
+            if p.get("categoria"):
+                prod["categoria"] = p["categoria"]
             updated += 1
         else:
             skipped += 1
 
-        if pid in stock:
-            prod["stock"] = int(stock[pid])
-        else:
-            prod["stock"] = 0
+        prod["stock"] = int(stock.get(pid, prod.get("stock", 0)))
 
-    # Agregar productos del Excel que no estaban en el catálogo
-    existing_ids = {p["id"] for p in bandas}
+    existing_ids = {p["id"] for p in items}
     for pid, p in precios.items():
         if pid not in existing_ids:
-            grupo = p.get("Grupo", "GENERAL").upper()
-            cat   = p.get("Categoria", "GENERAL").upper()
-            desc  = p.get("Description", pid)
-            bandas.append({
+            items.append({
                 "id":           pid,
-                "desc":         desc,
-                "grupo":        grupo,
-                "categoria":    cat,
+                "desc":         p.get("desc", pid),
+                "grupo":        "GENERAL",
+                "categoria":    p.get("categoria", "GENERAL"),
                 "precioLista":  p["precioLista"],
                 "precioBinasa": p["precioBinasa"],
                 "stock":        int(stock.get(pid, 0)),
-                "unidad":       "pz",
+                "unidad":       p.get("unidad", "pz"),
                 "marca":        "Megadyne",
             })
             new_products += 1
 
-    print(f"  Actualizados: {updated} | Sin coincidencia en Excel: {skipped} | Nuevos: {new_products}")
-    catalog["bandas"] = bandas
-    return catalog
+    print(f"  [{nombre_seccion}] Actualizados: {updated} | Sin match: {skipped} | Nuevos: {new_products}")
+    return items
 
 # ── Escribir data.js ───────────────────────────────────────────────────────────
 
 def escribir_data_js(content, catalog, json_start, json_end):
-    # Backup
     ts  = datetime.now().strftime("%Y%m%d_%H%M%S")
     bak = DATA_JS.replace(".js", f"_bak_{ts}.js")
     with open(bak, "w", encoding="utf-8") as f:
@@ -236,7 +230,6 @@ def main():
     print("  ACTUALIZADOR DE PRECIOS — Cotizador Ammega")
     print("=" * 55)
 
-    # 1. Encontrar Excel
     arg = sys.argv[1] if len(sys.argv) > 1 else None
     excel_path = encontrar_excel(arg)
 
@@ -251,13 +244,12 @@ def main():
 
     print(f"\n[1/4] Excel: {os.path.basename(excel_path)}")
 
-    # 2. Leer Excel
     print("\n[2/4] Leyendo Excel…")
     xl = pd.ExcelFile(excel_path)
     print(f"  Hojas encontradas: {xl.sheet_names}")
 
     try:
-        precios = leer_precios(xl)
+        precios_bandas, precios_mangueras = leer_precios(xl)
     except Exception as e:
         print(f"\n  ERROR leyendo precios: {e}")
         input("\nPresiona Enter para salir…")
@@ -265,17 +257,18 @@ def main():
 
     stock = leer_stock(xl)
 
-    # 3. Parsear data.js actual
     print("\n[3/4] Actualizando catálogo…")
     content, catalog, json_start, json_end = leer_data_js()
-    n_antes = len(catalog.get("bandas", []))
-    print(f"  Productos antes: {n_antes}")
 
-    catalog = actualizar_catalogo(catalog, precios, stock)
-    n_despues = len(catalog.get("bandas", []))
-    print(f"  Productos después: {n_despues}")
+    print(f"  Bandas antes:    {len(catalog.get('bandas', []))}")
+    print(f"  Mangueras antes: {len(catalog.get('mangueras', []))}")
 
-    # 4. Escribir
+    catalog["bandas"]    = actualizar_seccion(catalog.get("bandas",    []), precios_bandas,    stock, "bandas")
+    catalog["mangueras"] = actualizar_seccion(catalog.get("mangueras", []), precios_mangueras, stock, "mangueras")
+
+    print(f"  Bandas después:    {len(catalog['bandas'])}")
+    print(f"  Mangueras después: {len(catalog['mangueras'])}")
+
     print("\n[4/4] Guardando…")
     escribir_data_js(content, catalog, json_start, json_end)
 
